@@ -1,25 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "assemble.h"
 #include "symbolmap.h"
 
-typedef int bool;
-#ifndef TRUE
-#define TRUE 1
-#endif
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-#ifndef WORD_SIZE
-#define WORD_SIZE 4
-#endif
-
-char* compile(FILE *stream);
-bool hasLabel(char *str);
-bool isBlankLine(char *str);
-void firstPass(SymbolTable *map, FILE *stream);
-void secondPass(SymbolTable *map);
+FILE *input = NULL, *output = NULL;
 
 int main(int argc, char **argv) {
 
@@ -28,24 +13,28 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  FILE *input;
-  FILE *output;
-
-  //Get input file
-  if ((input = fopen(argv[1], "r")) == NULL) {
-    perror(argv[1]);
-    exit(EXIT_FAILURE);
-  }
-
-  //Get output file
-  if ((output = fopen(argv[2], "w")) == NULL) {
-    perror(argv[2]);
-    exit(EXIT_FAILURE);
-  }
-
+  setUpIO(argv[1], argv[2]);
   char *data = compile(input);
-  
-  //Write data to output file
+  outputData(data);
+
+  return EXIT_SUCCESS;
+}
+
+#pragma mark - IO
+
+void setUpIO(char *in, char *out) {
+  if ((input = fopen(in, "r")) == NULL) {
+    perror(in);
+    exit(EXIT_FAILURE);
+  }
+
+  if ((output = fopen(out, "w")) == NULL) {
+    perror(out);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void outputData(char *data) {
   if (fputs(data, output) <= 0) {
     perror("Write to binary file failed.");
     exit(EXIT_FAILURE);
@@ -53,8 +42,6 @@ int main(int argc, char **argv) {
 
   fclose(input);
   fclose(output);
-
-  return EXIT_SUCCESS;
 }
 
 #pragma mark - Compile
@@ -70,7 +57,6 @@ char* compile(FILE *stream) {
   secondPass(lblToAddr);
 
   map_free(lblToAddr);
-  free(lblToAddr);
 
   return "Done";
 }
@@ -93,7 +79,6 @@ void firstPass(SymbolTable *map, FILE *stream){
       continue;
     }
   }
-
   map_print(map);
 }
 
