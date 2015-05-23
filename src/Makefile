@@ -7,8 +7,14 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 all: assemble emulate
 
-assemble: assemble.c
-	$(CC) $(CFLAGS) $< -o $@
+assemble: assemble.o symbolmap.o
+	$(CC) $^ -o $@
+
+assemble.o: assemble.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+symbolmap.o: symbolmap.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 emulate: emulate.c
 	$(CC) $(CFLAGS) $< -o $@

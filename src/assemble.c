@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "symbolmap.h"
 
 typedef int bool;
 #ifndef TRUE
@@ -10,10 +11,15 @@ typedef int bool;
 #define FALSE 0
 #endif
 
-//TODO: Binary writer
-//TODO: Symbol Table
-//TODO: Tokeniser
-//TODO: Instructions
+#ifndef WORD_SIZE
+#define WORD_SIZE 4
+#endif
+
+char* compile(FILE *stream);
+bool hasLabel(char *str);
+bool isBlankLine(char *str);
+void firstPass(SymbolTable *map);
+void secondPass(SymbolTable *map);
 
 int main(int argc, char **argv) {
 
@@ -25,11 +31,13 @@ int main(int argc, char **argv) {
   FILE *input;
   FILE *output;
 
+  //Get input file
   if ((input = fopen(argv[1], "r")) == NULL) {
     perror(argv[1]);
     exit(EXIT_FAILURE);
   }
 
+  //Get output file
   if ((output = fopen(argv[2], "w")) == NULL) {
     perror(argv[2]);
     exit(EXIT_FAILURE);
@@ -37,11 +45,7 @@ int main(int argc, char **argv) {
 
   printf("Correct Number of arguments\n");
 
-  printf("Compiles...\n");
-
-  printf("Now we write to file: ");
-
-  char *data = "This is the data we want to write to the file";
+  char *data = compile(input);
 
   printf("%s\n", data);
   //Write data to output file
@@ -54,4 +58,59 @@ int main(int argc, char **argv) {
   fclose(output);
 
   return EXIT_SUCCESS;
+}
+
+#pragma mark - Compile
+
+char* compile(FILE *stream) {
+  // char *output;
+  char buffer[512];
+
+  SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
+
+  firstPass(lblToAddr);
+
+  //TODO: Second Pass - Florian
+  secondPass(lblToAddr);
+
+  map_free(lblToAddr);
+  free(lblToAddr);
+
+  return "Done";
+}
+
+void firstPass(SymbolTable *map){
+  map_init(map); //Set up Symbol Table
+  int currAddr = 0;
+  //Loop over each line getting labels and putting them
+  //into the map with their respective addresses
+  while (fgets(buffer, sizeof(buffer), stream) != NULL) {
+    if (!isBlankLine(buffer)) {
+      if (hasLabel(buffer)) {
+        char *label;
+        label = strtok(buffer, ":");
+        map_set(map, label, currAddr);
+      }
+      currAddr += WORD_SIZE;
+    } else {
+      continue;
+    }
+  }
+
+  map_print(map);
+}
+
+void secondPass(SymbolTable *map) {
+
+}
+
+#pragma mark - Helper Functions
+
+bool hasLabel(char *str) {
+  const char labelSep = ':';
+  return strchr(str, labelSep) != NULL;
+}
+
+bool isBlankLine(char *str) {
+  return str[0] == '\n';
 }
