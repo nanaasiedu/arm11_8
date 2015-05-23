@@ -9,12 +9,12 @@ FILE *input = NULL, *output = NULL;
 int main(int argc, char **argv) {
 
   if (argc != 3) {
-    perror("Incorrect Number of Arguements");
+    perror("Incorrect Number of Arguments");
     exit(EXIT_FAILURE);
   }
 
   setUpIO(argv[1], argv[2]);
-  char *data = compile(input);
+  char *data = compile();
   outputData(data);
 
   return EXIT_SUCCESS;
@@ -46,12 +46,12 @@ void outputData(char *data) {
 
 #pragma mark - Compile
 
-char* compile(FILE *stream) {
+char* compile() {
   // char *output;
 
   SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
 
-  firstPass(lblToAddr, stream);
+  firstPass(lblToAddr, input);
 
   //TODO: Second Pass - Florian
   secondPass(lblToAddr);
@@ -61,13 +61,13 @@ char* compile(FILE *stream) {
   return "Done";
 }
 
-void firstPass(SymbolTable *map, FILE *stream){
+void firstPass(SymbolTable *map){
   char buffer[512];
   map_init(map); //Set up Symbol Table
   int currAddr = 0;
   //Loop over each line getting labels and putting them
   //into the map with their respective addresses
-  while (fgets(buffer, sizeof(buffer), stream) != NULL) {
+  while (fgets(buffer, sizeof(buffer), input) != NULL) {
     if (!isBlankLine(buffer)) {
       if (hasLabel(buffer)) {
         char *label;
@@ -75,9 +75,7 @@ void firstPass(SymbolTable *map, FILE *stream){
         map_set(map, label, currAddr);
       }
       currAddr += WORD_SIZE;
-    } else {
-      continue;
-    }
+    } 
   }
   map_print(map);
 }

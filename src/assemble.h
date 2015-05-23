@@ -1,3 +1,6 @@
+#ifndef ASSEMBLE
+#define ASSEMBLE
+
 #include <stdlib.h>
 #include "symbolmap.h"
 
@@ -17,9 +20,11 @@ typedef int bool;
 void setUpIO(char *in, char *out);
 void outputData(char *data);
 //Compile
-char* compile(FILE *stream);
-void firstPass(SymbolTable *map, FILE *stream);
+char* compile();
+void firstPass(SymbolTable *map);
 void secondPass(SymbolTable *map);
 //Helper
 bool hasLabel(char *str);
 bool isBlankLine(char *str);
+
+#endif /* end of include guard: ASSEMBLE */

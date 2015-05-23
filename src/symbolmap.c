@@ -5,15 +5,6 @@
 
 int find_index(char **a, int size, char *key);
 
-void map_init(SymbolTable *map) {
-  // initialize size and capacity
-  map->size = 0;
-  map->capacity = INITIAL_MAP_SIZE;
-  // allocate memory for map->keys & map->values
-  map->keys = malloc(sizeof(char) * MAX_LINE_LENGTH * map->capacity);
-  map->values = malloc(sizeof(int) * map->capacity);
-}
-
 int map_get(SymbolTable *map, char *key) {
   int index = find_index(map->keys, map->size, key);
   if (index == -1) {
@@ -32,16 +23,10 @@ void map_set(SymbolTable *map, char *key, int value) {
 
 void map_double_capacity(SymbolTable *map) {
   if (map->size >= map->capacity) {
-    map->capacity *= 2;
-    map->keys = realloc(map->keys, sizeof(char) * map->capacity * MAX_LINE_LENGTH);
-    map->values = realloc(map->values, sizeof(int) * map->capacity);
+    map->fullCapacity *= 2;
+    map->keys = realloc(map->keys, sizeof(char) * map->fullCapacity * MAX_LINE_LENGTH);
+    map->values = realloc(map->values, sizeof(int) * map->fullCapacity);
   }
-}
-
-void map_free(SymbolTable *map) {
-  free(map->keys);
-  free(map->values);
-  free(map);
 }
 
 #pragma mark - Helper Functions
@@ -55,10 +40,25 @@ int find_index(char **a, int size, char *key) {
    return(-1);
 }
 
+void map_init(SymbolTable *map) {
+  // initialize size and capacity
+  map->size = 0;
+  map->fullCapacity = INITIAL_MAP_SIZE;
+  // allocate memory for map->keys & map->values
+  map->keys = malloc(sizeof(char) * MAX_LINE_LENGTH * map->fullCapacity);
+  map->values = malloc(sizeof(int) * map->fullCapacity);
+}
+
 void map_print(SymbolTable *map) {
   char **keyIndex = map->keys;
   int *valueIndex = map->values;
   for (int i = 0; i < map->size; i++) {
     printf("(Key:%s, Value: %d)\n", *keyIndex++, *valueIndex++);
   }
+}
+
+void map_free(SymbolTable *map) {
+  free(map->keys);
+  free(map->values);
+  free(map);
 }
