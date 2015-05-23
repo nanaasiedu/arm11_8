@@ -18,7 +18,7 @@ typedef int bool;
 char* compile(FILE *stream);
 bool hasLabel(char *str);
 bool isBlankLine(char *str);
-void firstPass(SymbolTable *map);
+void firstPass(SymbolTable *map, FILE *stream);
 void secondPass(SymbolTable *map);
 
 int main(int argc, char **argv) {
@@ -64,11 +64,10 @@ int main(int argc, char **argv) {
 
 char* compile(FILE *stream) {
   // char *output;
-  char buffer[512];
 
   SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
 
-  firstPass(lblToAddr);
+  firstPass(lblToAddr, stream);
 
   //TODO: Second Pass - Florian
   secondPass(lblToAddr);
@@ -79,7 +78,8 @@ char* compile(FILE *stream) {
   return "Done";
 }
 
-void firstPass(SymbolTable *map){
+void firstPass(SymbolTable *map, FILE *stream){
+  char buffer[512];
   map_init(map); //Set up Symbol Table
   int currAddr = 0;
   //Loop over each line getting labels and putting them
