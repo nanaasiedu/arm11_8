@@ -43,11 +43,8 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  printf("Correct Number of arguments\n");
-
   char *data = compile(input);
-
-  printf("%s\n", data);
+  
   //Write data to output file
   if (fputs(data, output) <= 0) {
     perror("Write to binary file failed.");
