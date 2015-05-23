@@ -18,13 +18,10 @@ typedef int bool;
 
 //IO
 void setUpIO(char *in, char *out);
-void outputData(char *data);
 //Compile
-char* compile();
-void firstPass(SymbolTable *map);
-void secondPass(SymbolTable *map);
+void resolveLabelAddresses(SymbolTable *map);
+void parseProgram(SymbolTable *map);
 //Helper
-bool hasLabel(char *str);
-bool isBlankLine(char *str);
+void tokenise();
 
 #endif /* end of include guard: ASSEMBLE */

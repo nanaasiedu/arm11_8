@@ -14,9 +14,16 @@ int main(int argc, char **argv) {
   }
 
   setUpIO(argv[1], argv[2]);
-  char *data = compile();
-  outputData(data);
 
+  SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
+  tokenise();
+  resolveLabelAddresses(lblToAddr);
+  parseProgram(lblToAddr);
+  map_free(lblToAddr);
+
+  fclose(input);
+  fclose(output);
+  
   return EXIT_SUCCESS;
 }
 
@@ -34,34 +41,9 @@ void setUpIO(char *in, char *out) {
   }
 }
 
-void outputData(char *data) {
-  if (fputs(data, output) <= 0) {
-    perror("Write to binary file failed.");
-    exit(EXIT_FAILURE);
-  }
-
-  fclose(input);
-  fclose(output);
-}
-
 #pragma mark - Compile
-
-char* compile() {
-  // char *output;
-
-  SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
-
-  firstPass(lblToAddr, input);
-
-  //TODO: Second Pass - Florian
-  secondPass(lblToAddr);
-
-  map_free(lblToAddr);
-
-  return "Done";
-}
-
-void firstPass(SymbolTable *map){
+//TODO: resolve completely redo
+void resolveLabelAddresses(SymbolTable *map){
   char buffer[512];
   map_init(map); //Set up Symbol Table
   int currAddr = 0;
@@ -75,22 +57,14 @@ void firstPass(SymbolTable *map){
         map_set(map, label, currAddr);
       }
       currAddr += WORD_SIZE;
-    } 
+    }
   }
+
   map_print(map);
 }
 
-void secondPass(SymbolTable *map) {
-
-}
-
 #pragma mark - Helper Functions
+//TODO: Tokenise
+void tokenise() {
 
-bool hasLabel(char *str) {
-  const char labelSep = ':';
-  return strchr(str, labelSep) != NULL;
-}
-
-bool isBlankLine(char *str) {
-  return str[0] == '\n';
 }
