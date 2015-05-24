@@ -23,5 +23,6 @@ void resolveLabelAddresses(SymbolTable *map);
 void parseProgram(SymbolTable *map);
 //Helper
 void tokenise();
+void createMnemonicTable();
 
 #endif /* end of include guard: ASSEMBLE */
