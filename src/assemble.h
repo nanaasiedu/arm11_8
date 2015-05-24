@@ -16,6 +16,13 @@ typedef int bool;
 #define WORD_SIZE 4
 #endif
 
+typedef enum {label,literal,other,newline,endfile} TokenType;
+
+typedef struct {
+  char *value;
+  TokenType type
+} Token;
+
 //IO
 void setUpIO(char *in, char *out);
 //Compile
