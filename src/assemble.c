@@ -111,52 +111,6 @@ void parseLine(Token *token) {
 }
 
 void parseInstruction(Token *token) {
-<<<<<<< HEAD
-  switch(index_of(token, mnemonicTable)) {
-    case ADD: parseAdd(token);
-    break;
-    case SUB: parseSub(token);
-    break;
-    case RSB: parseRsb(token);
-    break;
-    case AND: parseAnd(token);
-    break;
-    case EOR: parseEor(token);
-    break;
-    case ORR: parseOrr(token);
-    break;
-    case MOV: parseMov(token);
-    break;
-    case TST: parseTst(token);
-    break;
-    case TEQ: parseTeq(token);
-    break;
-    case CMP: parseCmp(token);
-    break;
-    case MUL: parseMul(token);
-    break;
-    case MLA: parseMla(token);
-    break;
-    case BEQ: parseBeq(token);
-    break;
-    case BNE: parseBne(token);
-    break;
-    case BGE: parseBge(token);
-    break;
-    case BLT: parseBlt(token);
-    break;
-    case BGT: parseBgt(token);
-    break;
-    case BLE: parseBle(token);
-    break;
-    case B: parseB(token);
-    break;
-    case LSL: parseLsl(token);
-    break;
-    case ANDEQ: parseAndeq(token);
-    break;
-
-=======
   switch(map_get(&mnemonicTable, token->value)) {
     case ADD: parseAdd(token); break;
     case SUB: parseSub(token); break;
@@ -180,7 +134,6 @@ void parseInstruction(Token *token) {
     case B: parseB(token); break;
     case LSL: parseLsl(token); break;
     case ANDEQ: generateHaltOpcode(); break;
->>>>>>> upstream/master
   }
 }
 
