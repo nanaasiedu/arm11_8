@@ -37,7 +37,7 @@ void resolveLabelAddresses(SymbolTable *map);
 void parseProgram(SymbolTable *map);
 void parseLine(Token *token);
 void parseInstruction(Token *token);
-//ParseInstructions
+//Parse Instructions
 void parseAdd();
 void parseSub();
 void parseRsb();

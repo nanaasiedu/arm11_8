@@ -21,6 +21,10 @@ int mnemonicInts[23] = {
   0,1,10,11,12,13,14
 };
 
+int numberOfArguments[23] = {
+  3,3,3,3,3,3,2,2,2,2
+};
+
 SymbolTable mnemonicTable = {23,23,mnemonicStrings,mnemonicInts};
 
 int main(int argc, char **argv) {
@@ -207,7 +211,7 @@ void parseB() {
 void parseLsl() {
 
 }
-void parseAndeq() { 
+void parseAndeq() {
 
 }
 
