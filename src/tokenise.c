@@ -36,6 +36,8 @@ char* print_tokentype(TokenType type) {
       return "Label";
     case LITERAL:
       return "Literal";
+    case EXPRESSION:
+      return "Expression";
     case OTHER:
       return "Other";
     case NEWLINE:
@@ -55,6 +57,11 @@ bool isLabel(char *string) {
 bool isLiteral(char *string) {
   return string[0] == '#';
 }
+
+bool isExpression(char *string) {
+  return string[0] == '=';
+}
+
 void tokens_free(Tokens *tokens) {
   free(tokens);
   free(tokens->tokens);

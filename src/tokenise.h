@@ -9,7 +9,7 @@ typedef int bool;
 #define FALSE 0
 #endif
 
-typedef enum {LABEL,LITERAL,OTHER,NEWLINE,ENDFILE} TokenType;
+typedef enum {LABEL,LITERAL,EXPRESSION,OTHER,NEWLINE,ENDFILE} TokenType;
 
 typedef struct {
   char *value;
@@ -28,6 +28,7 @@ void tokens_print(Tokens *tokens);
 //Helpers
 bool isLabel(char *string);
 bool isLiteral(char *string);
+bool isExpression(char *string);
 char* print_tokentype(TokenType type);
 void tokens_free(Tokens *tokens);
 
