@@ -1,16 +1,17 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "emulateDefs.h"
 #include <stdint.h>
+#include "emulateDefs.h"
 
-void *voidMem = calloc(65536, 1); // Memory location of the start of the RAM addresses
-uint8_t *mem = (uint8_t *)voidMem; //RAM
+char *mem = NULL; //RAM
 
 int main(int argc, char **argv) {
   if (argc != 1) {
     printf("Incorrect number of arguments");
     exit(EXIT_FAILURE);
   }
+
+  mem = calloc(65536, 1);
 
   FILE *binFile = NULL;
 
@@ -27,5 +28,5 @@ int main(int argc, char **argv) {
 
 void cleanup(void) {
 // cleanup frees up memory used within the program when program shuts down
-  //free(voidMem);
+  free(mem);
 }

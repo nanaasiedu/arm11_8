@@ -12,6 +12,8 @@ typedef int bool;
 #define FALSE 0
 #endif
 
+#define MEM16BIT 65536 // Number of memory locations in a 16 bit address
+
 void cleanup(void);
 
 typedef struct {
