@@ -149,31 +149,28 @@ void parseInstruction(Token *token) {
 }
 
 //Parse Instructions
-
-void parseAdd(Token *token) {
+void parseTurnaryDataProcessing(Token *token) {
   token *rd_token = token + 1;
   token *rn_token = token + 2;
   token *operand_token = token + 3;
   int rd,rn,operand;
   rd = map_get(registerTable, rd->value);
   rn = map_get(registerTable, rn->value);
-  if(operand->value == LITERAL) {
+  if(operand->type == LITERAL) {
     int numberRepresented;
     sscanf((operand->value),"%d",&numberRepresented);
     operand = numberRepresented;
   } else {
     operand = map_get(registerTable, operand->value);
   }
-  dataProcessing();
+  generateDataProcessingOpcode();
 }
 
-void parseSub(Token *token) {
+void parseBinaryDataProcessing(Token *token) {
   token *rd_token = token + 1;
-  token *rn_token = token + 2;
-  token *operand_token = token + 3;
-  int rd,rn,operand;
+  token *operand_token = token + 2;
+  int rd,operand;
   rd = map_get(registerTable, rd->value);
-  rn = map_get(registerTable, rn->value);
   if(operand->value == LITERAL) {
     int numberRepresented;
     sscanf((operand->value),"%d",&numberRepresented);
@@ -181,111 +178,35 @@ void parseSub(Token *token) {
   } else {
     operand = map_get(registerTable, operand->value);
   }
-  dataProcessing();
+  generateDataProcessingOpcode();
 }
-void parseRsb(Token *token) {
-  token *rd_token = token + 1;
-  token *rn_token = token + 2;
-  token *operand_token = token + 3;
-  int rd,rn,operand;
-  rd = map_get(registerTable, rd->value);
-  rn = map_get(registerTable, rn->value);
-  if(operand->value == LITERAL) {
-    int numberRepresented;
-    sscanf((operand->value),"%d",&numberRepresented);
-    operand = numberRepresented;
-  } else {
-    operand = map_get(registerTable, operand->value);
-  }
-  dataProcessing();
-}
-void parseAnd(Token *token) {
- token *rd_token = token + 1;
-  token *rn_token = token + 2;
-  token *operand_token = token + 3;
-  int rd,rn,operand;
-  rd = map_get(registerTable, rd->value);
-  rn = map_get(registerTable, rn->value);
-  if(operand->value == LITERAL) {
-    int numberRepresented;
-    sscanf((operand->value),"%d",&numberRepresented);
-    operand = numberRepresented;
-  } else {
-    operand = map_get(registerTable, operand->value);
-  }
-  dataProcessing();
-}
-void parseEor(Token *token) {
-  token *rd_token = token + 1;
-  token *rn_token = token + 2;
-  token *operand_token = token + 3;
-  int rd,rn,operand;
-  rd = map_get(registerTable, rd->value);
-  rn = map_get(registerTable, rn->value);
-  if(operand->value == LITERAL) {
-    int numberRepresented;
-    sscanf((operand->value),"%d",&numberRepresented);
-    operand = numberRepresented;
-  } else {
-    operand = map_get(registerTable, operand->value);
-  }
-  dataProcessing();
-}
-void parseOrr(Token *token) {
- token *rd_token = token + 1;
-  token *rn_token = token + 2;
-  token *operand_token = token + 3;
-  int rd,rn,operand;
-  rd = map_get(registerTable, rd->value);
-  rn = map_get(registerTable, rn->value);
-  if(operand->value == LITERAL) {
-    int numberRepresented;
-    sscanf((operand->value),"%d",&numberRepresented);
-    operand = numberRepresented;
-  } else {
-    operand = map_get(registerTable, operand->value);
-  }
-  dataProcessing();
-}
-void parseMov(Token *token) {
 
-}
-void parseLdr(Token *token){
-  uint32_t cond, i, p, u, l, rn, rd, offset;
-  cond = 14;
-  l = 1;
-  Token *rdToken = token+1;
-  Token *addrToken = token+2;
-  rd = map_get(registerTable, rdToken->value);
-  if (addrToken->type == EXPRESSION) {
-    p = 1;
-    i = 0;
-    rn = map_get(registerTable, "PC");
-    char *ptr;
-    uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
-  }
-  else {
-
-  }
-}
-void parseStr(Token *token){
-
-}
-void parseTst(Token *token) {
-
-}
-void parseTeq(Token *token) {
-
-}
-void parseCmp(Token *token) {
-
-}
 void parseMul(Token *token) {
-
+  token *rd_token = token + 1;
+  token *rm_token = token + 2;
+  token *rs_token = token + 3;
+  int rd,rm,rs;
+  rd = map_get(registerTable, rd->value);
+  rm = map_get(registerTable, rm->value);
+  rs = map_get(registerTable, rs->value);
+  generateMultiplyOpcode();
 }
+
 void parseMla(Token *token) {
+  token *rd_token = token + 1;
+  token *rm_token = token + 2;
+  token *rs_token = token + 3;
+  token *rn_token = token + 4;
+  int rd,rm,rs,rn;
+  rd = map_get(registerTable, rd->value);
+  rm = map_get(registerTable, rm->value);
+  rs = map_get(registerTable, rs->value);
+  rn = map_get(registerTable, rn->value);
 
+  generateMultiplyOpcode();
 }
+
+
 void parseB(Token *token) {
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
@@ -336,17 +257,13 @@ void tokenise() {
   tokens_print(tokens);
 }
 
-<<<<<<< HEAD
-// int index_of(Token *token, int *arr) {
-=======
-// int index_of(Token *token, char *arr) {
->>>>>>> fccde1ffbd9f2d4cf11cc70dd88107e62647b748
-//   int i = 0;
-//   while (strcmp(token->value,arr[i]) != 0) {
-//     i++;
-//   }
-//   return i;
-// }
+int index_of(Token *token, char *arr) {
+  int i = 0;
+  while (strcmp(token->value,arr[i]) != 0) {
+    i++;
+  }
+  return i;
+}
 
 void dealloc() {
   fclose(input);
