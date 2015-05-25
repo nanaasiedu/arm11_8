@@ -98,47 +98,47 @@ void parseLine(Token *token) {
 
 void parseInstruction(Token *token) {
   switch(mnemonic_name(token)) {
-    case ADD: parseAdd();
+    case ADD: parseAdd(token);
     break;
-    case SUB: parseSub();
+    case SUB: parseSub(token);
     break;
-    case RSB: parseRsb();
+    case RSB: parseRsb(token);
     break;
-    case AND: parseAnd();
+    case AND: parseAnd(token);
     break;
-    case EOR: parseEor();
+    case EOR: parseEor(token);
     break;
-    case ORR: parseOrr();
+    case ORR: parseOrr(token);
     break;
-    case MOV: parseMov();
+    case MOV: parseMov(token);
     break;
-    case TST: parseTst();
+    case TST: parseTst(token);
     break;
-    case TEQ: parseTeq();
+    case TEQ: parseTeq(token);
     break;
-    case CMP: parseCmp();
+    case CMP: parseCmp(token);
     break;
-    case MUL: parseMul();
+    case MUL: parseMul(token);
     break;
-    case MLA: parseMla();
+    case MLA: parseMla(token);
     break;
-    case BEQ: parseBeq();
+    case BEQ: parseBeq(token);
     break;
-    case BNE: parseBne();
+    case BNE: parseBne(token);
     break;
-    case BGE: parseBge();
+    case BGE: parseBge(token);
     break;
-    case BLT: parseBlt();
+    case BLT: parseBlt(token);
     break;
-    case BGT: parseBgt();
+    case BGT: parseBgt(token);
     break;
-    case BLE: parseBle();
+    case BLE: parseBle(token);
     break;
-    case B: parseB();
+    case B: parseB(token);
     break;
-    case LSL: parseLsl();
+    case LSL: parseLsl(token);
     break;
-    case ANDEQ: parseAndeq();
+    case ANDEQ: parseAndeq(token);
     break;
 
   }
