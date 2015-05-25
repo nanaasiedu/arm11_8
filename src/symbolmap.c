@@ -8,7 +8,7 @@ int find_index(char **a, int size, char *key);
 int map_get(SymbolTable *map, char *key) {
   int index = find_index(map->keys, map->size, key);
   if (index == -1) {
-    perror("Key not found in Symbol Table");
+    printf("Key not found in Symbol Table: %s\n", key);
     exit(EXIT_FAILURE);
   }
   return map->values[index];
@@ -22,9 +22,9 @@ void map_set(SymbolTable *map, char *key, int value) {
 }
 
 void map_double_capacity(SymbolTable *map) {
-  if (map->size >= map->capacity) {
+  if (map->size >= map->fullCapacity) {
     map->fullCapacity *= 2;
-    map->keys = realloc(map->keys, sizeof(char) * map->fullCapacity * MAX_LINE_LENGTH);
+    map->keys = realloc(map->keys, sizeof(char) * map->fullCapacity);
     map->values = realloc(map->values, sizeof(int) * map->fullCapacity);
   }
 }
@@ -45,7 +45,7 @@ void map_init(SymbolTable *map) {
   map->size = 0;
   map->fullCapacity = INITIAL_MAP_SIZE;
   // allocate memory for map->keys & map->values
-  map->keys = malloc(sizeof(char) * MAX_LINE_LENGTH * map->fullCapacity);
+  map->keys = malloc(sizeof(char) * map->fullCapacity);
   map->values = malloc(sizeof(int) * map->fullCapacity);
 }
 
