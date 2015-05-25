@@ -12,9 +12,9 @@ typedef int bool;
 #define FALSE 0
 #endif
 
-#define MEM16BIT 65536 // Number of memory locations in a 16 bit address
-
-void cleanup(void);
+#ifndef MEM16BIT
+#define MEM16BIT 65536
+#endif
 
 typedef struct {
   uint8_t cond;
@@ -33,23 +33,10 @@ struct regFile {
   uint32_t *LR;
   uint32_t *PC;
   uint32_t *CPSR;
-}
+};
 
-// #ifndef WORD_SIZE
-// #define WORD_SIZE 4
-// #endif
-
-/*
-//IO
-void setUpIO(char *in, char *out);
-void outputData(char *data);
-//Compile
-char* compile();
-void firstPass(SymbolTable *map);
-void secondPass(SymbolTable *map);
-//Helper
-bool hasLabel(char *str);
-bool isBlankLine(char *str);
-*/
+void dealloc(void);
+void enterC(void);
+void loadFileToMem(char const *file);
 
 #endif /* end of include guard: EMULATEDEFS */

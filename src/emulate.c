@@ -1,32 +1,43 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "emulateDefs.h"
+#include <stdlib.h>
+#include "emulate.h"
 
-char *mem = NULL; //RAM
+FILE *binFile = NULL; //Binary file containing instructions
+uint8_t *mem = NULL; //Memory
 
-int main(int argc, char **argv) {
-  if (argc != 1) {
+int main (int argc, char const *argv[]) {
+  if (argc != 2) {
     printf("Incorrect number of arguments");
     exit(EXIT_FAILURE);
   }
 
-  mem = calloc(65536, 1);
+  mem = calloc(MEM16BIT, 1); // allocates 2^16 bit memory addresses to mem
 
-  FILE *binFile = NULL;
+  loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
 
-	binFile=fopen(argv[0],"wb");
-	if (!binFile)
-	{
-		printf("Unable to open file!");
-		return EXIT_FAILURE;
-	}
 
-  cleanup();
+  enterC();
+  dealloc();
   return EXIT_SUCCESS;
 }
 
-void cleanup(void) {
-// cleanup frees up memory used within the program when program shuts down
+void loadFileToMem(char const *file) {
+  // Reads bytes from file and inserts them into the mem array
+  if ((binFile = fopen(file,"r")) == NULL){
+    perror("Unable to open file!");
+    exit(EXIT_FAILURE);
+  }
+
+  fread(mem,1,MEM16BIT,binFile);
+}
+
+void dealloc(void) {
+  // Frees all memory locations alloacted during the execution of the program
   free(mem);
+}
+
+void enterC(void) {
+  printf("Press enter");
+  while (getchar() != '\n');
 }
