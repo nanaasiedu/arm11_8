@@ -11,7 +11,7 @@ assemble: assemble.o symbolmap.o tokenise.o
 	$(CC) $^ -o $@
 
 tokenise.o: tokenise.c
-	$(CC) $(CFLAGS) $< -c -o $@	
+	$(CC) $(CFLAGS) $< -c -o $@
 
 assemble.o: assemble.c
 	$(CC) $(CFLAGS) $< -c -o $@
@@ -19,7 +19,7 @@ assemble.o: assemble.c
 symbolmap.o: symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-emulate: emulate.c
+emulate: emulateDefs.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:

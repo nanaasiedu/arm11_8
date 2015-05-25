@@ -34,9 +34,9 @@ struct regFile {
   uint32_t *LR;
   uint32_t *PC;
   uint32_t *CPSR;
-}
+};
 
 /* Helper functions for emulate */
-
+int getInstType(int32_t instruction);
 
 #endif /* end of include guard: EMULATEDEFS */

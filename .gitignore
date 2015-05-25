@@ -18,6 +18,7 @@
 emulate
 assemble
 *.dSYM
+*.exe
 
 #ignore junk files from compiling Haskell code
 *.hi
