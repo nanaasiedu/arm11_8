@@ -18,7 +18,16 @@ int mnemonicInts[23] = {
   4,2,3,0,1,12,13,8,9,10,
   0,1,
   0,0,
-  0,1,10,11,12,13,14
+  0,1,10,11,12,13,14,
+  0,1
+};
+
+int numberOfArguments[23] = {
+  3,3,3,3,3,3,2,2,2,2,
+  3,4,
+  2,2,
+  1,1,1,1,1,1,1,
+  3,2
 };
 
 SymbolTable mnemonicTable = {23,23,mnemonicStrings,mnemonicInts};
@@ -39,7 +48,7 @@ int main(int argc, char **argv) {
   map_init(lblToAddr);
   tokenise();
   resolveLabelAddresses(lblToAddr);
-  //parseProgram(lblToAddr);
+  parseProgram(lblToAddr);
 
   map_free(lblToAddr);
   dealloc();
@@ -249,6 +258,6 @@ int mnemonic_name(Token *token) {
 void dealloc() {
   fclose(input);
   fclose(output);
-  //map_free(mnemonicTable);
+  // map_free(mnemonicTable);
   tokens_free(tokens);
 }
