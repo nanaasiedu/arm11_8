@@ -82,8 +82,9 @@ void resolveLabelAddresses(SymbolTable *map) {
 
 void parseProgram(SymbolTable *map) {
   int i = 0;
-  while (tokens[i].type != ENDFILE) {
-    parseLine(tokens+i);
+  Token *tokenArray = tokens->tokens;
+  while (tokenArray[i].type != ENDFILE) {
+    parseLine(tokenArray+i);
     i++;
   }
 }
@@ -99,13 +100,13 @@ void parseInstruction(Token *token) {
   switch(index_of(token)) {
     case ADD: parseAdd();
     break;
-    case SUB: parseSub()
+    case SUB: parseSub();
     break;
-    case RSB: parseRsb()
+    case RSB: parseRsb();
     break;
-    case AND: parseAnd()
+    case AND: parseAnd();
     break;
-    case EOR: parseEor()
+    case EOR: parseEor();
     break;
     case ORR: parseOrr();
     break;
@@ -141,6 +142,72 @@ void parseInstruction(Token *token) {
     break;
 
   }
+
+}
+
+//Parse Instructions
+
+void parseAdd() {
+
+}
+void parseSub() {
+
+}
+void parseRsb() {
+
+}
+void parseAnd() {
+
+}
+void parseEor() {
+
+}
+void parseOrr() {
+
+}
+void parseMov() {
+
+}
+void parseTst() {
+
+}
+void parseTeq() {
+
+}
+void parseCmp() {
+
+}
+void parseMul() {
+
+}
+void parseMla() {
+
+}
+void parseBeq() {
+
+}
+void parseBne() {
+
+}
+void parseBge() {
+
+}
+void parseBlt() {
+
+}
+void parseBgt() {
+
+}
+void parseBle() {
+
+}
+void parseB() {
+
+}
+void parseLsl() {
+
+}
+void parseAndeq() { 
 
 }
 

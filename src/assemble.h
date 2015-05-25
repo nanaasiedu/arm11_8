@@ -60,14 +60,9 @@ void parseB();
 void parseLsl();
 void parseAndeq();
 //Helper
-<<<<<<< HEAD
-void createMnemonicTable();
 void dealloc();
 //Tokens
 void tokenise();
-=======
-void tokenise();
 int index_of(Token *token);
->>>>>>> af76d07516246369c890218e9f7c8ef6d3c4ceda
 
 #endif /* end of include guard: ASSEMBLE */
