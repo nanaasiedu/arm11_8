@@ -29,5 +29,6 @@ void tokens_print(Tokens *tokens);
 bool isLabel(char *string);
 bool isLiteral(char *string);
 char* print_tokentype(TokenType type);
+void tokens_free(Tokens *tokens);
 
 #endif /* end of include guard: TOKENISE_H */

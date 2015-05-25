@@ -1,13 +1,9 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "assemble.h"
-#include "symbolmap.h"
-#include "tokenise.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
 
 FILE *input = NULL, *output = NULL;
-//SymbolTable *mnemonicTable = malloc(sizeof(SymbolTable));
 Tokens *tokens = NULL;
 
 int main(int argc, char **argv) {
@@ -23,11 +19,12 @@ int main(int argc, char **argv) {
   tokens_init(tokens);
   setUpIO(argv[1], argv[2]);
 
-  //SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
+  SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
+  map_init(lblToAddr);
   tokenise();
-  //resolveLabelAddresses(lblToAddr);
+  resolveLabelAddresses(lblToAddr);
   //parseProgram(lblToAddr);
-  //map_free(lblToAddr);
+  map_free(lblToAddr);
 
   dealloc();
 
@@ -49,25 +46,22 @@ void setUpIO(char *in, char *out) {
 }
 
 #pragma mark - Compile
-//TODO: resolve completely redo
-void resolveLabelAddresses(SymbolTable *map){
-  // char buffer[512];
-  // map_init(map); //Set up Symbol Table
-  // int currAddr = 0;
-  // //Loop over each line getting labels and putting them
-  // //into the map with their respective addresses
-  // while (fgets(buffer, sizeof(buffer), input) != NULL) {
-  //   if (!isBlankLine(buffer)) {
-  //     if (hasLabel(buffer)) {
-  //       char *label;
-  //       label = strtok(buffer, ":");
-  //       map_set(map, label, currAddr);
-  //     }
-  //     currAddr += WORD_SIZE;
-  //   }
-  // }
 
-  // map_print(map);
+void resolveLabelAddresses(SymbolTable *map) {
+  address currAddr = 0;
+  for (size_t i = 0; i < tokens->size; i++) {
+    Token token = tokens->tokens[i];
+    switch (token.type) {
+      case LABEL:
+        map_set(map, token.value, currAddr);
+      break;
+      case NEWLINE:
+        currAddr += WORD_SIZE;
+      break;
+      default: break;
+    }
+  }
+  map_print(map);
 }
 
 #pragma mark - Helper Functions
@@ -120,6 +114,5 @@ void dealloc() {
   fclose(input);
   fclose(output);
   //map_free(mnemonicTable);
-  free(tokens);
-  free(tokens->tokens);
+  tokens_free(tokens);
 }

@@ -2,6 +2,7 @@
 #define ASSEMBLE
 
 #include <stdlib.h>
+#include <stdint.h>
 #include "symbolmap.h"
 #include "tokenise.h"
 
@@ -13,6 +14,8 @@
 #define NOT_FOUND -1
 #endif
 
+typedef uint16_t address;
+typedef uint32_t instruction;
 
 //IO
 void setUpIO(char *in, char *out);

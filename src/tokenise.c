@@ -55,3 +55,7 @@ bool isLabel(char *string) {
 bool isLiteral(char *string) {
   return string[0] == '#';
 }
+void tokens_free(Tokens *tokens) {
+  free(tokens);
+  free(tokens->tokens);
+}
