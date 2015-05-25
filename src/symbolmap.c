@@ -15,6 +15,7 @@ int map_get(SymbolTable *map, char *key) {
 }
 
 void map_set(SymbolTable *map, char *key, int value) {
+  map_double_capacity(map);
   map->keys[map->size] = malloc(sizeof(char)*MAX_LINE_LENGTH);
   strcpy(map->keys[map->size], key);
   map->values[map->size] = value;

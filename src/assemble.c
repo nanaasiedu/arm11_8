@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "assemble.h"
 #include "symbolmap.h"
-#include <ctype.h>
+#include "tokenise.h"
 
 FILE *input = NULL, *output = NULL;
-SymbolTable *mnemonicTable = malloc(sizeof(SymbolTable));
+//SymbolTable *mnemonicTable = malloc(sizeof(SymbolTable));
 Tokens *tokens = NULL;
 
 int main(int argc, char **argv) {
@@ -18,7 +19,8 @@ int main(int argc, char **argv) {
 
   //Setup
   createMnemonicTable();
-  createTokenArray();
+  tokens = malloc(sizeof(Tokens));
+  tokens_init(tokens);
   setUpIO(argv[1], argv[2]);
 
   //SymbolTable *lblToAddr = malloc(sizeof(SymbolTable));
@@ -27,9 +29,7 @@ int main(int argc, char **argv) {
   //parseProgram(lblToAddr);
   //map_free(lblToAddr);
 
-  fclose(input);
-  fclose(output);
-  map_free(mnemonicTable);
+  dealloc();
 
   return EXIT_SUCCESS;
 }
@@ -71,59 +71,55 @@ void resolveLabelAddresses(SymbolTable *map){
 }
 
 #pragma mark - Helper Functions
-//TODO: Tokenise
+
 void tokenise() {
   char line[512];
   while (fgets(line, sizeof(line), input) != NULL) {
     char *sep = " ,\n";
     char *token;
-    for (token = strtok(line, sep); token; token(NULL, sep)) {
+    for (token = strtok(line, sep); token; token = strtok(NULL, sep)) {
       if (isLabel(token)) {
-        //Add LABEL
+        char *pch = strstr(token, ":");
+        strncpy(pch, "\0", 1);
+        tokens_add(tokens, token, LABEL);
       }
       else if (isLiteral(token)) {
-        //Add LITERAL
+        token++;
+        tokens_add(tokens, token, LITERAL);
       }
       else {
-        //Add OTHER
+        tokens_add(tokens, token, OTHER);
       }
     }
-    //Add NEW_LINE
+    tokens_add(tokens, "nl", NEWLINE);
   }
-  //Add ENDFILE
-}
-
-bool isLabel(char *string) {
-  int length = strlen(string);
-  return isalpha(string[0]) && (string[length-1] == ':');
-}
-
-bool isLiteral(char *string) {
-  return string[0] == '#';
+  tokens_add(tokens, "end", ENDFILE);
+  tokens_print(tokens);
 }
 
 void parseProgram(SymbolTable *map) {}
 
 void createMnemonicTable() {
-  map_init(mnemonicTable);
-  mnemonicTable->fullCapacity = 23;
-  mnemonicTable->size = 23;
-  mnemonicTable->keys = {"add","sub","rsb","and","eor",
-                         "orr","mov","tst","teq","cmp",
-                         "mul","mla",
-                         "ldr","str",
-                         "beq","bne", "bge","blt","bgt","ble","b",
-                         "lsl","andeq"};
-  mnemonicTable->values = {4,2,3,0,1,
-                           12,13,8,9,10,
-                           0,1,
-                           0,0,
-                           0,1,10,11,12,13,14};
+
+  // mnemonicTable->fullCapacity = 23;
+  // mnemonicTable->size = 23;
+  // mnemonicTable->keys = {"add","sub","rsb","and","eor",
+  //                        "orr","mov","tst","teq","cmp",
+  //                        "mul","mla",
+  //                        "ldr","str",
+  //                        "beq","bne", "bge","blt","bgt","ble","b",
+  //                        "lsl","andeq"};
+  // mnemonicTable->values = {4,2,3,0,1,
+  //                          12,13,8,9,10,
+  //                          0,1,
+  //                          0,0,
+  //                          0,1,10,11,12,13,14};
 }
 
-void createTokenArray() {
-  tokens = malloc(sizeof(Tokens));
-  tokens->size = 0;
-  tokens->fullCapacity = 100;
-  tokens->tokens = malloc(sizeof(Token) * tokens->fullCapacity);
+void dealloc() {
+  fclose(input);
+  fclose(output);
+  //map_free(mnemonicTable);
+  free(tokens);
+  free(tokens->tokens);
 }
