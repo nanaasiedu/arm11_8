@@ -130,18 +130,18 @@ void parseLine(Token *token) {
 
 void parseInstruction(Token *token) {
   switch(map_get(&mnemonicTable, token->value)) {
-    case ADD: parseAdd(token); break;
-    case SUB: parseSub(token); break;
-    case RSB: parseRsb(token); break;
-    case AND: parseAnd(token); break;
-    case EOR: parseEor(token); break;
-    case ORR: parseOrr(token); break;
-    case MOV: parseMov(token); break;
-    case TST: parseTst(token); break;
-    case TEQ: parseTeq(token); break;
-    case CMP: parseCmp(token); break;
-    case MUL: parseMul(token); break;
-    case MLA: parseMla(token); break;
+    case ADD: 
+    case SUB: 
+    case RSB: 
+    case AND: 
+    case EOR: 
+    case ORR: parseTurnaryDataProcessing(token); break;
+    case MOV: 
+    case TST: 
+    case TEQ: 
+    case CMP: 
+    case MUL: 
+    case MLA: parseBinaryDataProcessing(token); break;
     case LDR:
     case BEQ:
     case BNE:
