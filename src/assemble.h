@@ -33,7 +33,7 @@ typedef enum {
 //IO
 void setUpIO(char *in, char *out);
 //Compile
-void resolveLabelAddresses(SymbolTable *map);
+void resolveLabelAddresses();
 void parseProgram(SymbolTable *map);
 void parseLine(Token *token);
 void parseInstruction(Token *token);
@@ -50,16 +50,11 @@ void parseTeq(Token *token);
 void parseCmp(Token *token);
 void parseMul(Token *token);
 void parseMla(Token *token);
-void parseBeq(Token *token);
-void parseBne(Token *token);
-void parseBge(Token *token);
-void parseBlt(Token *token);
-void parseBgt(Token *token);
-void parseBle(Token *token);
 void parseB(Token *token);
 void parseLsl(Token *token);
-void parseAndeq(Token *token);
-
+//Opcode Generators
+void generateBranchOpcode(uint8_t cond, uint32_t offset);
+void generateHaltOpcode();
 //Helper
 void dealloc();
 //Tokens
