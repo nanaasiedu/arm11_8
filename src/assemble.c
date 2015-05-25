@@ -18,11 +18,16 @@ int mnemonicInts[23] = {
   4,2,3,0,1,12,13,8,9,10,
   0,1,
   0,0,
-  0,1,10,11,12,13,14
-};
+  0,1,10,11,12,13,14,
+  0,1
+}; //for special cases not sure
 
 int numberOfArguments[23] = {
-  3,3,3,3,3,3,2,2,2,2
+  3,3,3,3,3,3,2,2,2,2,
+  3,4,
+  2,2,
+  1,1,1,1,1,1,1,
+  3,2
 };
 
 SymbolTable mnemonicTable = {23,23,mnemonicStrings,mnemonicInts};
