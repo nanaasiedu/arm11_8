@@ -38,16 +38,8 @@ void parseProgram(SymbolTable *map);
 void parseLine(Token *token);
 void parseInstruction(Token *token);
 //Parse Instructions
-void parseAdd(Token *token);
-void parseSub(Token *token);
-void parseRsb(Token *token);
-void parseAnd(Token *token);
-void parseEor(Token *token);
-void parseOrr(Token *token);
-void parseMov(Token *token);
-void parseTst(Token *token);
-void parseTeq(Token *token);
-void parseCmp(Token *token);
+void parseTurnaryDataProcessing(Token *token);
+void parseBinaryDataProcessing(Token *token);
 void parseMul(Token *token);
 void parseMla(Token *token);
 void parseB(Token *token);
