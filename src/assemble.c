@@ -97,7 +97,7 @@ void parseLine(Token *token) {
 
 
 void parseInstruction(Token *token) {
-  switch(index_of(token)) {
+  switch(mnemonic_name(token)) {
     case ADD: parseAdd();
     break;
     case SUB: parseSub();
@@ -147,67 +147,67 @@ void parseInstruction(Token *token) {
 
 //Parse Instructions
 
-void parseAdd() {
+void parseAdd(Token *token) {
 
 }
-void parseSub() {
+void parseSub(Token *token) {
 
 }
-void parseRsb() {
+void parseRsb(Token *token) {
 
 }
-void parseAnd() {
+void parseAnd(Token *token) {
 
 }
-void parseEor() {
+void parseEor(Token *token) {
 
 }
-void parseOrr() {
+void parseOrr(Token *token) {
 
 }
-void parseMov() {
+void parseMov(Token *token) {
 
 }
-void parseTst() {
+void parseTst(Token *token) {
 
 }
-void parseTeq() {
+void parseTeq(Token *token) {
 
 }
-void parseCmp() {
+void parseCmp(Token *token) {
 
 }
-void parseMul() {
+void parseMul(Token *token) {
 
 }
-void parseMla() {
+void parseMla(Token *token) {
 
 }
-void parseBeq() {
+void parseBeq(Token *token) {
 
 }
-void parseBne() {
+void parseBne(Token *token) {
 
 }
-void parseBge() {
+void parseBge(Token *token) {
 
 }
-void parseBlt() {
+void parseBlt(Token *token) {
 
 }
-void parseBgt() {
+void parseBgt(Token *token) {
 
 }
-void parseBle() {
+void parseBle(Token *token) {
 
 }
-void parseB() {
+void parseB(Token *token) {
 
 }
-void parseLsl() {
+void parseLsl(Token *token) {
 
 }
-void parseAndeq() { 
+void parseAndeq(Token *token) {
 
 }
 
@@ -238,7 +238,7 @@ void tokenise() {
   tokens_print(tokens);
 }
 
-int index_of(Token *token) {
+int mnemonic_name(Token *token) {
   int i = 0;
   while (strcmp(token->value,mnemonicStrings[i]) != 0) {
     i++;

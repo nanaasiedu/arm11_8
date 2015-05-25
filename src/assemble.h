@@ -37,32 +37,32 @@ void resolveLabelAddresses(SymbolTable *map);
 void parseProgram(SymbolTable *map);
 void parseLine(Token *token);
 void parseInstruction(Token *token);
-//ParseInstructions
-void parseAdd();
-void parseSub();
-void parseRsb();
-void parseAnd();
-void parseEor();
-void parseOrr();
-void parseMov();
-void parseTst();
-void parseTeq();
-void parseCmp();
-void parseMul();
-void parseMla();
-void parseBeq();
-void parseBne();
-void parseBge();
-void parseBlt();
-void parseBgt();
-void parseBle();
-void parseB();
-void parseLsl();
-void parseAndeq();
+//Parse Instructions
+void parseAdd(Token *token);
+void parseSub(Token *token);
+void parseRsb(Token *token);
+void parseAnd(Token *token);
+void parseEor(Token *token);
+void parseOrr(Token *token);
+void parseMov(Token *token);
+void parseTst(Token *token);
+void parseTeq(Token *token);
+void parseCmp(Token *token);
+void parseMul(Token *token);
+void parseMla(Token *token);
+void parseBeq(Token *token);
+void parseBne(Token *token);
+void parseBge(Token *token);
+void parseBlt(Token *token);
+void parseBgt(Token *token);
+void parseBle(Token *token);
+void parseB(Token *token);
+void parseLsl(Token *token);
+void parseAndeq(Token *token);
 //Helper
 void dealloc();
 //Tokens
 void tokenise();
-int index_of(Token *token);
+int mnemonic_name(Token *token);
 
 #endif /* end of include guard: ASSEMBLE */
