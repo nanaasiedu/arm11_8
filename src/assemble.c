@@ -125,6 +125,7 @@ void parseInstruction(Token *token) {
     case MUL: parseMul(token); break;
     case MLA: parseMla(token); break;
     case LDR:
+    case STR:
     case BEQ:
     case BNE:
     case BGE:
@@ -160,6 +161,27 @@ void parseOrr(Token *token) {
 void parseMov(Token *token) {
 
 }
+void parseLdr(Token *token){
+  uint32_t cond, i, p, u, l, rn, rd, offset;
+  cond = 14;
+  l = 1;
+  Token *rdToken = token+1;
+  Token *addrToken = token+2;
+  rd = map_get(register_map, rdToken->value);
+  if (addrToken->type == EXPRESSION) {
+    p = 1;
+    i = 0;
+    rn = map_get(register_map, "PC");
+    char *ptr;
+    uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
+  }
+  else {
+
+  }
+}
+void parseStr(Token *token){
+
+}
 void parseTst(Token *token) {
 
 }
@@ -176,9 +198,9 @@ void parseMla(Token *token) {
 
 }
 void parseB(Token *token) {
-  uint8_t cond; uint32_t offset;
+  uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = (uint32_t) addr - map_get(lblToAddr, token->value);
+  offset = addr - map_get(lblToAddr, token->value);
   generateBranchOpcode(cond, offset);
 }
 void parseLsl(Token *token) {
@@ -186,7 +208,7 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-void generateBranchOpcode(uint8_t cond, uint32_t offset) {
+void generateBranchOpcode(uint8_t cond, int offset) {
 
 }
 
@@ -225,13 +247,13 @@ void tokenise() {
   tokens_print(tokens);
 }
 
-int index_of(Token *token, int *arr) {
-  int i = 0;
-  while (strcmp(token->value,arr[i]) != 0) {
-    i++;
-  }
-  return i;
-}
+// int index_of(Token *token, int *arr) {
+//   int i = 0;
+//   while (strcmp(token->value,arr[i]) != 0) {
+//     i++;
+//   }
+//   return i;
+// }
 
 void dealloc() {
   fclose(input);

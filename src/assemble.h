@@ -45,6 +45,8 @@ void parseAnd(Token *token);
 void parseEor(Token *token);
 void parseOrr(Token *token);
 void parseMov(Token *token);
+void parseLdr(Token *token);
+void parseStr(Token *token);
 void parseTst(Token *token);
 void parseTeq(Token *token);
 void parseCmp(Token *token);
@@ -53,7 +55,7 @@ void parseMla(Token *token);
 void parseB(Token *token);
 void parseLsl(Token *token);
 //Opcode Generators
-void generateBranchOpcode(uint8_t cond, uint32_t offset);
+void generateBranchOpcode(uint8_t cond, int offset);
 void generateHaltOpcode();
 //Helper
 void dealloc();
