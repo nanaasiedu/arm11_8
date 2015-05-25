@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h> // reg Uint32
+#include "emulateDefs.h"
+#include <stdint.h> 
 
 uint8_t mem[65536] = calloc(65536); // RAM
 
