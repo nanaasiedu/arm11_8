@@ -225,9 +225,9 @@ void tokenise() {
   tokens_print(tokens);
 }
 
-int mnemonic_name(Token *token) {
+int index_of(Token *token, int *arr) {
   int i = 0;
-  while (strcmp(token->value,mnemonicStrings[i]) != 0) {
+  while (strcmp(token->value,arr[i]) != 0) {
     i++;
   }
   return i;
