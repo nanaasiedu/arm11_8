@@ -12,6 +12,8 @@ typedef int bool;
 #define FALSE 0
 #endif
 
+void cleanup(void);
+
 typedef struct {
   uint8_t cond;
   uint8_t instType;
@@ -25,10 +27,10 @@ typedef struct {
 
 struct regFile {
   uint32_t reg[17]; // registers 0-12 are general purpose.
-  uint32_t *SP = &reg[13];
-  uint32_t *LR = &reg[14];
-  uint32_t *PC = &reg[15];
-  uint32_t *CPSR = &reg[16];
+  uint32_t *SP;
+  uint32_t *LR;
+  uint32_t *PC;
+  uint32_t *CPSR;
 }
 
 // #ifndef WORD_SIZE
