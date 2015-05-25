@@ -106,7 +106,7 @@ void parseLine(Token *token) {
 
 
 void parseInstruction(Token *token) {
-  switch(mnemonic_name(token)) {
+  switch(index_of(token, mnemonicTable)) {
     case ADD: parseAdd(token);
     break;
     case SUB: parseSub(token);
@@ -247,9 +247,9 @@ void tokenise() {
   tokens_print(tokens);
 }
 
-int mnemonic_name(Token *token) {
+int index_of(Token *token, int *arr) {
   int i = 0;
-  while (strcmp(token->value,mnemonicStrings[i]) != 0) {
+  while (strcmp(token->value,arr[i]) != 0) {
     i++;
   }
   return i;
