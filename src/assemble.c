@@ -16,14 +16,6 @@ char *mnemonicStrings[23] = {
   "lsl","andeq"
 };
 
-char *mnemonicStrings[23] = {
-  "add","sub","rsb","and","eor","orr","mov","tst","teq","cmp",
-  "mul","mla",
-  "ldr","str",
-  "beq","bne", "bge","blt","bgt","ble","b",
-  "lsl","andeq"
-};
-
 char *registerStrings[16] = {
   "r0","r1","r3","r4","r5","r6","r7",
   "r8","r9","r10","r11","r12","r13","r14","r15"
@@ -45,9 +37,9 @@ int numberOfArguments[23] = {
   3,2
 };
 
-int registerInts[16] {
+int registerInts[16] = {
   0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
-}; 
+};
 
 SymbolTable *lblToAddr = NULL;
 SymbolTable mnemonicTable = {23,23,mnemonicStrings,mnemonicInts};
@@ -157,65 +149,66 @@ void parseInstruction(Token *token) {
 
 //Parse Instructions
 void parseTurnaryDataProcessing(Token *token) {
-  token *rd_token = token + 1;
-  token *rn_token = token + 2;
-  token *operand_token = token + 3;
-  int rd,rn,operand; 
-  rd = map_get(registerTable, rd->value);
-  rn = map_get(registerTable, rn->value);
-  if(operand->type == LITERAL) {
-    int numberRepresented;
-    sscanf((operand->value),"%d",&numberRepresented);
-    operand = numberRepresented;
+  Token *rd_token;
+  rd_token = token + 1;
+  Token *rn_token; 
+  rn_token = token + 2;
+  Token *operand_token;
+  operand_token = token + 3;
+  int rd,rn,operand;
+  rd = map_get(&registerTable, rd_token->value);
+  rn = map_get(&registerTable, rn_token->value);
+  if(operand_token->type == LITERAL) {
+    sscanf((operand_token->value),"%d",&operand);
   } else {
-    operand = map_get(registerTable, operand->value);
+    operand = map_get(&registerTable, operand_token->value);
   }
   generateDataProcessingOpcode();
 }
 
 void parseBinaryDataProcessing(Token *token) {
-  token *rd_token = token + 1;
-  token *operand_token = token + 2;
-  int rd,operand; 
-  rd = map_get(registerTable, rd->value);
-  if(operand->value == LITERAL) {
-    int numberRepresented;
-    sscanf((operand->value),"%d",&numberRepresented);
-    operand = numberRepresented;
+  Token *rd_token = token + 1;
+  Token *operand_token = token + 2;
+  int rd,operand;
+  rd = map_get(&registerTable, rd_token->value);
+  if(operand_token->type == LITERAL) {
+    sscanf((operand_token->value),"%d",&operand);
   } else {
-    operand = map_get(registerTable, operand->value);
+    operand = map_get(&registerTable, operand_token->value);
   }
   generateDataProcessingOpcode();
 }
 
 void parseMul(Token *token) {
-  token *rd_token = token + 1;
-  token *rm_token = token + 2;
-  token *rs_token = token + 3;
-  int rd,rm,rs; 
-  rd = map_get(registerTable, rd->value);
-  rm = map_get(registerTable, rm->value);
-  rs = map_get(registerTable, rs->value);
+  Token *rd_token = token + 1;
+  Token *rm_token = token + 2;
+  Token *rs_token = token + 3;
+  int rd,rm,rs;
+  rd = map_get(&registerTable, rd_token->value);
+  rm = map_get(&registerTable, rm_token->value);
+  rs = map_get(&registerTable, rs_token->value);
   generateMultiplyOpcode();
 }
 
 void parseMla(Token *token) {
-  token *rd_token = token + 1;
-  token *rm_token = token + 2;
-  token *rs_token = token + 3;
-  token *rn_token = token + 4;
-  int rd,rm,rs,rn; 
-  rd = map_get(registerTable, rd->value);
-  rm = map_get(registerTable, rm->value);
-  rs = map_get(registerTable, rs->value);
-  rn = map_get(registerTable, rn->value);
+  Token *rd_token = token + 1;
+  Token *rm_token = token + 2;
+  Token *rs_token = token + 3;
+  Token *rn_token = token + 4;
+  int rd,rm,rs,rn;
+  rd = map_get(&registerTable, rd_token->value);
+  rm = map_get(&registerTable, rm_token->value);
+  rs = map_get(&registerTable, rs_token->value);
+  rn = map_get(&registerTable, rn_token->value);
+
   generateMultiplyOpcode();
 }
 
+
 void parseB(Token *token) {
-  uint8_t cond; uint32_t offset;
+  uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = (uint32_t) addr - map_get(lblToAddr, token->value);
+  offset = addr - map_get(lblToAddr, token->value);
   generateBranchOpcode(cond, offset);
 }
 void parseLsl(Token *token) {
@@ -223,7 +216,15 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-void generateBranchOpcode(uint8_t cond, uint32_t offset) {
+void generateDataProcessingOpcode() {
+
+}
+
+void generateMultiplyOpcode() {
+
+}
+
+void generateBranchOpcode(uint8_t cond, int offset) {
 
 }
 
