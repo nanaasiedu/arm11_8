@@ -5,14 +5,27 @@
 struct regFile rf;
 
 int main(int argc, char const *argv[]) {
+
+  printf("running tests...\n\n");
+
+  clearRegFile();
   /* code */
+
+  printf("\n...tests complete\n");
   return EXIT_SUCCESS;
+}
+
+void clearRegFile(void) {
+  for (int i = 0; i < (sizeof(regFile) / 4); i++){
+          // each regFile elem is 32bits
+    rf[i] = 0;
+  }
 }
 
 int32_t fetch(uint8_t *mem){
   int32_t instruction = 0;
   for (int i = 3; i >= 0; i--) {
-    instruction = instruction * 256 + mem[(*rf.PC + i)];
+    instruction = instruction * 256 + mem[*rf.PC + i];
   }
   *rf.PC = *rf.PC + 4;
   return instruction;
@@ -20,7 +33,8 @@ int32_t fetch(uint8_t *mem){
 
 DecodedInst decode(int32_t instruction) {
   DecodedInst di;
-  int instType = getInstType(instruction);
+  di.instType = getInstType(instruction); // only has correct 4 MSBs
+  di.instType = getFlags(instruction, di.instType); // all bits correct
 
   // code
 
@@ -28,7 +42,7 @@ DecodedInst decode(int32_t instruction) {
 }
 
 // returns correct 4 MSB of code for current instruction
-int getInstType(int32_t instruction) {
+uint8_t getInstType(int32_t instruction) {
   long mask = 1 << 27;
   if ((instruction & mask) != FALSE){ // bit 27 == 1
     return BRANCH;
@@ -47,4 +61,53 @@ int getInstType(int32_t instruction) {
     return DATA_PROC;
   }
   return MULT; //bit 25 == 0; bits [4..7] == 9
+}
+
+uint8_t getFlags(int32_t instruction, uint8_t instType){
+  int mask = 1;
+  uint8_t result = instType;
+  switch(instType){
+    case 16 : //DATA_PROC
+        mask = mask << 25;
+        if ((instruction & mask) != FALSE){
+          result = result + 8;
+        }
+        mask = mask >> 5;
+        if ((instruction & mask) != FALSE){
+          result = result + 4;
+        }
+        break;
+    case 32 : //MULT
+        mask = mask << 20;
+        if ((instruction & mask) != FALSE){
+          result = result + 4;
+        }
+        mask = mask << 1;
+        if ((instruction & mask) != FALSE){
+          result = result + 2;
+        }
+        break;
+    case 64 : //DATA_TRANS
+        mask = mask << 25;
+        if ((instruction & mask) != FALSE){
+          result = result + 8;
+        }
+        mask = mask >> 5;
+        if ((instruction & mask) != FALSE){
+          result = result + 4;
+        }
+        mask = mask << 4;
+        if ((instruction & mask) != FALSE){
+          result = result + 2;
+        }
+        mask = mask >> 1;
+        if ((instruction & mask) != FALSE){
+          result = result + 1;
+        }
+        break;
+    case 128 : //BRANCH
+    default :
+        break;
+  }
+  return result;
 }

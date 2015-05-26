@@ -4,10 +4,18 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+// Instruction types
 const int BRANCH = 128;
 const int DATA_TRANS = 64;
 const int MULT = 32;
 const int DATA_PROC = 16;
+
+/*
+#define BRANCH_ 128;
+#define DATA_TRANS_ 64;
+#define MULT_ 32;
+#define DATA_PROC_ 16;
+*/
 
 typedef int bool;
 #ifndef TRUE
@@ -37,6 +45,14 @@ struct regFile {
 };
 
 /* Helper functions for emulate */
-int getInstType(int32_t instruction);
+void clearRegFile(void);
+
+int32_t fetch(uint8_t *mem);
+
+DecodedInst decode(int32_t instruction);
+
+uint8_t getInstType(int32_t instruction);
+
+uint8_t getFlags(int32_t instruction, uint8_t instType);
 
 #endif /* end of include guard: EMULATEDEFS */
