@@ -259,7 +259,11 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-void generateDataProcessingOpcode(int8_t opcode, int8_t rd, int8_t rn, int16_t operand, int8_t S) {
+void generateDataProcessingOpcode(int8_t opcode, 
+                                  int8_t rd, 
+                                  int8_t rn, 
+                                  int16_t operand, 
+                                  int8_t S) {
   int32_t instr = 14;
   instr = instr << 28;
   int8_t nonParameter;
@@ -278,7 +282,12 @@ void generateDataProcessingOpcode(int8_t opcode, int8_t rd, int8_t rn, int16_t o
   //call output
 }
 
-void generateMultiplyOpcode(int8_t opcode, int8_t rd, int8_t rm, int8_t rs, int8_t rn, int8_t A) {
+void generateMultiplyOpcode(int8_t opcode, 
+                            int8_t rd, 
+                            int8_t rm, 
+                            int8_t rs, 
+                            int8_t rn, 
+                            int8_t A) {
   int32_t instr = 14;
   instr = instr << 28;
   int8_t nonParameter;
@@ -313,8 +322,41 @@ void generateBranchOpcode(uint8_t cond, int offset) {
   instr |= offset;
 }
 
+void generateSingleDataTransferOpcode(uint32_t cond, 
+                                      uint32_t i, 
+                                      uint32_t p, 
+                                      uint32_t u,
+                                      uint32_t l, 
+                                      uint32_t rd, 
+                                      uint32_t rn,
+                                      uint32_t offset) {
+
+  uint32_t instr = 14;
+  instr = instr << 28;
+  int8_t nonParameter;
+  nonParameter = 1;
+  nonParameter = nonParameter << 26;
+  instr |= nonParameter;
+  i = i << 25;
+  instr |= i;
+  p = p << 24;
+  instr |= p;
+  u = u << 23;
+  instr |= u;
+  nonParameter = 0;
+  nonParameter = nonParameter << 21;
+  instr |= nonParameter;
+  l = l << 20;
+  instr |= l;
+  rn = rn << 16;
+  instr |= rn;
+  rd = rd << 12;
+  instr |= rd;
+  instr |= offset;
+}
+
 void generateHaltOpcode() {
-  int32_t instr = 0;
+  //int32_t instr = 0;
   //call output
 }
 
