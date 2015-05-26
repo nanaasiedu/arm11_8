@@ -41,17 +41,23 @@ struct regFile {
   uint32_t *CPSR;
 };
 
+// execute functions --
 void execute(DecodedInst di);
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t Rn, uint8_t Rd, uint32_t operand);
+uint32_t shiftReg(uint32_t valu, int shiftSeg);
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm);
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset);
-void testing(void);
+void testing(void); //WILL REMOVE
+// --
 void executeBranch(uint32_t offset);
 void dealloc(void);
-int ipow(int x, int y);
-void enterC(void);
 void loadFileToMem(char const *file);
 void clearRegfile (struct regFile rf);
+// helper functions --
+int ipow(int x, int y);
+int rotr8(uint8_t x, int n);
+void enterC(void);  //WILL REMOVE
+//--
 int32_t fetch(uint8_t *mem);
 DecodedInst decode(int32_t instruction);
 uint8_t getInstType(int32_t instruction);

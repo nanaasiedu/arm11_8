@@ -72,26 +72,72 @@ void execute(DecodedInst di) {
     } else if ((di.instType & 128) != 0) { // Branch
       executeBranch(di.operandOffset);
     }
-  } else {
-    printf("cond fail\n");
   }
 
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t rd, uint32_t operand) {
-  printf("dataproc\n");
+  int i = (instType & 8) >> 3; // Immediate Operand
+  int rotate = (operand >> 7); // rotate segment if i = 1
+
+  int shiftSeg = (operand >> 4); // 8 bit shift segment if i = 0
+  int rm = operand & (ipow(2,4)-1); // 4 bit
+
+  int s = (instType & 4) >> 2; // Set condition
+
+  if (i) { // if operand is immediate
+    operand = operand & (ipow(2,8)-1); // operand = Immediate segment
+    operand = rotr8(operand,rotate*2);
+  } else {// operand is a register
+    operand = shiftReg(rf.reg[rm], shiftSeg);
+  }
+
+}
+
+uint32_t shiftReg(uint32_t value, int shiftSeg) {
+  //POST: return shifted value of rm to operand
+  int shiftop = shiftSeg & 1; // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
+  int shiftType = shiftSeg & 6; //2 bit
+  int rs = shiftSeg >> 4; // 4 bit
+  int conint = shiftSeg >> 3; // 4 bit
+  uint32_t res; // result
+  int shift; // value to shift by
+
+  if (shiftop) { // if shiftseg is in reg rs mode
+    shift = rf.reg[rs] & (2^8 - 1) // DO
+  } else { // if shiftseg is in constant int mode
+    shift = conint;
+  }
+
+  switch(shiftType) {
+    case 0: // logical left
+
+    break;
+    case 1: // logical right
+
+    break;
+    case 2: // arithmetic right
+
+    break;
+    case 3: // rotate right 
+
+    break;
+  }
+
+  return res;
+
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm) {
-  printf("mult\n");
+
 }
 
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset) {
-  printf("single\n");
+
 }
 
 void executeBranch(uint32_t offset) {
-  printf("branch\n");
+
 }
 
 void testing(void) {
@@ -129,8 +175,15 @@ void clearRegfile (struct regFile rf) {
 }
 
 int ipow(int x, int y) {
-  // returns x^y cast as an int
+  // POST: returns x^y cast as an int
   return (int)pow(x,y);
+}
+
+int rotr8(uint8_t x, int n) {
+  // PRE: x is an unsigned 8 bit number (note x may be any type with 8 or more bits). n is the number x will be rotated by.
+  // POST: rotr8 will return the 8 bit value of x rotated n spaces to the right
+  uint8_t a = (x & (ipow(2,n)-1)) << (sizeof(x)*8 - n);
+  return (x >> n) | a;
 }
 
 void dealloc(void) {
