@@ -41,8 +41,14 @@ struct regFile {
   uint32_t *CPSR;
 };
 
-void execute(uint16_t cond);
+void execute(DecodedInst di);
+void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t Rn, uint8_t Rd, uint32_t operand);
+void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm);
+void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset);
+void testing(void);
+void executeBranch(uint32_t offset);
 void dealloc(void);
+int ipow(int x, int y);
 void enterC(void);
 void loadFileToMem(char const *file);
 void clearRegfile (struct regFile rf);
