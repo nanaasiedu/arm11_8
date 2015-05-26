@@ -5,13 +5,13 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 .PHONY: all clean
 
-all: assemble emulate
+all: assemble
 
 assemble: assemble.o symbolmap.o tokenise.o
 	$(CC) $^ -o $@
 
 tokenise.o: tokenise.c
-	$(CC) $(CFLAGS) $< -c -o $@	
+	$(CC) $(CFLAGS) $< -c -o $@
 
 assemble.o: assemble.c
 	$(CC) $(CFLAGS) $< -c -o $@
@@ -19,7 +19,7 @@ assemble.o: assemble.c
 symbolmap.o: symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-emulate: emulate.c
+emulate: emulateDefs.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:

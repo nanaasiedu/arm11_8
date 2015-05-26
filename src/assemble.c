@@ -17,7 +17,7 @@ char *mnemonicStrings[23] = {
 };
 
 char *registerStrings[16] = {
-  "r0","r1","r3","r4","r5","r6","r7",
+  "r0","r1","r2","r3","r4","r5","r6","r7",
   "r8","r9","r10","r11","r12","r13","r14","r15"
 };
 
@@ -121,26 +121,14 @@ void parseLine(Token *token) {
 }
 
 void parseInstruction(Token *token) {
-  switch(map_get(&mnemonicTable, token->value)) {
-    case ADD: 
-    case SUB: 
-    case RSB: 
-    case AND: 
-    case EOR: 
+  switch(index_of(token->value, mnemonicStrings)) {
+    case ADD: case SUB: case RSB: case AND: case EOR:
     case ORR: parseTurnaryDataProcessing(token); break;
-    case MOV: 
-    case TST: 
-    case TEQ: 
-    case CMP: 
-    case MUL: 
+    case MOV: case TST: case TEQ: case CMP: case MUL:
     case MLA: parseBinaryDataProcessing(token); break;
-    case LDR:
-    case BEQ:
-    case BNE:
-    case BGE:
-    case BLT:
-    case BGT:
-    case BLE:
+    case LDR: parseLdr(token); break;
+    case STR: parseStr(token); break;
+    case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
     case B: parseB(token); break;
     case LSL: parseLsl(token); break;
     case ANDEQ: generateHaltOpcode(); break;
@@ -155,12 +143,22 @@ void parseTurnaryDataProcessing(Token *token) {
   int rd,rn,operand;
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
+<<<<<<< HEAD
   if(operand_token->type == LITERAL) {
     operand = atoi(operand_token->value);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
   generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rd,rn,operand,0);
+=======
+   if(operand_token->type == LITERAL) {
+    char *ptr;
+    operand = (int) strtol(operand_token->value, &ptr, 0);
+   } else {
+    operand = map_get(&registerTable, operand_token->value);
+   }
+  generateDataProcessingOpcode();
+>>>>>>> upstream/master
 }
 
 void parseBinaryDataProcessing(Token *token) {
@@ -169,7 +167,12 @@ void parseBinaryDataProcessing(Token *token) {
   int rdOrRn,operand;
   rdOrRn = map_get(&registerTable, rdOrRn_token->value);
   if(operand_token->type == LITERAL) {
+<<<<<<< HEAD
     operand = atoi(operand_token->value);
+=======
+    char *ptr;
+    operand = (int) strtol(operand_token->value, &ptr, 0);
+>>>>>>> upstream/master
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
@@ -201,16 +204,73 @@ void parseMla(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
+<<<<<<< HEAD
   generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,rn,1);
+=======
+  generateMultiplyOpcode();
+>>>>>>> upstream/master
 }
 
+void parseLdr(Token *token) {
+  uint32_t cond, i, p, u, l, rd, rn;
+  int offset;
+  cond = 14;
+  l = 1;
+  Token *rdToken = token+1;
+  Token *addrToken = token+2;
+  rd = map_get(&registerTable, rdToken->value);
+  //p, i, rn, offset, u
+  if (addrToken->type == EXPRESSION) {
+    p = 1;
+    i = 0;
+    rn = map_get(&registerTable, PC);
+    char *ptr;
+    uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
+    offset = ex - addr;
+    if (offset < 0) {
+      offset *= -1;
+      u = 0;
+    } else {
+      u = 1;
+    }
+    if (offset <= 0xFF) {
+      //mov
+    } else {
+      //ldr
+    }
+  }
+  else {
+    i = 1;
+    if ((token+3)->type == NEWLINE) {
+      //Pre-Index, just base register
+      p = 1;
+      rn = map_get(&registerTable, stripBrackets(addrToken->value));
+      offset = 0;
+      u = 1;
+    } else if (isPreIndex(addrToken->value)) {
+      //Pre-Index, base and offset
+      p = 1;
+      rn = map_get(&registerTable, addrToken->value+1);
+      char *ptr;
+      offset = (int) strtol((token+3)->value, &ptr, 0);
+      u = 1;
+    } else {
+      //Post-Index
+    }
+  }
+}
+
+void parseStr(Token *token) {
+
+}
 
 void parseB(Token *token) {
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = addr - map_get(lblToAddr, token->value);
+  offset = map_get(lblToAddr, token->value) - addr;
   generateBranchOpcode(cond, offset);
 }
+
 void parseLsl(Token *token) {
 
 }
@@ -280,7 +340,7 @@ void generateHaltOpcode() {
 void tokenise() {
   char line[512];
   while (fgets(line, sizeof(line), input) != NULL) {
-    char *sep = " ,\n[]";
+    char *sep = " ,\n";
     char *token;
     for (token = strtok(line, sep); token; token = strtok(NULL, sep)) {
       if (isLabel(token)) {
@@ -303,9 +363,31 @@ void tokenise() {
     tokens_add(tokens, "nl", NEWLINE);
   }
   tokens_add(tokens, "end", ENDFILE);
-  tokens_print(tokens);
+  print_tokens(tokens);
 }
 
+<<<<<<< HEAD
+=======
+int index_of(char *value, char **arr) {
+  for (int i = 0; i < 23; i++) {
+    if (strcmp(arr[i], value) == 0) {
+       return i;
+    }
+  }
+  return -1;
+}
+
+char* stripBrackets(char *str) {
+  char *pch = strstr(str, "]");
+  strncpy(pch, "\0", 1);
+  return str+1;
+}
+
+bool isPreIndex(char *str) {
+  return FALSE;
+}
+
+>>>>>>> upstream/master
 void dealloc() {
   fclose(input);
   fclose(output);

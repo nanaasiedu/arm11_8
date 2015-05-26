@@ -24,7 +24,7 @@ typedef struct {
 
 void tokens_init(Tokens *tokens);
 void tokens_add(Tokens *tokens, char *value, TokenType type);
-void tokens_print(Tokens *tokens);
+void print_tokens(Tokens *tokens);
 //Helpers
 bool isLabel(char *string);
 bool isLiteral(char *string);

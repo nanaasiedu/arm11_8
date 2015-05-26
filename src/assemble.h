@@ -10,6 +10,10 @@
 #define WORD_SIZE 4
 #endif
 
+#ifndef PC
+#define PC "r15"
+#endif
+
 #ifndef NOT_FOUND
 #define NOT_FOUND -1
 #endif
@@ -44,6 +48,8 @@ void parseMul(Token *token);
 void parseMla(Token *token);
 void parseB(Token *token);
 void parseLsl(Token *token);
+void parseLdr(Token *token);
+void parseStr(Token *token);
 //Opcode Generators
 void generateDataProcessingOpcode(int8_t opcode, int8_t rd, int8_t rn, int16_t operand, int8_t S);
 void generateMultiplyOpcode(int8_t opcode, int8_t rd, int8_t rm, int8_t rs, int8_t rn, int8_t A);
@@ -51,6 +57,9 @@ void generateBranchOpcode(uint8_t cond, int offset);
 void generateHaltOpcode();
 //Helper
 void dealloc();
+int index_of(char *value, char **arr);
+char* stripBrackets(char *str);
+bool isPreIndex(char *str);
 //Tokens
 void tokenise();
 int mnemonic_name(Token *token);
