@@ -49,6 +49,13 @@ void clearRegfile (struct regFile rf);
 int32_t fetch(uint8_t *mem);
 DecodedInst decode(int32_t instruction);
 uint8_t getInstType(int32_t instruction);
-uint8_t getFlags(int32_t instruction, uint8_t instType);
+
+// dont keep getFlags()
+//***********************
+
+void decodeForDataProc(int32_t instruction, DecodedInst di);
+void decodeForMult(int32_t instruction, DecodedInst di);
+void decodeForDataTrans(int32_t instruction, DecodedInst di);
+void decodeForBranch(int32_t instruction, DecodedInst di);
 
 #endif /* end of include guard: EMULATEDEFS */
