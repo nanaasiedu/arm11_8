@@ -198,6 +198,7 @@ void parseLdr(Token *token) {
   Token *rdToken = token+1;
   Token *addrToken = token+2;
   rd = map_get(&registerTable, rdToken->value);
+  //p, i, rn, offset, u
   if (addrToken->type == EXPRESSION) {
     p = 1;
     i = 0;
@@ -218,11 +219,22 @@ void parseLdr(Token *token) {
     }
   }
   else {
-    rn = map_get(&registerTable, addrToken->value);
+    i = 1;
     if ((token+3)->type == NEWLINE) {
-      //fuck
+      //Pre-Index, just base register
+      p = 1;
+      rn = map_get(&registerTable, stripBrackets(addrToken->value));
+      offset = 0;
+      u = 1;
+    } else if (isPreIndex(addrToken->value)) {
+      //Pre-Index, base and offset
+      p = 1;
+      rn = map_get(&registerTable, addrToken->value+1);
+      char *ptr;
+      offset = (int) strtol((token+3)->value, &ptr, 0);
+      u = 1;
     } else {
-
+      //Post-Index
     }
   }
 }
@@ -264,7 +276,7 @@ void generateHaltOpcode() {
 void tokenise() {
   char line[512];
   while (fgets(line, sizeof(line), input) != NULL) {
-    char *sep = " ,\n[]";
+    char *sep = " ,\n";
     char *token;
     for (token = strtok(line, sep); token; token = strtok(NULL, sep)) {
       if (isLabel(token)) {
@@ -297,6 +309,16 @@ int index_of(char *value, char **arr) {
     }
   }
   return -1;
+}
+
+char* stripBrackets(char *str) {
+  char *pch = strstr(str, "]");
+  strncpy(pch, "\0", 1);
+  return str+1;
+}
+
+bool isPreIndex(char *str) {
+  return FALSE;
 }
 
 void dealloc() {

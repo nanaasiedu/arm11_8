@@ -58,6 +58,8 @@ void generateHaltOpcode();
 //Helper
 void dealloc();
 int index_of(char *value, char **arr);
+char* stripBrackets(char *str);
+bool isPreIndex(char *str);
 //Tokens
 void tokenise();
 int mnemonic_name(Token *token);
