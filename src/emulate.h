@@ -28,15 +28,17 @@ typedef struct {
 } DecodedInst;
 
 struct regFile {
-  uint32_t reg[17]; // registers 0-12 are general purpose.
+  uint32_t *reg; // registers 0-12 are general purpose.
   uint32_t *SP;
   uint32_t *LR;
   uint32_t *PC;
   uint32_t *CPSR;
 };
 
+void execute(uint16_t cond);
 void dealloc(void);
 void enterC(void);
 void loadFileToMem(char const *file);
+void clearRegfile (struct regFile rf);
 
 #endif /* end of include guard: EMULATEDEFS */
