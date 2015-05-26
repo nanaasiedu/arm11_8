@@ -1,25 +1,18 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include "emulateDefs.h"
+#include <stdio.h>
+#include "emulate.h"
 
 struct regFile rf;
 
 int main(int argc, char const *argv[]) {
 
   printf("running tests...\n\n");
-
-  clearRegFile();
+  
   /* code */
 
   printf("\n...tests complete\n");
   return EXIT_SUCCESS;
-}
-
-void clearRegFile(void) {
-  for (int i = 0; i < (sizeof(regFile) / 4); i++){
-          // each regFile elem is 32bits
-    rf[i] = 0;
-  }
 }
 
 int32_t fetch(uint8_t *mem){
