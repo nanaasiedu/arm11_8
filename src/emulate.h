@@ -16,6 +16,12 @@ typedef int bool;
 #define MEM16BIT 65536
 #endif
 
+// Instruction types
+const int BRANCH = 128;
+const int DATA_TRANS = 64;
+const int MULT = 32;
+const int DATA_PROC = 16;
+
 typedef struct {
   uint8_t cond;
   uint8_t instType;
@@ -40,5 +46,9 @@ void dealloc(void);
 void enterC(void);
 void loadFileToMem(char const *file);
 void clearRegfile (struct regFile rf);
+int32_t fetch(uint8_t *mem);
+DecodedInst decode(int32_t instruction);
+uint8_t getInstType(int32_t instruction);
+uint8_t getFlags(int32_t instruction, uint8_t instType);
 
 #endif /* end of include guard: EMULATEDEFS */

@@ -21,6 +21,7 @@ int main (int argc, char const *argv[]) {
 
   execute(14);// WILL CHANGE
 
+  printf("The program is closing");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
 }
@@ -76,9 +77,9 @@ void clearRegfile (struct regFile rf) {
   // allocates 12 bytes for each register
   rf.reg = calloc(4*17,1);
   rf.SP = &rf.reg[13];
-  rf.LR = calloc(4,1);
-  rf.PC = calloc(4,1);
-  rf.CPSR = calloc(4,1);
+  rf.LR = &rf.reg[14];
+  rf.PC = &rf.reg[15];
+  rf.CPSR = &rf.reg[16];
 }
 
 void dealloc(void) {
