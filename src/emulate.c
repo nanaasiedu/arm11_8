@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "emulate.h"
@@ -19,35 +20,36 @@ int main (int argc, char const *argv[]) {
 
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
 
-  execute(14);// WILL CHANGE
+  //testing(); //FOR TESTING PURPOSES
+
+  //execute(14);// WILL CHANGE TO DECODE
 
   printf("The program is closing");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
 }
 
-void execute(uint16_t cond) {
-  //COND WILL CHANGE TO DECODE STRUCT
+void execute(DecodedInst di) {
   bool condPass = FALSE; //condPass will be TRUE iff cond is satisfied
 
-  switch(cond) {
+  switch(di.cond) {
     case 0: // 0000: Z set / is equal
-      condPass = ((*rf.CPSR & (2^30)) != 0);
+      condPass = ((*rf.CPSR & ipow(2,30)) != 0);
       break;
     case 1: // 0001: Z clear / not equal
-      condPass = ((*rf.CPSR & (2^30)) == 0);
+      condPass = ((*rf.CPSR & ipow(2,30)) == 0);
       break;
     case 10: // 1010: N equals V / greater equal
-      condPass = (*rf.CPSR & (2^31)) == (*rf.CPSR & (2^28) << 3);
+      condPass = (*rf.CPSR & ipow(2,31)) == ((*rf.CPSR & ipow(2,38)) << 3);
       break;
     case 11: // 1011: N not equal V / less
-      condPass = (*rf.CPSR & (2^31)) != (*rf.CPSR & (2^28) << 3);
+      condPass = (*rf.CPSR & ipow(2,31)) != ((*rf.CPSR & ipow(2,28)) << 3);
       break;
     case 12: // 1100: Z clear AND (N = V) / greater than
-      condPass = ((*rf.CPSR & (2^30)) == 0) && ((*rf.CPSR & (2^31)) == (*rf.CPSR & (2^28) << 3));
+      condPass = ((*rf.CPSR & ipow(2,30)) == 0) && ((*rf.CPSR & ipow(2,31)) == ((*rf.CPSR & ipow(2,28)) << 3));
       break;
     case 13: // 1101: Z set OR (N != V) / less than
-      condPass = ((*rf.CPSR & (2^30)) != 0) || ((*rf.CPSR & (2^31)) != (*rf.CPSR & (2^28) << 3));
+      condPass = ((*rf.CPSR & ipow(2,30)) != 0) || ((*rf.CPSR & ipow(2,31)) != ((*rf.CPSR & ipow(2,28)) << 3));
       break;
     case 14: // 1110 ignore
       condPass = TRUE;
@@ -58,9 +60,53 @@ void execute(uint16_t cond) {
   }
 
   if (condPass) {
+    if ((di.instType & 16) != 0) {// Data processing
+      executeDataProcessing(di.instType, di.opcode, di.rn, di.rd, di.operandOffset);
 
+    } else if ((di.instType & 32) != 0) { // Mult
+      executeMult(di.instType, di.rd, di.rn, di.rs, di.rm);
+
+    } else if ((di.instType & 64) != 0) { // Data transfer
+      executeSingleDataTransfer(di.instType, di.rn, di.rd, di.operandOffset);
+
+    } else if ((di.instType & 128) != 0) { // Branch
+      executeBranch(di.operandOffset);
+    }
+  } else {
+    printf("cond fail\n");
   }
 
+}
+
+void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t rd, uint32_t operand) {
+  printf("dataproc\n");
+}
+
+void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm) {
+  printf("mult\n");
+}
+
+void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset) {
+  printf("single\n");
+}
+
+void executeBranch(uint32_t offset) {
+  printf("branch\n");
+}
+
+void testing(void) {
+  // Basic test suite
+  printf("start testing\n");
+  rf.CPSR = malloc(4);
+  *rf.CPSR = ipow(2,31);
+  DecodedInst di;
+  di.cond = 13;
+  di.instType = 64;
+
+  execute(di);
+
+  printf("end testing\n");
+  free(rf.CPSR);
 }
 
 void loadFileToMem(char const *file) {
@@ -80,6 +126,11 @@ void clearRegfile (struct regFile rf) {
   rf.LR = &rf.reg[14];
   rf.PC = &rf.reg[15];
   rf.CPSR = &rf.reg[16];
+}
+
+int ipow(int x, int y) {
+  // returns x^y cast as an int
+  return (int)pow(x,y);
 }
 
 void dealloc(void) {
