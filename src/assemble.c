@@ -144,7 +144,8 @@ void parseTurnaryDataProcessing(Token *token) {
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
   if(operand_token->type == LITERAL) {
-    operand = atoi(operand_token->value);
+    char *ptr;
+    operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
@@ -157,7 +158,8 @@ void parseBinaryDataProcessing(Token *token) {
   int rdOrRn,operand;
   rdOrRn = map_get(&registerTable, rdOrRn_token->value);
   if(operand_token->type == LITERAL) {
-    operand = atoi(operand_token->value);
+    char *ptr;
+    operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
@@ -189,7 +191,6 @@ void parseMla(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
-
   generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,rn,1);
 }
 
