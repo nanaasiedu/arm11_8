@@ -45,8 +45,8 @@ void parseMla(Token *token);
 void parseB(Token *token);
 void parseLsl(Token *token);
 //Opcode Generators
-void generateDataProcessingOpcode();
-void generateMultiplyOpcode();
+void generateDataProcessingOpcode(int8_t opcode, int8_t rd, int8_t rn, int16_t operand, int8_t S);
+void generateMultiplyOpcode(int8_t opcode, int8_t rd, int8_t rm, int8_t rs, int8_t rn, int8_t A);
 void generateBranchOpcode(uint8_t cond, int offset);
 void generateHaltOpcode();
 //Helper

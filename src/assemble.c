@@ -149,34 +149,35 @@ void parseInstruction(Token *token) {
 
 //Parse Instructions
 void parseTurnaryDataProcessing(Token *token) {
-  Token *rd_token;
-  rd_token = token + 1;
-  Token *rn_token; 
-  rn_token = token + 2;
-  Token *operand_token;
-  operand_token = token + 3;
+  Token *rd_token = token + 1;
+  Token *rn_token = token + 2;
+  Token *operand_token = token + 3;
   int rd,rn,operand;
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
   if(operand_token->type == LITERAL) {
-    sscanf((operand_token->value),"%d",&operand);
+    operand = atoi(operand_token->value);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
-  generateDataProcessingOpcode();
+  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rd,rn,operand,0);
 }
 
 void parseBinaryDataProcessing(Token *token) {
-  Token *rd_token = token + 1;
+  Token *rdOrRn_token = token + 1;
   Token *operand_token = token + 2;
-  int rd,operand;
-  rd = map_get(&registerTable, rd_token->value);
+  int rdOrRn,operand;
+  rdOrRn = map_get(&registerTable, rdOrRn_token->value);
   if(operand_token->type == LITERAL) {
-    sscanf((operand_token->value),"%d",&operand);
+    operand = atoi(operand_token->value);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
-  generateDataProcessingOpcode();
+  if (strcmp(token->value,"mov") == 0) {
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rdOrRn,0,operand,0);
+  } else {
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),0,rdOrRn,operand,1);
+  }
 }
 
 void parseMul(Token *token) {
@@ -187,7 +188,7 @@ void parseMul(Token *token) {
   rd = map_get(&registerTable, rd_token->value);
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
-  generateMultiplyOpcode();
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,0,0);
 }
 
 void parseMla(Token *token) {
@@ -200,8 +201,7 @@ void parseMla(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
-
-  generateMultiplyOpcode();
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,rn,1);
 }
 
 
@@ -216,20 +216,63 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-void generateDataProcessingOpcode() {
-
+void generateDataProcessingOpcode(int8_t opcode, int8_t rd, int8_t rn, int16_t operand, int8_t S) {
+  int32_t instr = 14;
+  instr = instr << 28;
+  int8_t nonParameter;
+  nonParameter = 0;
+  nonParameter = nonParameter << 25;
+  instr |= nonParameter;
+  opcode = opcode << 21;
+  instr |= opcode;
+  S = S << 20;
+  instr |= S;
+  rn = rn << 16;
+  instr |= rn;
+  rd = rd << 12;
+  instr |= rd;
+  instr |= operand;
+  //call output
 }
 
-void generateMultiplyOpcode() {
-
+void generateMultiplyOpcode(int8_t opcode, int8_t rd, int8_t rm, int8_t rs, int8_t rn, int8_t A) {
+  int32_t instr = 14;
+  instr = instr << 28;
+  int8_t nonParameter;
+  nonParameter = 0;
+  nonParameter = nonParameter << 22;
+  instr |= nonParameter;
+  A = A << 21;
+  instr |= A;
+  nonParameter = 0;
+  nonParameter = nonParameter << 20;
+  instr |= nonParameter;
+  rd = rd << 16;
+  instr |= rn;
+  rn = rn << 12;
+  instr |= rd;
+  rs = rs << 8;
+  instr |= rs;
+  nonParameter = 9;
+  nonParameter = nonParameter << 4;
+  instr |= nonParameter;
+  instr |= rm;
+  //call output
 }
 
 void generateBranchOpcode(uint8_t cond, int offset) {
-
+  int32_t instr = cond;
+  instr = instr << 28;
+  int8_t nonParameter;
+  nonParameter = 10;
+  nonParameter = nonParameter << 24;
+  instr |= nonParameter;
+  instr |= offset;
 }
 
 void generateHaltOpcode() {
-
+  int32_t instr = 0;
+  //call output
 }
 
 #pragma mark - Helper Functions
@@ -262,14 +305,6 @@ void tokenise() {
   tokens_add(tokens, "end", ENDFILE);
   tokens_print(tokens);
 }
-
-// int index_of(Token *token, char *arr) {
-//   int i = 0;
-//   while (strcmp(token->value,arr[i]) != 0) {
-//     i++;
-//   }
-//   return i;
-// }
 
 void dealloc() {
   fclose(input);
