@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "emulateDefs.h"
+#include "emulate.h"
 
 struct regFile rf;
 

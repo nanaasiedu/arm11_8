@@ -28,7 +28,7 @@ typedef struct {
 } DecodedInst;
 
 struct regFile {
-  uint32_t *reg; // registers 0-12 are general purpose.
+  uint32_t *reg; // registers 0-13 are general purpose.
   uint32_t *SP;
   uint32_t *LR;
   uint32_t *PC;

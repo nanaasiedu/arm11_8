@@ -59,7 +59,7 @@ void execute(uint16_t cond) {
   if (condPass) {
 
   }
-  
+
 }
 
 void loadFileToMem(char const *file) {
@@ -74,8 +74,8 @@ void loadFileToMem(char const *file) {
 
 void clearRegfile (struct regFile rf) {
   // allocates 12 bytes for each register
-  rf.reg = calloc(4*12,1);
-  rf.SP = calloc(4,1);
+  rf.reg = calloc(4*17,1);
+  rf.SP = &rf.reg[13];
   rf.LR = calloc(4,1);
   rf.PC = calloc(4,1);
   rf.CPSR = calloc(4,1);
