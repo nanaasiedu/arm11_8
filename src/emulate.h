@@ -94,9 +94,9 @@ uint8_t getInstType(int32_t instruction);
 // dont keep getFlags()
 //***********************
 
-void decodeForDataProc(int32_t instruction, DecodedInst di);
-void decodeForMult(int32_t instruction, DecodedInst di);
-void decodeForDataTrans(int32_t instruction, DecodedInst di);
-void decodeForBranch(int32_t instruction, DecodedInst di);
+void decodeForDataProc(int32_t instruction, DecodedInst *di);
+void decodeForMult(int32_t instruction, DecodedInst *di);
+void decodeForDataTrans(int32_t instruction, DecodedInst *di);
+void decodeForBranch(int32_t instruction, DecodedInst *di);
 
 #endif /* end of include guard: EMULATEDEFS */
