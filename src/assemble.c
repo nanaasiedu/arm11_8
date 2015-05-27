@@ -77,7 +77,7 @@ void setUpIO(char *in, char *out) {
     exit(EXIT_FAILURE);
   }
 
-  if ((output = fopen(out, "w")) == NULL) {
+  if ((output = fopen(out, "wa")) == NULL) {
     perror(out);
     exit(EXIT_FAILURE);
   }
@@ -219,9 +219,9 @@ void parseLdr(Token *token) {
       u = 1;
     }
     if (offset <= 0xFF) {
-      //mov
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, 0);
     } else {
-      //ldr
+      generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
   }
   else {
@@ -253,7 +253,7 @@ void parseB(Token *token) {
   uint8_t cond; int offset;
   Token *lblToken = token+1;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = map_get(lblToAddr, lblToken->value) - addr;
+  offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
   generateBranchOpcode(cond, offset);
 }
 
