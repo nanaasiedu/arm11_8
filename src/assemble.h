@@ -10,6 +10,10 @@
 #define WORD_SIZE 4
 #endif
 
+#ifndef ARM_OFFSET
+#define ARM_OFFSET 8
+#endif
+
 #ifndef PC
 #define PC "r15"
 #endif
