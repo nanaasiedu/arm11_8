@@ -26,6 +26,7 @@ const int BRANCH = 128;
 const int DATA_TRANS = 64;
 const int MULT = 32;
 const int DATA_PROC = 16;
+const int HALT = 0;
 
 typedef struct {
   uint8_t cond;
