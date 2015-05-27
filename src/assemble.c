@@ -359,7 +359,7 @@ void outputData(uint32_t i) {
   littleEndian_format = (littleEndian_format | b2) << 8;
   littleEndian_format = (littleEndian_format | b3);
 
-  printf("%.4x: %.8x\n", addr, littleEndian_format);
+  printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
 
   if (output != NULL) {
     fprintf(output, "%c%c%c%c", b0,b1,b2,b3);
