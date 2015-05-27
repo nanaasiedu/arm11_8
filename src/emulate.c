@@ -5,7 +5,8 @@
 #include "emulate.h"
 #include <limits.h>
 
-// ADD: CPSR bit const / opcode const / shift type const
+// TODO: CPSR bit const / opcode const / shift type const
+// TODO: Redo reg mem output
 // ADD SUBTRACTION BORROW LOGIC
 
 FILE *binFile = NULL; //Binary file containing instructions
@@ -22,9 +23,10 @@ int main (int argc, char const *argv[]) {
 
   clearRegfile(); // Sets all registers to 0
 
-  loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
+  loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into
+                          //mem
 
-  int executeResult;
+  /*int executeResult;
   int32_t instruction;
   DecodedInst di;
   // PC = 0 before entering loop
@@ -36,10 +38,12 @@ int main (int argc, char const *argv[]) {
       executeResult = execute(di);
     } while(executeResult == EXE_CONTINUE);
   } while(executeResult != EXE_HALT); //fetch again if EXE_BRANCH
+  */
 
-  //testing(); //FOR TESTING PURPOSES
+  //testingExecute(); //PASSED
+  testingDataProc();
 
-  outputMemReg();
+  //outputMemReg();
   printf("The program is closing");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
@@ -104,7 +108,7 @@ uint8_t getInstType(int32_t instruction) {
 
 void decodeForDataProc(int32_t instruction, DecodedInst di) {
 
-// set flag bits: I S x x
+  // set flag bits: I S x x
   long mask = 1;
   mask = mask << 25;
   if ((instruction & mask) != FALSE){
@@ -134,7 +138,7 @@ void decodeForDataProc(int32_t instruction, DecodedInst di) {
 
 void decodeForMult(int32_t instruction, DecodedInst di) {
 
-// set flag bits: x S A x
+  // set flag bits: x S A x
   long mask = 1;
   mask = mask << 20;
   if ((instruction & mask) != FALSE){
@@ -159,7 +163,7 @@ void decodeForMult(int32_t instruction, DecodedInst di) {
 
 void decodeForDataTrans(int32_t instruction, DecodedInst di) {
 
-// set flag bits: I L P U
+  // set flag bits: I L P U
   long mask = 1;
   mask = mask << 25;
   if ((instruction & mask) != FALSE){
@@ -210,7 +214,7 @@ void decodeForBranch(int32_t instruction, DecodedInst di) {
 
 }
 
-int execute(DecodedInst di) {
+int execute(DecodedInst di) { //confirmed
   if (di.instType == EXE_HALT) {
     return EXE_HALT;
   }
@@ -220,52 +224,64 @@ int execute(DecodedInst di) {
 
   switch(di.cond) {
     case 0: // 0000: Z set / is equal
-      condPass = ((*rf.CPSR & ipow(2,30)) != 0);
+      condPass = getBit(*rf.CPSR,Zbit);
       break;
     case 1: // 0001: Z clear / not equal
-      condPass = ((*rf.CPSR & ipow(2,30)) == 0);
+      condPass = !getBit(*rf.CPSR,Zbit);
       break;
     case 10: // 1010: N equals V / greater equal
-      condPass = (*rf.CPSR & ipow(2,31)) == ((*rf.CPSR & ipow(2,38)) << 3);
+      condPass = getBit(*rf.CPSR,Nbit) == getBit(*rf.CPSR,Vbit);
       break;
     case 11: // 1011: N not equal V / less
-      condPass = (*rf.CPSR & ipow(2,31)) != ((*rf.CPSR & ipow(2,28)) << 3);
+      condPass = getBit(*rf.CPSR,Nbit) != getBit(*rf.CPSR,Vbit);
       break;
     case 12: // 1100: Z clear AND (N = V) / greater than
-      condPass = ((*rf.CPSR & ipow(2,30)) == 0) && ((*rf.CPSR & ipow(2,31)) == ((*rf.CPSR & ipow(2,28)) << 3));
+      condPass = (!getBit(*rf.CPSR,Zbit)) && (getBit(*rf.CPSR,Nbit) ==
+                 getBit(*rf.CPSR,Vbit));
       break;
     case 13: // 1101: Z set OR (N != V) / less than
-      condPass = ((*rf.CPSR & ipow(2,30)) != 0) || ((*rf.CPSR & ipow(2,31)) != ((*rf.CPSR & ipow(2,28)) << 3));
+      condPass = getBit(*rf.CPSR,Zbit) ||  (getBit(*rf.CPSR,Nbit) !=
+                 getBit(*rf.CPSR,Vbit));
       break;
     case 14: // 1110 ignore
       condPass = TRUE;
       break;
     default:
       perror("Invalid instruction entered with unknown condition");
+      dealloc();
       exit(EXIT_FAILURE);
   }
 
   if (condPass) {
-    if ((di.instType & DATA_PROC) != 0) {// Data processing
-      executeDataProcessing(di.instType, di.opcode, di.rn, di.rd, di.operandOffset);
 
+    if ((di.instType & DATA_PROC) != 0) {// Data processing
+      executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
+                            di.operandOffset);
+      //printf("Entered Data processing\n"); // FOR TESTING
     } else if ((di.instType & MULT) != 0) { // Mult
       executeMult(di.instType, di.rd, di.rn, di.rs, di.rm);
+      //printf("Entered Mult\n"); // FOR TESTING
 
     } else if ((di.instType & DATA_TRANS) != 0) { // Data transfer
       executeSingleDataTransfer(di.instType, di.rn, di.rd, di.operandOffset);
+      //printf("Entered Data transfer\n"); // FOR TESTING
 
     } else if ((di.instType & BRANCH) != 0) { // Branch
       executeBranch(di.operandOffset);
+      //printf("Entered Branch\n"); // FOR TESTING
       res = EXE_BRANCH;
     }
-  }
+
+  }/* else {
+    printf("Cond failed\n"); // FOR TESTING
+  }*/
 
   return res;
 
 }
 
-void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t rd, uint32_t operand) {
+void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
+                           rd, uint32_t operand) {//TESTING
   bool i = getBit(instType,3); // Immediate Operand
   int rotate = (operand >> 7); // rotate segment if i = 1
 
@@ -382,7 +398,8 @@ void setCPSRZN(int value, bool trigger) {
   alterN(value & ipow(2,31));
 }
 
-void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm) {
+void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
+                 rm) {
   bool a = getBit(instType,1); //Accumulate
   bool s = getBit(instType,2); //set condition
 
@@ -396,7 +413,8 @@ void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t r
 
 }
 
-void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset) {
+void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
+                               uint32_t offset) {
   bool i = getBit(instType,3); // immediate offset
   bool l = getBit(instType,2); // Load/Store
   bool p = getBit(instType,1); // Pre/Post, set = Pre
@@ -444,19 +462,125 @@ void executeBranch(int offset) {
   rf.CPSR += offset;
 }
 
-void testing(void) {
+void testingExecute(void) {
   // Basic test suite
-  printf("start testing\n");
-  rf.CPSR = malloc(4);
-  *rf.CPSR = ipow(2,31);
+  printf("start testing\n\n");
   DecodedInst di;
-  di.cond = 13;
-  di.instType = 64;
+  di.instType = BRANCH;
 
+  /*
+  printf("N = %d\n", getBit(*rf.CPSR,Nbit));
+  printf("Z = %d\n", getBit(*rf.CPSR,Zbit));
+  printf("V = %d\n", getBit(*rf.CPSR,Vbit));
+  */
+
+  printf("Test 0 ====\n");
+  alterN(0);
+  printf("N = %d expected 0\n", getBit(*rf.CPSR,Nbit));
+  alterN(1);
+  printf("N = %d expected 1\n", getBit(*rf.CPSR,Nbit));
+
+  alterZ(0);
+  alterN(1);
+  printf("Z = %d expected 0\n", getBit(*rf.CPSR,Zbit));
+  alterZ(1);
+  alterN(0);
+  printf("Z = %d expected 1\n", getBit(*rf.CPSR,Zbit));
+  printf("====\n\n");
+
+  printf("Test 1 ====\n");
+  alterZ(1);
+  di.cond = 1;
   execute(di);
+  printf("Expected: fail\n");
+  printf("====\n\n");
+
+  printf("Test 2 ====\n");
+  alterZ(0);
+  alterN(1);
+  alterV(0);
+  di.cond = 12;
+  execute(di);
+  printf("Expected: fail\n");
+  printf("====\n\n");
+
+  printf("Test 3 ====\n");
+  alterZ(0);
+  alterN(0);
+  alterV(1);
+  di.cond = 13;
+  di.instType = BRANCH;
+  execute(di);
+  printf("Expected: branch\n");
+  printf("====\n\n");
+
+  printf("Test 4 ====\n");
+  alterZ(0);
+  alterN(1);
+  alterV(1);
+  di.cond = 12;
+  di.instType = MULT;
+  execute(di);
+  printf("Expected: mult\n");
+  printf("====\n\n");
+
+  printf("Test 5 ====\n");
+  alterZ(0);
+  alterN(1);
+  alterV(0);
+  di.cond = 11;
+  di.instType = DATA_PROC;
+  execute(di);
+  printf("Expected: data processing\n");
+  printf("====\n\n");
+
+  printf("Test 6 ====\n");
+  alterZ(0);
+  alterN(1);
+  alterV(1);
+  di.cond = 10;
+  di.instType = DATA_TRANS;
+  execute(di);
+  printf("Expected: data transfer\n");
+  printf("====\n\n");
+
+  printf("Test 7 ====\n");
+  alterZ(0);
+  alterN(1);
+  alterV(1);
+  di.cond = 0;
+  di.instType = DATA_TRANS;
+  execute(di);
+  printf("Expected: fail\n");
+  alterZ(1);
+  di.instType = MULT;
+  execute(di);
+  printf("Expected: mult\n");
+  printf("====\n\n");
+
+  printf("Test 8 ====\n");
+  di.cond = 14;
+  di.instType = BRANCH;
+  execute(di);
+  printf("Expected: branch\n");
+  printf("====\n\n");
 
   printf("end testing\n");
-  free(rf.CPSR);
+}
+
+void testingDataProc(void) {
+  printf("start testing\n\n");
+
+  printf("Test 1 ====\n");
+  setCPSRZN(0,1);
+  printf(
+  "CPSR: "BYTETOBINARYPATTERN"\n",
+  BYTETOBINARY(getBinarySeg(*rf.CPSR,4,31))
+  );
+  printf("Expected: CPSR: 0100\n");
+  printf("====\n\n");
+
+  printf("end testing\n");
 }
 
 void loadFileToMem(char const *file) {
@@ -478,12 +602,20 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
+void alterV(bool set) {
+  if (set) {
+    *rf.CPSR = *rf.CPSR | ipow(2,28);
+  } else {
+    *rf.CPSR = *rf.CPSR & ((ipow(2,32) - 1) - ipow(2,28));
+  }
+}
+
 void alterC(bool set) {
   // Sets/clears CPSR bit C depending on set
   if (set) {
     *rf.CPSR = *rf.CPSR | ipow(2,29);
   } else {
-    *rf.CPSR = *rf.CPSR & (ipow(2,32) - 1 - ipow(2,29));
+    *rf.CPSR = *rf.CPSR & ((ipow(2,32) - 1) - ipow(2,29));
   }
 }
 
@@ -492,33 +624,33 @@ void alterZ(bool set) {
   if (set) {
     *rf.CPSR = *rf.CPSR | ipow(2,30);
   } else {
-    *rf.CPSR = *rf.CPSR & (ipow(2,32) - 1 - ipow(2,30));
+    *rf.CPSR = *rf.CPSR & ((ipow(2,32) - 1) - ipow(2,30));
   }
 }
 
 void alterN(bool set) {
   if (set) {
-      *rf.CPSR = *rf.CPSR | ipow(2,31);
+    *rf.CPSR = *rf.CPSR | (-ipow(2,31));
   } else {
-    *rf.CPSR = *rf.CPSR & (ipow(2,32) - 1 - ipow(2,31));
+    *rf.CPSR = *rf.CPSR & (ipow(2,31)-1);
   }
 }
 
-int ipow(int x, int y) {
+int64_t ipow(int x, int y) {
   // POST: returns x^y cast as an int
-  return (int)pow(x,y);
+  return (int64_t)pow(x,y);
 }
 
-int getBit(int x, int pos) {
-  //returns bit value of the bit at position pos of x
+int getBit(uint32_t x, int pos) {
+  //returns 1 bit value of the bit at position pos of x
   // e.g getBit(10010011, 0) = 1
   return (x & ipow(2,pos)) >> pos;
 }
 
-int getBinarySeg(int x, int start, int length) {
+uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) {
   //PRE: sizeof(x) > start > 0 / length > 0
   //POST: res = int value of binary segment between start and end
-  int acc = ipow(2,start); // an accumulator which will set the positions of the bits with the segment we want to return
+  uint32_t acc = ipow(2,start); // an accumulator which will set the positions of the bits with the segment we want to return
 
   for (int i = 1; i < length; i++) {
     acc += ipow(2,start-i);
@@ -539,6 +671,17 @@ int rotr32(uint32_t x, int n) {
   // POST: rotr32 will return the 32 bit value of x rotated n spaces to the right
   uint32_t a = (x & (ipow(2,n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
+}
+
+void testingHelpers(void) {
+  //int x;
+  printf("start testing\n\n");
+
+  printf("Test 1 ====\n");
+
+  printf("====\n\n");
+
+  printf("end testing\n");
 }
 
 void outputMemReg(void) {

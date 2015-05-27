@@ -49,6 +49,10 @@ struct regFile {
 
 const int NUM_REG = 17; // number of registers
 const int NUM_GREG = 13; // number of general purpose registers
+const int Nbit = 31; // position of status bits in CPSR
+const int Zbit = 30;
+const int Cbit = 29;
+const int Vbit = 28;
 
 // execute functions --
 int execute(DecodedInst di);
@@ -58,7 +62,8 @@ void setCPSRZN(int value, int trigger);
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm);
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset);
 void executeBranch(int offset);
-void testing(void); //WILL REMOVE
+void testingDataProc(void);
+void testingExecute(void);
 // --
 void dealloc(void);
 void loadFileToMem(char const *file);
@@ -66,15 +71,17 @@ void outputMemReg(void);
 void clearRegfile (void);
 // helper functions --
 void printSpecialReg(uint32_t value, char message[]);
-int ipow(int x, int y);
+int64_t ipow(int x, int y);
 int rotr8(uint8_t x, int n);
 int rotr32(uint32_t x, int n);
 void enterC(void);  //WILL REMOVE
 void alterC(bool set);
 void alterZ(bool set);
+void alterV(bool set);
 void alterN(bool set);
-int getBit(int x, int pos);
-int getBinarySeg(int x, int start, int length);
+void testingHelpers(void);
+int getBit(uint32_t x, int pos);
+uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length);
 //--
 int32_t fetch(uint8_t *mem);
 DecodedInst decode(int32_t instruction);
