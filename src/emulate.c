@@ -61,16 +61,16 @@ DecodedInst decode(int32_t instruction) {
   di.instType = getInstType(instruction); // only has correct 4 MSBs
   switch(di.instType){
     case 16 : //DATA_PROC
-        decodeForDataProc(instruction, di);
+        decodeForDataProc(instruction, &di);
         break;
     case 32 : //MULT
-        decodeForMult(instruction, di);
+        decodeForMult(instruction, &di);
         break;
     case 64 : //DATA_TRANS
-        decodeForDataTrans(instruction, di);
+        decodeForDataTrans(instruction, &di);
         break;
     case 128 : //BRANCH
-        decodeForBranch(instruction, di);
+        decodeForBranch(instruction, &di);
     case 0 : //HALT
     default :
         break;
@@ -103,110 +103,109 @@ uint8_t getInstType(int32_t instruction) {
   return MULT; //bit 25 == 0; bits [4..7] == 9
 }
 
-void decodeForDataProc(int32_t instruction, DecodedInst di) {
+void decodeForDataProc(int32_t instruction, DecodedInst *di) {
 
-// set flag bits: I S x x
-  long mask = 1;
-  mask = mask << 25;
+  // set flag bits: I S x x
+  long mask = 1 << 25;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 8;
+    di->instType += 8;
   }
-  mask = mask >> 5;
+  mask >>= 5;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 4;
+    di->instType += 4;
   }
 
   // set opcode
   mask = 15;
-  di.opcode = instruction >> 21;
-  di.opcode = di.opcode & mask;
+  di->opcode = instruction >> 21;
+  di->opcode = di->opcode & mask;
 
   // set registers
-  di.rn = instruction >> 16;
-  di.rn = di.rn & mask;
-  di.rd = instruction >> 12;
-  di.rd = di.rd & mask;
+  di->rn = instruction >> 16;
+  di->rn &= mask;
+  di->rd = instruction >> 12;
+  di->rd = di->rd & mask;
 
   // get operandOffset (operand)
   mask = 4095; // 2^12 - 1 for bits [0..11]
-  di.operandOffset = instruction & mask;
+  di->operandOffset = instruction & mask;
 
 }
 
-void decodeForMult(int32_t instruction, DecodedInst di) {
+void decodeForMult(int32_t instruction, DecodedInst *di) {
 
-// set flag bits: x S A x
+  // set flag bits: x S A x
   long mask = 1;
   mask = mask << 20;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 4;
+    di->instType = di->instType + 4;
   }
   mask = mask << 1;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 2;
+    di->instType = di->instType + 2;
   }
 
   // set registers
   mask = 15;
-  di.rd = instruction >> 16;
-  di.rd = di.rd & mask;
-  di.rn = instruction >> 12;
-  di.rn = di.rn & mask;
-  di.rs = instruction >> 8;
-  di.rs = di.rs & mask;
-  di.rm = instruction & mask;
+  di->rd = instruction >> 16;
+  di->rd = di->rd & mask;
+  di->rn = instruction >> 12;
+  di->rn = di->rn & mask;
+  di->rs = instruction >> 8;
+  di->rs = di->rs & mask;
+  di->rm = instruction & mask;
 
 }
 
-void decodeForDataTrans(int32_t instruction, DecodedInst di) {
+void decodeForDataTrans(int32_t instruction, DecodedInst *di) {
 
-// set flag bits: I L P U
+  // set flag bits: I L P U
   long mask = 1;
   mask = mask << 25;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 8;
+    di->instType = di->instType + 8;
   }
   mask = mask >> 5;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 4;
+    di->instType = di->instType + 4;
   }
   mask = mask << 4;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 2;
+    di->instType = di->instType + 2;
   }
   mask = mask >> 1;
   if ((instruction & mask) != FALSE){
-    di.instType = di.instType + 1;
+    di->instType = di->instType + 1;
   }
 
   // set registers
   mask = 15;
-  di.rn = instruction >> 16;
-  di.rn = di.rn & mask;
-  di.rd = instruction >> 12;
-  di.rd = di.rd & mask;
+  di->rn = instruction >> 16;
+  di->rn = di->rn & mask;
+  di->rd = instruction >> 12;
+  di->rd = di->rd & mask;
 
   // get operandOffset (offset)
   mask = 4095; // 2^12 - 1 for bits [0..11]
-  di.operandOffset = instruction & mask;
+  di->operandOffset = instruction & mask;
 
 }
 
-void decodeForBranch(int32_t instruction, DecodedInst di) {
+void decodeForBranch(int32_t instruction, DecodedInst *di) {
 
   // flag bits: x x x x
 
   // get operandOffset (signed offset)
   long mask = 1 << 24;
   mask--; // 2^24 - 1 for bits [0..23]
-  di.operandOffset = instruction & mask; //  = unaltered offset bits
+  di->operandOffset = instruction & mask; //  = unaltered offset bits
 
   mask = 1 << 23;
   if ((instruction & mask) != FALSE) { // offset is negative
-    di.operandOffset = ~(di.operandOffset ^ 0) + 1;
-        // = di.operandOffset XNOR 0, then + 1
+    di->operandOffset = ~(di->operandOffset ^ 0) + 1;
+        // = di->operandOffset XNOR 0, then + 1
         // = two's complement +ve value
-    di.operandOffset *= (-1);
+    di->operandOffset *= (-1);
   }
 
 }

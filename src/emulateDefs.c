@@ -11,16 +11,19 @@ struct regFile rf;
 void testFetch(void);
 void testGetInstType(void);
 void testDecodeForDataProc(void);
-
+void testDecodeForMult(void);
+void testDecodeForDataTrans(void);
 /*  End of test functions*/
 
 int main(int argc, char const *argv[]) {
 
   printf("running tests...\n\n");
 
-  testFetch();
-  testGetInstType();
-  testDecodeForDataProc();
+  // testFetch();
+  // testGetInstType();
+  // testDecodeForDataProc();
+  // testDecodeForMult();
+  testDecodeForDataTrans();
   /* code */
 
   printf("\n...tests complete\n");
@@ -132,11 +135,11 @@ void decodeForMult(int32_t instruction, DecodedInst *di) {
   // set registers
   mask = 15;
   di->rd = instruction >> 16;
-  di->rd = di->rd & mask;
+  di->rd &= mask;
   di->rn = instruction >> 12;
-  di->rn = di->rn & mask;
+  di->rn &= mask;
   di->rs = instruction >> 8;
-  di->rs = di->rs & mask;
+  di->rs &= mask;
   di->rm = instruction & mask;
 
 }
@@ -144,8 +147,7 @@ void decodeForMult(int32_t instruction, DecodedInst *di) {
 void decodeForDataTrans(int32_t instruction, DecodedInst *di) {
 
   // set flag bits: I L P U
-  long mask = 1;
-  mask = mask << 25;
+  long mask = 1 << 25;
   if ((instruction & mask) != FALSE){
     di->instType = di->instType + 8;
   }
@@ -170,7 +172,8 @@ void decodeForDataTrans(int32_t instruction, DecodedInst *di) {
   di->rd = di->rd & mask;
 
   // get operandOffset (offset)
-  mask = 4095; // 2^12 - 1 for bits [0..11]
+  mask = 1 << 12;
+  mask--; // 2^12 - 1 for bits [0..11]
   di->operandOffset = instruction & mask;
 
 }
@@ -270,7 +273,92 @@ void testDecodeForDataProc(void) {
   printf("Rd\t\t%d\t\t%d\n", 8, di.rd);
   printf("==========\n" );
   printf("\n");
+}
 
+void testDecodeForMult(void) {
+  printf("testing decodeForMult\n");
+  DecodedInst di;
+  di.instType = MULT;
+  int32_t instruction = 0x0001F390; // S = 0, A = 0, rd = 1, rn = 15, rs = 3, rm = 0
+  decodeForMult(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", MULT, di.instType);
+  printf("Rd\t\t%d\t\t%d\n", 1, di.rd);
+  printf("Rn\t\t%d\t\t%d\n", 15, di.rn);
+  printf("Rs\t\t%d\t\t%d\n", 3, di.rs);
+  printf("Rm\t\t%d\t\t%d\n", 0, di.rm);
+  printf("==========\n");
+  di.instType = MULT;
+  instruction = 0x002A779D; // S = 0, A = 1, rd = 10, rn = 7, rs = 7, rm = 13
+  decodeForMult(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", (MULT + 2), di.instType);
+  printf("Rd\t\t%d\t\t%d\n", 10, di.rd);
+  printf("Rn\t\t%d\t\t%d\n", 7, di.rn);
+  printf("Rs\t\t%d\t\t%d\n", 7, di.rs);
+  printf("Rm\t\t%d\t\t%d\n", 13, di.rm);
+  printf("==========\n");
+  di.instType = MULT;
+  instruction = 0x0032479C; // S = 1, A = 1, rd = 2, rn = 4, rs = 7, rm = 12
+  decodeForMult(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", (MULT + 3), di.instType);
+  printf("Rd\t\t%d\t\t%d\n", 2, di.rd);
+  printf("Rn\t\t%d\t\t%d\n", 4, di.rn);
+  printf("Rs\t\t%d\t\t%d\n", 7, di.rs);
+  printf("Rm\t\t%d\t\t%d\n", 12, di.rm);
+  printf("==========\n");
+  printf("\n");
+}
+
+void testDecodeForDataTrans(void) {
+  printf("testing decodeForDataTrans\n");
+  DecodedInst di;
+  di.instType = DATA_TRANS;
+  int32_t instruction = 0x0405D390;
+  // I = 0, L = 0, P = 0, U = 0
+  // rn = 5, rd = 13, offset = 912
+  decodeForDataTrans(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", DATA_TRANS, di.instType);
+  printf("Rn\t\t%d\t\t%d\n", 5, di.rn);
+  printf("Rd\t\t%d\t\t%d\n", 13, di.rd);
+  printf("offset\t\t%d\t\t%d\n", 912, di.operandOffset);
+  printf("==========\n");
+  di.instType = DATA_TRANS;
+  instruction = 0x07910005;
+  // I = 1, L = 1, P = 1, U = 1
+  // rn = 1, rd = 0, offset = 5
+  decodeForDataTrans(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", (DATA_TRANS + 15), di.instType);
+  printf("Rn\t\t%d\t\t%d\n", 1, di.rn);
+  printf("Rd\t\t%d\t\t%d\n", 0, di.rd);
+  printf("offset\t\t%d\t\t%d\n", 5, di.operandOffset);
+  printf("==========\n");
+  di.instType = DATA_TRANS;
+  instruction = 0x070A9FFF;
+  // I = 1, L = 0, P = 1, U = 0
+  // rn = 10, rd = 9, offset = 4095
+  decodeForDataTrans(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", (DATA_TRANS + 10), di.instType);
+  printf("Rn\t\t%d\t\t%d\n", 10, di.rn);
+  printf("Rd\t\t%d\t\t%d\n", 9, di.rd);
+  printf("offset\t\t%d\t\t%d\n", 4095, di.operandOffset);
+  printf("==========\n");
+  di.instType = DATA_TRANS;
+  instruction = 0x04923010;
+  // I = 0, L = 1, P = 0, U = 1
+  // rn = 2, rd = 3, offset = 16
+  decodeForDataTrans(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", (DATA_TRANS + 5), di.instType);
+  printf("Rn\t\t%d\t\t%d\n", 2, di.rn);
+  printf("Rd\t\t%d\t\t%d\n", 3, di.rd);
+  printf("offset\t\t%d\t\t%d\n", 16, di.operandOffset);
+  printf("==========\n");
+  printf("\n");
 }
 
 /*  End of test functions*/
