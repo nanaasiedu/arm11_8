@@ -292,7 +292,6 @@ void generateMultiplyOpcode(int32_t opcode,
                             int32_t A) {
   instruction instr = 14;
   instr = instr << 28;
-  int32_t nonParameter;
   A = A << 21;
   instr |= A;
   rd = rd << 16;
@@ -301,9 +300,7 @@ void generateMultiplyOpcode(int32_t opcode,
   instr |= rd;
   rs = rs << 8;
   instr |= rs;
-  nonParameter = 9;
-  nonParameter = nonParameter << 4;
-  instr |= nonParameter;
+  instr |= 9 << 4;//bits 7 to 4 = 1001;
   instr |= rm;
   outputData(instr);
 }
@@ -311,10 +308,7 @@ void generateMultiplyOpcode(int32_t opcode,
 void generateBranchOpcode(int32_t cond, int32_t offset) {
   instruction instr = cond;
   instr = instr << 28;
-  int32_t nonParameter;
-  nonParameter = 10;
-  nonParameter = nonParameter << 24;
-  instr |= nonParameter;
+  instr |= 10 << 24//bits 27 to 24 = 1010;
   instr |= offset;
   outputData(instr);
 }
@@ -330,10 +324,7 @@ void generateSingleDataTransferOpcode(uint32_t cond,
 
   uint32_t instr = 14;
   instr = instr << 28;
-  int8_t nonParameter;
-  nonParameter = 1;
-  nonParameter = nonParameter << 26;
-  instr |= nonParameter;
+  instr |= 1 << 26;//bits 27,26 = 01
   i = i << 25;
   instr |= i;
   p = p << 24;
