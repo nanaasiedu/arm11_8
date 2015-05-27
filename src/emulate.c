@@ -151,11 +151,11 @@ void decodeForMult(int32_t instruction, DecodedInst *di) {
   // set registers
   mask = 15;
   di->rd = instruction >> 16;
-  di->rd = di->rd & mask;
+  di->rd &= mask;
   di->rn = instruction >> 12;
-  di->rn = di->rn & mask;
+  di->rn &= mask;
   di->rs = instruction >> 8;
-  di->rs = di->rs & mask;
+  di->rs &= mask;
   di->rm = instruction & mask;
 
 }
@@ -163,8 +163,7 @@ void decodeForMult(int32_t instruction, DecodedInst *di) {
 void decodeForDataTrans(int32_t instruction, DecodedInst *di) {
 
   // set flag bits: I L P U
-  long mask = 1;
-  mask = mask << 25;
+  long mask = 1 << 25;
   if ((instruction & mask) != FALSE){
     di->instType = di->instType + 8;
   }
@@ -189,7 +188,8 @@ void decodeForDataTrans(int32_t instruction, DecodedInst *di) {
   di->rd = di->rd & mask;
 
   // get operandOffset (offset)
-  mask = 4095; // 2^12 - 1 for bits [0..11]
+  mask = 1 << 12;
+  mask--; // 2^12 - 1 for bits [0..11]
   di->operandOffset = instruction & mask;
 
 }
@@ -205,10 +205,8 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
 
   mask = 1 << 23;
   if ((instruction & mask) != FALSE) { // offset is negative
-    di->operandOffset = ~(di->operandOffset ^ 0) + 1;
-        // = di->operandOffset XNOR 0, then + 1
-        // = two's complement +ve value
-    di->operandOffset *= (-1);
+    di->operandOffset |= 0xFFF00000;
+    // 1s extended to MSB
   }
 
 }

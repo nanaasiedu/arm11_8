@@ -25,8 +25,8 @@ int main(int argc, char const *argv[]) {
   // testDecodeForDataProc();
   // testDecodeForMult();
   // testDecodeForDataTrans();
-  testDecodeForBranch();
-  /* code */
+  // testDecodeForBranch();
+  printf("All test passed\n");
 
   printf("\n...tests complete\n");
   return EXIT_SUCCESS;
@@ -92,17 +92,14 @@ uint8_t getInstType(int32_t instruction) {
 void decodeForDataProc(int32_t instruction, DecodedInst *di) {
 
   // set flag bits: I S x x
-  printf("%i\n",di->instType );
   long mask = 1 << 25;
   if ((instruction & mask) != FALSE){
     di->instType += 8;
   }
-  printf("%i\n",di->instType );
   mask >>= 5;
   if ((instruction & mask) != FALSE){
     di->instType += 4;
   }
-  printf("%i\n",di->instType );
 
   // set opcode
   mask = 15;
@@ -191,13 +188,8 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
 
   mask = 1 << 23;
   if ((instruction & mask) != FALSE) { // offset is negative
-    printf("%i\n", di->operandOffset);
-    di->operandOffset = ~(di->operandOffset ^ 0) + 1;
-    // = di->operandOffset XNOR 0, then + 1
-    // = two's complement +ve value
-    printf("%i\n", di->operandOffset);
-    di->operandOffset *= (-1);
-    printf("%i\n", di->operandOffset);
+    di->operandOffset |= 0xFFF00000;
+    // 1s extended to MSB
   }
 
 }
@@ -253,28 +245,40 @@ void testDecodeForDataProc(void) {
   printf("testing decodeForDataProc\n");
   DecodedInst di;
   di.instType = DATA_PROC;
-  int32_t instruction = 212992; // 00034000H I = 0, S = 0, rn = 3, rd = 4
+  int32_t instruction = 0x00034000;
+  // I = 0, S = 0, rn = 3, rd = 4
+  // opcode = 0, operand = 0
   decodeForDataProc(instruction, &di);
   printf("\nfield\t\texpected\tactual\n");
   printf("instType\t%d\t\t%d\n", DATA_PROC, di.instType);
   printf("Rn\t\t%d\t\t%d\n", 3, di.rn);
   printf("Rd\t\t%d\t\t%d\n", 4, di.rd);
+  printf("Opcode\t\t%d\t\t%d\n", 0, di.opcode);
+  printf("Operand\t\t%d\t\t%d\n", 0, di.operandOffset);
   printf("==========\n");
   di.instType = DATA_PROC;
-  instruction = 34254848; // 020AB000H I = 1, S = 0, rn = 10, rd = 11
+  instruction = 0x02EAB003;
+  // I = 1, S = 0, rn = 10, rd = 11
+  // opcode = 7, operand = 3
   decodeForDataProc(instruction, &di);
   printf("\nfield\t\texpected\tactual\n");
   printf("instType\t%d\t\t%d\n", (DATA_PROC + 8), di.instType);
   printf("Rn\t\t%d\t\t%d\n", 10, di.rn);
   printf("Rd\t\t%d\t\t%d\n", 11, di.rd);
+  printf("Opcode\t\t%d\t\t%d\n", 7, di.opcode);
+  printf("Operand\t\t%d\t\t%d\n", 3, di.operandOffset);
   printf("==========\n");
   di.instType = DATA_PROC;
-  instruction = 1605632; // 00188000H I = 0, S = 1, rn = 8, rd = 8
+  instruction = 0x00B88FFE;
+  // I = 0, S = 1, rn = 8, rd = 8
+  // opcode = 5, operand = 4094
   decodeForDataProc(instruction, &di);
   printf("\nfield\t\texpected\tactual\n");
   printf("instType\t%d\t\t%d\n", (DATA_PROC + 4), di.instType);
   printf("Rn\t\t%d\t\t%d\n", 8, di.rn);
   printf("Rd\t\t%d\t\t%d\n", 8, di.rd);
+  printf("Opcode\t\t%d\t\t%d\n", 5, di.opcode);
+  printf("Operand\t\t%d\t\t%d\n", 4094, di.operandOffset);
   printf("==========\n" );
   printf("\n");
 }
@@ -306,7 +310,7 @@ void testDecodeForMult(void) {
   instruction = 0x0032479C; // S = 1, A = 1, rd = 2, rn = 4, rs = 7, rm = 12
   decodeForMult(instruction, &di);
   printf("\nfield\t\texpected\tactual\n");
-  printf("instType\t%d\t\t%d\n", (MULT + 3), di.instType);
+  printf("instType\t%d\t\t%d\n", (MULT + 6), di.instType);
   printf("Rd\t\t%d\t\t%d\n", 2, di.rd);
   printf("Rn\t\t%d\t\t%d\n", 4, di.rn);
   printf("Rs\t\t%d\t\t%d\n", 7, di.rs);
