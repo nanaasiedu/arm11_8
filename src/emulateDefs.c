@@ -10,6 +10,7 @@ struct regFile rf;
 
 void testFetch(void);
 void testGetInstType(void);
+void testDecodeForDataProc(void);
 
 /*  End of test functions*/
 
@@ -19,6 +20,7 @@ int main(int argc, char const *argv[]) {
 
   testFetch();
   testGetInstType();
+  testDecodeForDataProc();
   /* code */
 
   printf("\n...tests complete\n");
@@ -236,6 +238,11 @@ void testGetInstType(void) {
   instruction = 0; // Halt : 0
   printf("Should be a halt statement, code: %d\n actual code: %d\n", HALT, getInstType(instruction));
   printf("\n");
+}
+
+void testDecodeForDataProc(/* arguments */) {
+  DecodedInst di;
+
 }
 
 /*  End of test functions*/
