@@ -99,7 +99,7 @@ void resolveLabelAddresses() {
       default: break;
     }
   }
-  map_print(lblToAddr);
+  // map_print(lblToAddr);
 }
 
 void parseProgram(SymbolTable *map) {
@@ -394,7 +394,7 @@ void tokenise() {
     tokens_add(tokens, "nl", NEWLINE);
   }
   tokens_add(tokens, "end", ENDFILE);
-  print_tokens(tokens);
+  // print_tokens(tokens);
 }
 
 int index_of(char *value, char **arr) {
