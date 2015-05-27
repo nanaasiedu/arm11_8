@@ -5,10 +5,18 @@
 
 struct regFile rf;
 
+/*  Test functions */
+//  Remember to remove
+
+// void testFetch(void);
+
+/*  End of test functions*/
+
 int main(int argc, char const *argv[]) {
 
   printf("running tests...\n\n");
 
+  // testFetch();
   /* code */
 
   printf("\n...tests complete\n");
@@ -175,3 +183,30 @@ void decodeForBranch(int32_t instruction, DecodedInst di) {
   }
 
 }
+
+
+/*  Test functions */
+//  Remember to remove
+
+// void testFetch(void) {
+  // printf("testing fetch\n");
+  // uint8_t *mem = NULL;
+  // mem = calloc(16, 1);
+  // for (uint8_t i = 0; i < 16; i++) {
+    // mem[i] = i;
+  // }
+  // /* addr | 32bit value
+  //  * 0    | 03020100H = 50462976
+  //  * 4    | 07060504H = 117835012
+  //  * 8    | 0B0A0908H = 185207048
+  //  * 12   | 0F0E0D0CH = 252579084
+  //  */
+  //  *rf.PC = 0;
+    // printf("At address 0, should store 50462976\nActually stores            %d\n", fetch(mem));
+    // printf("At address 4, should store 117835012\nActually stores            %d\n", fetch(mem));
+    // printf("At address 8, should store 185207048\nActually stores            %d\n", fetch(mem));
+    // printf("At address 12, should store 252579084\nActually stores             %d\n", fetch(mem));
+    // free(mem);
+// }
+
+/*  End of test functions*/
