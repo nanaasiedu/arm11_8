@@ -128,8 +128,8 @@ void parseInstruction(Token *token) {
     case ORR: parseTurnaryDataProcessing(token); break;
     case MOV: case TST: case TEQ: case CMP: case MUL:
     case MLA: parseBinaryDataProcessing(token); break;
-    case LDR: parseLdr(token); break;
-    case STR: parseStr(token); break;
+    case LDR: 
+    case STR: parseSingleDataTransfer(token); break;
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
     case B: parseB(token); break;
     case LSL: parseLsl(token); break;
@@ -196,7 +196,7 @@ void parseMla(Token *token) {
   generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,rn,1);
 }
 
-void parseLdr(Token *token) {
+void parseSingleDataTransfer(Token *token) {
   uint32_t cond, i, p, u, l, rd, rn;
   int offset;
   cond = 14;
@@ -241,12 +241,14 @@ void parseLdr(Token *token) {
       u = 1;
     } else {
       //Post-Index
+      p = 0;
+      rn = map_get(&registerTable, addrToken->value+1);
+      char *ptr;
+      offset = (int) strtol(stripLastBracket((token+3)->value), &ptr, 0);
+      u = 1;
     }
+    generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
   }
-}
-
-void parseStr(Token *token) {
-
 }
 
 void parseB(Token *token) {
@@ -262,14 +264,14 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-void generateDataProcessingOpcode(int32_t opcode, 
-                                  int32_t rd, 
-                                  int32_t rn, 
-                                  int32_t operand, 
+void generateDataProcessingOpcode(int32_t opcode,
+                                  int32_t rd,
+                                  int32_t rn,
+                                  int32_t operand,
                                   int32_t S) {
   instruction instr = 14;
   instr = instr << 28;
-  instr |= 1 << 25;//I is always set 
+  instr |= 1 << 25;//I is always set
   opcode = opcode << 21;
   instr |= opcode;
   S = S << 20;
@@ -282,11 +284,11 @@ void generateDataProcessingOpcode(int32_t opcode,
   outputData(instr);
 }
 
-void generateMultiplyOpcode(int32_t opcode, 
-                            int32_t rd, 
-                            int32_t rm, 
-                            int32_t rs, 
-                            int32_t rn, 
+void generateMultiplyOpcode(int32_t opcode,
+                            int32_t rd,
+                            int32_t rm,
+                            int32_t rs,
+                            int32_t rn,
                             int32_t A) {
   instruction instr = 14;
   instr = instr << 28;
@@ -317,12 +319,12 @@ void generateBranchOpcode(int32_t cond, int32_t offset) {
   outputData(instr);
 }
 
-void generateSingleDataTransferOpcode(uint32_t cond, 
-                                      uint32_t i, 
-                                      uint32_t p, 
+void generateSingleDataTransferOpcode(uint32_t cond,
+                                      uint32_t i,
+                                      uint32_t p,
                                       uint32_t u,
-                                      uint32_t l, 
-                                      uint32_t rd, 
+                                      uint32_t l,
+                                      uint32_t rd,
                                       uint32_t rn,
                                       uint32_t offset) {
 
@@ -414,9 +416,13 @@ int index_of(char *value, char **arr) {
 }
 
 char* stripBrackets(char *str) {
+  stripLastBracket(str);
+  return str+1;
+}
+
+void stripLastBracket(char *str) {
   char *pch = strstr(str, "]");
   strncpy(pch, "\0", 1);
-  return str+1;
 }
 
 bool isPreIndex(char *str) {

@@ -53,8 +53,7 @@ void parseMul(Token *token);
 void parseMla(Token *token);
 void parseB(Token *token);
 void parseLsl(Token *token);
-void parseLdr(Token *token);
-void parseStr(Token *token);
+void parseSingleDataTransfer(Token *token);
 //Opcode Generators
 void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S);
 void generateMultiplyOpcode(int32_t opcode, int32_t rd, int32_t rm, int32_t rs, int32_t rn, int32_t A);
