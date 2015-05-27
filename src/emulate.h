@@ -47,6 +47,9 @@ struct regFile {
   uint32_t *CPSR;
 };
 
+const int NUM_REG = 17; // number of registers
+const int NUM_GREG = 13; // number of general purpose registers
+
 // execute functions --
 int execute(DecodedInst di);
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t Rn, uint8_t Rd, uint32_t operand);
@@ -59,8 +62,10 @@ void testing(void); //WILL REMOVE
 // --
 void dealloc(void);
 void loadFileToMem(char const *file);
-void clearRegfile (struct regFile rf);
+void outputMemReg(void);
+void clearRegfile (void);
 // helper functions --
+void printSpecialReg(uint32_t value, char message[]);
 int ipow(int x, int y);
 int rotr8(uint8_t x, int n);
 int rotr32(uint32_t x, int n);
@@ -69,10 +74,22 @@ void alterC(bool set);
 void alterZ(bool set);
 void alterN(bool set);
 int getBit(int x, int pos);
+int getBinarySeg(int x, int start, int length);
 //--
 int32_t fetch(uint8_t *mem);
 DecodedInst decode(int32_t instruction);
 uint8_t getInstType(int32_t instruction);
+
+#define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
+#define BYTETOBINARY(byte)  \
+  (byte & 0x80 ? 1 : 0), \
+  (byte & 0x40 ? 1 : 0), \
+  (byte & 0x20 ? 1 : 0), \
+  (byte & 0x10 ? 1 : 0), \
+  (byte & 0x08 ? 1 : 0), \
+  (byte & 0x04 ? 1 : 0), \
+  (byte & 0x02 ? 1 : 0), \
+  (byte & 0x01 ? 1 : 0)
 
 // dont keep getFlags()
 //***********************

@@ -7,6 +7,7 @@
 
 // ADD: CPSR bit const / opcode const / shift type const
 // ADD SUBTRACTION BORROW LOGIC
+// ADD memory and register output
 
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  //Memory
@@ -20,7 +21,7 @@ int main (int argc, char const *argv[]) {
 
   mem = calloc(MEM16BIT, 1); //allocates 2^16 bit memory addresses to mem
 
-  clearRegfile(rf); // Sets all registers to 0
+  clearRegfile(); // Sets all registers to 0
 
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
 
@@ -39,6 +40,7 @@ int main (int argc, char const *argv[]) {
 
   //testing(); //FOR TESTING PURPOSES
 
+  outputMemReg();
   printf("The program is closing");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
@@ -100,13 +102,13 @@ int execute(DecodedInst di) {
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t rd, uint32_t operand) {
-  int i = (instType & 8) >> 3; // Immediate Operand
+  bool i = getBit(instType,3); // Immediate Operand
   int rotate = (operand >> 7); // rotate segment if i = 1
 
   int shiftSeg = (operand >> 4); // 8 bit shift segment if i = 0
   int rm = operand & (ipow(2,4)-1); // 4 bit
 
-  int s = (instType & 4) >> 2; // Set condition
+  bool s = getBit(instType,2); // Set condition
 
   int testRes = 0; // result from test operations
 
@@ -166,7 +168,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
 uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
   //POST: return shifted value of rm to operand
-  int shiftop = shiftSeg & 1; // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
+  bool shiftop = shiftSeg & 1; // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
   int shiftType = shiftSeg & 6; //2 bit
   int rs = shiftSeg >> 4; // 4 bit
   int conint = shiftSeg >> 3; // 4 bit
@@ -217,8 +219,8 @@ void setCPSRZN(int value, bool trigger) {
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm) {
-  bool a = (instType & 2) >> 1; //Accumulate
-  int s = (instType & 4) >> 2; //set condition
+  bool a = getBit(instType,1); //Accumulate
+  bool s = getBit(instType,2); //set condition
 
   if (!a) { // Normal multiply
     rf.reg[rd] = rf.reg[rm]*rf.reg[rs];
@@ -231,6 +233,46 @@ void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t r
 }
 
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset) {
+  bool i = getBit(instType,3); // immediate offset
+  bool l = getBit(instType,2); // Load/Store
+  bool p = getBit(instType,1); // Pre/Post, set = Pre
+  bool u = getBit(instType,0); // Up bit
+
+  int shiftSeg = (offset >> 4); // 8 bit shift segment if i = 0
+  int rm = offset & (ipow(2,4)-1); // 4 bit
+
+  if (!i) { // if offset is immediate
+    offset = offset & (ipow(2,12)-1); // offset = Immediate
+  } else {// offset is a register
+    offset = barrelShift(rf.reg[rm], shiftSeg, 0);
+  }
+
+  int soffset = offset; // signed offset
+  int pcoffset = 0;     // if rn = PC we must add 8 bytes to account for pipeline
+  if (!u) { // if we are subtracting soffset will be negative
+    soffset *= -1;
+  }
+
+  if(rn == 15) {
+    pcoffset = 8*8; // 8 bytes
+  }
+
+  if (p) { //pre-indexing
+    if (l) { //load
+      rf.reg[rd] = mem[rf.reg[rn]+soffset+pcoffset];
+    } else { //store
+      mem[rf.reg[rn]+soffset+pcoffset] = rf.reg[rd];
+    }
+
+  } else { //post-indexing
+    if (l) { //load
+      rf.reg[rd] = mem[rf.reg[rn]+pcoffset];
+    } else { //store
+      mem[rf.reg[rn]+pcoffset] = rf.reg[rd];
+    }
+
+    rf.reg[rn] = rf.reg[rn] + soffset +pcoffset;
+  }
 
 }
 
@@ -263,9 +305,9 @@ void loadFileToMem(char const *file) {
   fread(mem,1,MEM16BIT,binFile);
 }
 
-void clearRegfile (struct regFile rf) {
-  // allocates 12 bytes for each register
-  rf.reg = calloc(4*17,1);
+void clearRegfile (void) {
+  // allocates 4 bytes for each register
+  rf.reg = calloc(NUM_REG,4);
   rf.SP = &rf.reg[13];
   rf.LR = &rf.reg[14];
   rf.PC = &rf.reg[15];
@@ -309,6 +351,18 @@ int getBit(int x, int pos) {
   return (x & ipow(2,pos)) >> pos;
 }
 
+int getBinarySeg(int x, int start, int length) {
+  //PRE: sizeof(x) > start > 0 / length > 0
+  //POST: res = int value of binary segment between start and end
+  int acc = ipow(2,start); // an accumulator which will set the positions of the bits with the segment we want to return
+
+  for (int i = 1; i < length; i++) {
+    acc += ipow(2,start-i);
+  }
+
+  return (x & acc) >> (start - (length - 1));
+}
+
 int rotr8(uint8_t x, int n) {
   // PRE: x is an unsigned 8 bit number (note x may be any type with 8 or more bits). n is the number x will be rotated by.
   // POST: rotr8 will return the 8 bit value of x rotated n spaces to the right
@@ -322,6 +376,102 @@ int rotr32(uint32_t x, int n) {
   uint32_t a = (x & (ipow(2,n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
 }
+
+void outputMemReg(void) {
+  //outputs the state of the main memory and register file
+  // output mem -----------------------
+  uint8_t addr = 0; //current address
+  printf("Main memory --- \n");
+
+  while(addr < MEM16BIT) {
+    printf("%X: ",addr);
+
+    for (int i = 0; i < 4; i++) {
+      printf(BYTETOBINARYPATTERN" ", BYTETOBINARY(mem[addr+i]));
+    }
+
+    printf("\n");
+    addr += 4; // go to next byte
+
+    if (mem[addr] == 0 && mem[addr+1] == 0 && mem[addr+2] == 0 && mem[addr+3] == 0) {
+      break; // we have reached a halt intruction
+    }
+  }
+
+  printf("---\n\n");
+
+  // Output registers ------------
+  printf("Register file --- \n");
+  for (int i = 0; i < NUM_GREG; i++) {
+    printf(
+    "register %d: "BYTETOBINARYPATTERN" "
+    BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
+    BYTETOBINARYPATTERN"\n", i,
+    BYTETOBINARY(getBinarySeg(rf.reg[i],31,8)),
+    BYTETOBINARY(getBinarySeg(rf.reg[i],23,8)),
+    BYTETOBINARY(getBinarySeg(rf.reg[i],15,8)),
+    BYTETOBINARY(getBinarySeg(rf.reg[i],7,8))
+    );
+  }
+
+  printf(
+  "SP: "BYTETOBINARYPATTERN" "
+  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
+  BYTETOBINARYPATTERN"\n",
+  BYTETOBINARY(getBinarySeg(*rf.SP,31,8)),
+  BYTETOBINARY(getBinarySeg(*rf.SP,23,8)),
+  BYTETOBINARY(getBinarySeg(*rf.SP,15,8)),
+  BYTETOBINARY(getBinarySeg(*rf.SP,7,8))
+  );
+
+  printf(
+  "LR: "BYTETOBINARYPATTERN" "
+  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
+  BYTETOBINARYPATTERN"\n",
+  BYTETOBINARY(getBinarySeg(*rf.LR,31,8)),
+  BYTETOBINARY(getBinarySeg(*rf.LR,23,8)),
+  BYTETOBINARY(getBinarySeg(*rf.LR,15,8)),
+  BYTETOBINARY(getBinarySeg(*rf.LR,7,8))
+  );
+
+  printf(
+  "PC: "BYTETOBINARYPATTERN" "
+  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
+  BYTETOBINARYPATTERN"\n",
+  BYTETOBINARY(getBinarySeg(*rf.PC,31,8)),
+  BYTETOBINARY(getBinarySeg(*rf.PC,23,8)),
+  BYTETOBINARY(getBinarySeg(*rf.PC,15,8)),
+  BYTETOBINARY(getBinarySeg(*rf.PC,7,8))
+  );
+
+  printf(
+  "CPSR: "BYTETOBINARYPATTERN" "
+  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
+  BYTETOBINARYPATTERN"\n",
+  BYTETOBINARY(getBinarySeg(*rf.CPSR,31,8)),
+  BYTETOBINARY(getBinarySeg(*rf.CPSR,23,8)),
+  BYTETOBINARY(getBinarySeg(*rf.CPSR,15,8)),
+  BYTETOBINARY(getBinarySeg(*rf.CPSR,7,8))
+  );
+
+  printf("---\n\n");
+
+}
+
+/*
+void printSpecialReg(uint32_t value, char *message) {
+  // Takes in a register value and prints it out in binary form
+  printf(
+  "%s "BYTETOBINARYPATTERN" "
+  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
+  BYTETOBINARYPATTERN"\n", *message
+  BYTETOBINARY(getBinarySeg(value,31,8)),
+  BYTETOBINARY(getBinarySeg(value,23,8)),
+  BYTETOBINARY(getBinarySeg(value,15,8)),
+  BYTETOBINARY(getBinarySeg(value,7,8))
+  );
+}
+*/
 
 void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
