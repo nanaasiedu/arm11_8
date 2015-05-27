@@ -308,7 +308,7 @@ void generateMultiplyOpcode(int32_t opcode,
 void generateBranchOpcode(int32_t cond, int32_t offset) {
   instruction instr = cond;
   instr = instr << 28;
-  instr |= 10 << 24//bits 27 to 24 = 1010;
+  instr |= 10 << 24;//bits 27 to 24 = 1010;
   instr |= offset;
   outputData(instr);
 }
@@ -411,9 +411,10 @@ char* stripBrackets(char *str) {
   return str+1;
 }
 
-void stripLastBracket(char *str) {
+char* stripLastBracket(char *str) {
   char *pch = strstr(str, "]");
   strncpy(pch, "\0", 1);
+  return str;
 }
 
 bool isPreIndex(char *str) {
