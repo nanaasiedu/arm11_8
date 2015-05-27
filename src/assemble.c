@@ -109,7 +109,9 @@ void parseProgram(SymbolTable *map) {
     do {
       tokenArray++;
     } while(tokenArray->type != NEWLINE);
-    tokenArray++;
+    do {
+      tokenArray++;
+    } while(tokenArray->type == NEWLINE);
     addr += WORD_SIZE;
   }
 }
@@ -249,8 +251,9 @@ void parseStr(Token *token) {
 
 void parseB(Token *token) {
   uint8_t cond; int offset;
+  Token *lblToken = token+1;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = map_get(lblToAddr, token->value) - addr;
+  offset = map_get(lblToAddr, lblToken->value) - addr;
   generateBranchOpcode(cond, offset);
 }
 
@@ -266,10 +269,7 @@ void generateDataProcessingOpcode(int8_t opcode,
                                   int8_t S) {
   int32_t instr = 14;
   instr = instr << 28;
-  int8_t nonParameter;
-  nonParameter = 0;
-  nonParameter = nonParameter << 25;
-  instr |= nonParameter;
+  instr |= 1 << 25;//I is always set 
   opcode = opcode << 21;
   instr |= opcode;
   S = S << 20;
@@ -279,7 +279,7 @@ void generateDataProcessingOpcode(int8_t opcode,
   rd = rd << 12;
   instr |= rd;
   instr |= operand;
-  //call output
+  outputData(instr);
 }
 
 void generateMultiplyOpcode(int8_t opcode, 
@@ -290,7 +290,7 @@ void generateMultiplyOpcode(int8_t opcode,
                             int8_t A) {
   int32_t instr = 14;
   instr = instr << 28;
-  int8_t nonParameter;
+  int32_t nonParameter;
   nonParameter = 0;
   nonParameter = nonParameter << 22;
   instr |= nonParameter;
@@ -309,17 +309,18 @@ void generateMultiplyOpcode(int8_t opcode,
   nonParameter = nonParameter << 4;
   instr |= nonParameter;
   instr |= rm;
-  //call output
+  outputData(instr);
 }
 
-void generateBranchOpcode(uint8_t cond, int offset) {
+void generateBranchOpcode(int32_t cond, int32_t offset) {
   int32_t instr = cond;
   instr = instr << 28;
-  int8_t nonParameter;
+  int32_t nonParameter;
   nonParameter = 10;
   nonParameter = nonParameter << 24;
   instr |= nonParameter;
   instr |= offset;
+  outputData(instr);
 }
 
 void generateSingleDataTransferOpcode(uint32_t cond, 
@@ -356,8 +357,29 @@ void generateSingleDataTransferOpcode(uint32_t cond,
 }
 
 void generateHaltOpcode() {
-  //int32_t instr = 0;
-  //call output
+  int32_t instr = 0;
+  outputData(instr);
+}
+
+void outputData(uint32_t i) {
+  uint8_t b0,b1,b2,b3;
+  uint32_t littleEndian_format = 0;
+
+  b0 = i;// & 0xff);
+  b1 = i >> 8;// & 0xff);
+  b2 = i >> 16;// & 0xff);
+  b3 = i >> 24;// & 0xff);
+
+  littleEndian_format = (littleEndian_format | b0) << 8;
+  littleEndian_format = (littleEndian_format | b1) << 8;
+  littleEndian_format = (littleEndian_format | b2) << 8;
+  littleEndian_format = (littleEndian_format | b3);
+
+  printf("%.8x: %.8x\n", addr, littleEndian_format);
+
+  if (output != NULL) {
+    fprintf(output, "%c%c%c%c", b0,b1,b2,b3);
+  }
 }
 
 #pragma mark - Helper Functions
