@@ -24,6 +24,19 @@ int main (int argc, char const *argv[]) {
 
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
 
+  int executeResult;
+  int32_ instruction;
+  DecodedInst di;
+  // PC = 0 before entering loop
+  do {
+    instruction = fetch(mem);
+    do {
+      di = decode(instruction);
+      instruction = fetch(mem);
+      executeResult = execute(di);
+    } while(executeResult == EXE_CONTINUE);
+  } while(executeResult != EXE_HALT); //fetch again if EXE_BRANCH
+
   //testing(); //FOR TESTING PURPOSES
 
   printf("The program is closing");
