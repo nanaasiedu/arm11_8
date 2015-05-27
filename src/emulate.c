@@ -7,7 +7,6 @@
 
 // ADD: CPSR bit const / opcode const / shift type const
 // ADD SUBTRACTION BORROW LOGIC
-// ADD memory and register output
 
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  //Memory
@@ -26,7 +25,7 @@ int main (int argc, char const *argv[]) {
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
 
   int executeResult;
-  int32_ instruction;
+  int32_t instruction;
   DecodedInst di;
   // PC = 0 before entering loop
   do {
