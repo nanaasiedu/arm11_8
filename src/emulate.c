@@ -15,7 +15,7 @@ struct regFile rf;    //sets register file
 
 int main (int argc, char const *argv[]) {
   if (argc != 2) {
-    printf("Incorrect number of arguments");
+    printf("Incorrect number of arguments\n");
     exit(EXIT_FAILURE);
   }
 
@@ -26,7 +26,7 @@ int main (int argc, char const *argv[]) {
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into mem
 
   int executeResult;
-  int32_ instruction;
+  int32_t instruction;
   DecodedInst di;
   // PC = 0 before entering loop
   do {
@@ -44,6 +44,171 @@ int main (int argc, char const *argv[]) {
   printf("The program is closing");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
+}
+
+int32_t fetch(uint8_t *mem){
+  int32_t instruction = 0;
+  for (int i = 3; i >= 0; i--) {
+    instruction <<= 8;
+    instruction += mem[*rf.PC + i];
+  }
+  *rf.PC = *rf.PC + 4;
+  return instruction;
+}
+
+DecodedInst decode(int32_t instruction) {
+  DecodedInst di;
+  di.instType = getInstType(instruction); // only has correct 4 MSBs
+  switch(di.instType){
+    case 16 : //DATA_PROC
+        decodeForDataProc(instruction, di);
+        break;
+    case 32 : //MULT
+        decodeForMult(instruction, di);
+        break;
+    case 64 : //DATA_TRANS
+        decodeForDataTrans(instruction, di);
+        break;
+    case 128 : //BRANCH
+        decodeForBranch(instruction, di);
+    case 0 : //HALT
+    default :
+        break;
+  }
+  return di;
+}
+
+// returns correct 4 MSB of code for current instruction
+uint8_t getInstType(int32_t instruction) {
+  if (instruction == HALT){
+    return HALT;
+  }
+  long mask = 1 << 27;
+  if ((instruction & mask) != FALSE){ // bit 27 == 1
+    return BRANCH;
+  }
+  mask = mask >> 1;
+  if ((instruction & mask) != FALSE) { // bit 26 == 1
+    return DATA_TRANS;
+  }
+  mask = mask >> 1;
+  if ((instruction & mask) != FALSE) { // bit 25 == 1
+    return DATA_PROC;
+  }
+  mask = 15 << 4;
+  int multCode = 9 << 4;
+  if ((instruction & mask) != multCode){ // bit 25 == 0; bits [4..7] != 9
+    return DATA_PROC;
+  }
+  return MULT; //bit 25 == 0; bits [4..7] == 9
+}
+
+void decodeForDataProc(int32_t instruction, DecodedInst di) {
+
+// set flag bits: I S x x
+  long mask = 1;
+  mask = mask << 25;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 8;
+  }
+  mask = mask >> 5;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 4;
+  }
+
+  // set opcode
+  mask = 15;
+  di.opcode = instruction >> 21;
+  di.opcode = di.opcode & mask;
+
+  // set registers
+  di.rn = instruction >> 16;
+  di.rn = di.rn & mask;
+  di.rd = instruction >> 12;
+  di.rd = di.rd & mask;
+
+  // get operandOffset (operand)
+  mask = 4095; // 2^12 - 1 for bits [0..11]
+  di.operandOffset = instruction & mask;
+
+}
+
+void decodeForMult(int32_t instruction, DecodedInst di) {
+
+// set flag bits: x S A x
+  long mask = 1;
+  mask = mask << 20;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 4;
+  }
+  mask = mask << 1;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 2;
+  }
+
+  // set registers
+  mask = 15;
+  di.rd = instruction >> 16;
+  di.rd = di.rd & mask;
+  di.rn = instruction >> 12;
+  di.rn = di.rn & mask;
+  di.rs = instruction >> 8;
+  di.rs = di.rs & mask;
+  di.rm = instruction & mask;
+
+}
+
+void decodeForDataTrans(int32_t instruction, DecodedInst di) {
+
+// set flag bits: I L P U
+  long mask = 1;
+  mask = mask << 25;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 8;
+  }
+  mask = mask >> 5;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 4;
+  }
+  mask = mask << 4;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 2;
+  }
+  mask = mask >> 1;
+  if ((instruction & mask) != FALSE){
+    di.instType = di.instType + 1;
+  }
+
+  // set registers
+  mask = 15;
+  di.rn = instruction >> 16;
+  di.rn = di.rn & mask;
+  di.rd = instruction >> 12;
+  di.rd = di.rd & mask;
+
+  // get operandOffset (offset)
+  mask = 4095; // 2^12 - 1 for bits [0..11]
+  di.operandOffset = instruction & mask;
+
+}
+
+void decodeForBranch(int32_t instruction, DecodedInst di) {
+
+  // flag bits: x x x x
+
+  // get operandOffset (signed offset)
+  long mask = 1 << 24;
+  mask--; // 2^24 - 1 for bits [0..23]
+  di.operandOffset = instruction & mask; //  = unaltered offset bits
+
+  mask = 1 << 23;
+  if ((instruction & mask) != FALSE) { // offset is negative
+    di.operandOffset = ~(di.operandOffset ^ 0) + 1;
+        // = di.operandOffset XNOR 0, then + 1
+        // = two's complement +ve value
+    di.operandOffset *= (-1);
+  }
+
 }
 
 int execute(DecodedInst di) {
@@ -115,7 +280,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
   if (i) { // if operand is immediate
     operand = operand & (ipow(2,8)-1); // operand = Immediate segment
     operand = rotr8(operand,rotate*2);
-  } else {// operand is a register
+  } else { // operand is a register
     operand = barrelShift(rf.reg[rm], shiftSeg, s);
   }
 
@@ -476,10 +641,6 @@ void printSpecialReg(uint32_t value, char *message) {
 void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
   free(rf.reg);
-  free(rf.SP);
-  free(rf.LR);
-  free(rf.PC);
-  free(rf.CPSR);
   free(mem);
 }
 

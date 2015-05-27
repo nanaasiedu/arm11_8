@@ -240,8 +240,31 @@ void testGetInstType(void) {
   printf("\n");
 }
 
-void testDecodeForDataProc(/* arguments */) {
+void testDecodeForDataProc(void) {
+  printf("testing decodeForDataProc\n");
   DecodedInst di;
+  int32_t instruction = 212992; // 00034000H I = 0, S = 0, rn = 3, rd = 4
+  decodeForDataProc(instruction, di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", DATA_PROC, di.instType);
+  printf("Rn\t\t%d\t\t%d\n", 3, di.rn);
+  printf("Rd\t\t%d\t\t%d\n", 4, di.rd);
+  printf("==========\n");
+  instruction = 212992; // 020AB000 I = 1, S = 0, rn = 10, rd = 11
+  decodeForDataProc(instruction, di);
+  printf("\nfield\texpected\tactual\n");
+  printf("instType\t%d\t%d\n", (DATA_PROC + 8), di.instType);
+  printf("Rn\t%d\t%d\n", 10, di.rn);
+  printf("Rd\t%d\t%d\n", 11, di.rd);
+  printf("==========\n");
+  instruction = 1605632; // 00188000 I = 0, S = 1, rn = 8, rd = 8
+  decodeForDataProc(instruction, di);
+  printf("\nfield\texpected\tactual\n");
+  printf("instType\t%d\t%d\n", (DATA_PROC + 4), di.instType);
+  printf("Rn\t%d\t%d\n", 8, di.rn);
+  printf("Rd\t%d\t%d\n", 8, di.rd);
+  printf("==========\n" );
+  printf("\n");
 
 }
 
