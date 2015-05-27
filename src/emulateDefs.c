@@ -13,6 +13,7 @@ void testGetInstType(void);
 void testDecodeForDataProc(void);
 void testDecodeForMult(void);
 void testDecodeForDataTrans(void);
+void testDecodeForBranch(void);
 /*  End of test functions*/
 
 int main(int argc, char const *argv[]) {
@@ -23,7 +24,8 @@ int main(int argc, char const *argv[]) {
   // testGetInstType();
   // testDecodeForDataProc();
   // testDecodeForMult();
-  testDecodeForDataTrans();
+  // testDecodeForDataTrans();
+  testDecodeForBranch();
   /* code */
 
   printf("\n...tests complete\n");
@@ -189,14 +191,16 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
 
   mask = 1 << 23;
   if ((instruction & mask) != FALSE) { // offset is negative
+    printf("%i\n", di->operandOffset);
     di->operandOffset = ~(di->operandOffset ^ 0) + 1;
-        // = di->operandOffset XNOR 0, then + 1
-        // = two's complement +ve value
+    // = di->operandOffset XNOR 0, then + 1
+    // = two's complement +ve value
+    printf("%i\n", di->operandOffset);
     di->operandOffset *= (-1);
+    printf("%i\n", di->operandOffset);
   }
 
 }
-
 
 /*  Test functions */
 //  Remember to remove
@@ -357,6 +361,28 @@ void testDecodeForDataTrans(void) {
   printf("Rn\t\t%d\t\t%d\n", 2, di.rn);
   printf("Rd\t\t%d\t\t%d\n", 3, di.rd);
   printf("offset\t\t%d\t\t%d\n", 16, di.operandOffset);
+  printf("==========\n");
+  printf("\n");
+}
+
+void testDecodeForBranch(void) {
+  printf("testing decodeForBranch\n");
+  DecodedInst di;
+  di.instType = BRANCH;
+  int32_t instruction = 0x0A000009;
+  // offset = 9
+  decodeForBranch(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", BRANCH, di.instType);
+  printf("offset\t\t%d\t\t%d\n", 9, di.operandOffset);
+  printf("==========\n");
+  di.instType = BRANCH;
+  instruction = 0x0AFFFFF7;
+  // offset = -9
+  decodeForBranch(instruction, &di);
+  printf("\nfield\t\texpected\tactual\n");
+  printf("instType\t%d\t\t%d\n", BRANCH, di.instType);
+  printf("offset\t\t%d\t\t%d\n", -9, di.operandOffset);
   printf("==========\n");
   printf("\n");
 }
