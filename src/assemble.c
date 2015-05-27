@@ -267,7 +267,7 @@ void generateDataProcessingOpcode(int8_t opcode,
                                   int8_t rn, 
                                   int16_t operand, 
                                   int8_t S) {
-  int32_t instr = 14;
+  instruction instr = 14;
   instr = instr << 28;
   instr |= 1 << 25;//I is always set 
   opcode = opcode << 21;
@@ -282,23 +282,17 @@ void generateDataProcessingOpcode(int8_t opcode,
   outputData(instr);
 }
 
-void generateMultiplyOpcode(int8_t opcode, 
-                            int8_t rd, 
-                            int8_t rm, 
-                            int8_t rs, 
-                            int8_t rn, 
-                            int8_t A) {
-  int32_t instr = 14;
+void generateMultiplyOpcode(int32_t opcode, 
+                            int32_t rd, 
+                            int32_t rm, 
+                            int32_t rs, 
+                            int32_t rn, 
+                            int32_t A) {
+  instruction instr = 14;
   instr = instr << 28;
   int32_t nonParameter;
-  nonParameter = 0;
-  nonParameter = nonParameter << 22;
-  instr |= nonParameter;
   A = A << 21;
   instr |= A;
-  nonParameter = 0;
-  nonParameter = nonParameter << 20;
-  instr |= nonParameter;
   rd = rd << 16;
   instr |= rn;
   rn = rn << 12;
@@ -313,7 +307,7 @@ void generateMultiplyOpcode(int8_t opcode,
 }
 
 void generateBranchOpcode(int32_t cond, int32_t offset) {
-  int32_t instr = cond;
+  instruction instr = cond;
   instr = instr << 28;
   int32_t nonParameter;
   nonParameter = 10;
@@ -344,9 +338,6 @@ void generateSingleDataTransferOpcode(uint32_t cond,
   instr |= p;
   u = u << 23;
   instr |= u;
-  nonParameter = 0;
-  nonParameter = nonParameter << 21;
-  instr |= nonParameter;
   l = l << 20;
   instr |= l;
   rn = rn << 16;
@@ -375,7 +366,7 @@ void outputData(uint32_t i) {
   littleEndian_format = (littleEndian_format | b2) << 8;
   littleEndian_format = (littleEndian_format | b3);
 
-  printf("%.8x: %.8x\n", addr, littleEndian_format);
+  printf("%.4x: %.8x\n", addr, littleEndian_format);
 
   if (output != NULL) {
     fprintf(output, "%c%c%c%c", b0,b1,b2,b3);
