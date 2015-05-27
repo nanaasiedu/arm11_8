@@ -262,11 +262,11 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-void generateDataProcessingOpcode(int8_t opcode, 
-                                  int8_t rd, 
-                                  int8_t rn, 
-                                  int16_t operand, 
-                                  int8_t S) {
+void generateDataProcessingOpcode(int32_t opcode, 
+                                  int32_t rd, 
+                                  int32_t rn, 
+                                  int32_t operand, 
+                                  int32_t S) {
   instruction instr = 14;
   instr = instr << 28;
   instr |= 1 << 25;//I is always set 
