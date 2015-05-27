@@ -17,15 +17,9 @@ typedef int bool;
 #endif
 
 //execute return values
-#ifndef HALT
-#define HALT 0
-#endif
-#ifndef NORMAL
-#define NORMAL -1
-#endif
-#ifndef EBRANCH
-#define EBRANCH 1
-#endif
+const int EXE_HALT = 0;
+const int EXE_CONTINUE = -1;
+const int EXE_BRANCH = 1;
 
 // Instruction types
 const int BRANCH = 128;
@@ -55,11 +49,11 @@ struct regFile {
 // execute functions --
 int execute(DecodedInst di);
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t Rn, uint8_t Rd, uint32_t operand);
-uint32_t shiftReg(uint32_t valu, int shiftSeg, int s);
+uint32_t barrelShift(uint32_t valu, int shiftSeg, int s);
 void setCPSRZN(int value, int trigger);
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm);
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset);
-void executeBranch(uint32_t offset);
+void executeBranch(int offset);
 void testing(void); //WILL REMOVE
 // --
 void dealloc(void);

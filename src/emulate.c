@@ -3,7 +3,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "emulate.h"
+#include <limits.h>
+
 // ADD: CPSR bit const / opcode const / shift type const
+// ADD SUBTRACTION BORROW LOGIC
 
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  //Memory
@@ -29,8 +32,12 @@ int main (int argc, char const *argv[]) {
 }
 
 int execute(DecodedInst di) {
+  if (di.instType == EXE_HALT) {
+    return EXE_HALT;
+  }
+
   bool condPass = FALSE; //condPass will be TRUE iff cond is satisfied
-  int res = NORMAL; // res will contain the state of the next executed instruction depending on whether halt or branch is executed
+  int res = EXE_CONTINUE; // res will contain the state of the next executed instruction depending on whether halt or branch is executed
 
   switch(di.cond) {
     case 0: // 0000: Z set / is equal
@@ -71,7 +78,7 @@ int execute(DecodedInst di) {
 
     } else if ((di.instType & BRANCH) != 0) { // Branch
       executeBranch(di.operandOffset);
-      res = EBRANCH;
+      res = EXE_BRANCH;
     }
   }
 
@@ -94,7 +101,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     operand = operand & (ipow(2,8)-1); // operand = Immediate segment
     operand = rotr8(operand,rotate*2);
   } else {// operand is a register
-    operand = shiftReg(rf.reg[rm], shiftSeg, s); //TO DOOOOO
+    operand = barrelShift(rf.reg[rm], shiftSeg, s);
   }
 
   switch(opcode) {
@@ -116,13 +123,8 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 4: // add
       rf.reg[rd] = rf.reg[rn] + operand;
-      if (((int64_t)(rf.reg[rn] + operand) & ipow(2,32)) >> 32) {
-        //if overflow the set carry
-        *rf.CPSR = *rf.CPSR | ipow(2,29);
-      } else {
-        *rf.CPSR = *rf.CPSR | (ipow(2,32) - 1 - ipow(2,29));
-      } //Set C - CHECKKKKKKKK
 
+      alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn])); // overflow will occur based on this condition
       setCPSRZN(rf.reg[rd],s);
     break;
     case 8: // tst
@@ -149,7 +151,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
 }
 
-uint32_t shiftReg(uint32_t value, int shiftSeg, int s) {
+uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
   //POST: return shifted value of rm to operand
   int shiftop = shiftSeg & 1; // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
   int shiftType = shiftSeg & 6; //2 bit
@@ -219,8 +221,8 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_
 
 }
 
-void executeBranch(uint32_t offset) {
-  //DONT CONSIDER 8
+void executeBranch(int offset) {
+  rf.CPSR += offset;
 }
 
 void testing(void) {
