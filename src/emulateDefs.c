@@ -8,7 +8,8 @@ struct regFile rf;
 /*  Test functions */
 //  Remember to remove
 
-// void testFetch(void);
+void testFetch(void);
+void testGetInstType(void);
 
 /*  End of test functions*/
 
@@ -16,7 +17,8 @@ int main(int argc, char const *argv[]) {
 
   printf("running tests...\n\n");
 
-  // testFetch();
+  testFetch();
+  testGetInstType();
   /* code */
 
   printf("\n...tests complete\n");
@@ -48,6 +50,7 @@ DecodedInst decode(int32_t instruction) {
         break;
     case 128 : //BRANCH
         decodeForBranch(instruction, di);
+    case 0 : //HALT
     default :
         break;
   }
@@ -56,6 +59,9 @@ DecodedInst decode(int32_t instruction) {
 
 // returns correct 4 MSB of code for current instruction
 uint8_t getInstType(int32_t instruction) {
+  if (instruction == HALT){
+    return HALT;
+  }
   long mask = 1 << 27;
   if ((instruction & mask) != FALSE){ // bit 27 == 1
     return BRANCH;
@@ -188,25 +194,48 @@ void decodeForBranch(int32_t instruction, DecodedInst di) {
 /*  Test functions */
 //  Remember to remove
 
-// void testFetch(void) {
-  // printf("testing fetch\n");
-  // uint8_t *mem = NULL;
-  // mem = calloc(16, 1);
-  // for (uint8_t i = 0; i < 16; i++) {
-    // mem[i] = i;
-  // }
-  // /* addr | 32bit value
-  //  * 0    | 03020100H = 50462976
-  //  * 4    | 07060504H = 117835012
-  //  * 8    | 0B0A0908H = 185207048
-  //  * 12   | 0F0E0D0CH = 252579084
-  //  */
-  //  *rf.PC = 0;
-    // printf("At address 0, should store 50462976\nActually stores            %d\n", fetch(mem));
-    // printf("At address 4, should store 117835012\nActually stores            %d\n", fetch(mem));
-    // printf("At address 8, should store 185207048\nActually stores            %d\n", fetch(mem));
-    // printf("At address 12, should store 252579084\nActually stores             %d\n", fetch(mem));
-    // free(mem);
-// }
+void testFetch(void) {
+  printf("testing fetch\n");
+  uint8_t *mem = NULL;
+  mem = calloc(16, 1);
+  for (uint8_t i = 0; i < 16; i++) {
+    mem[i] = i;
+  }
+  /* addr | 32bit value
+   * 0    | 03020100H = 50462976
+   * 4    | 07060504H = 117835012
+   * 8    | 0B0A0908H = 185207048
+   * 12   | 0F0E0D0CH = 252579084
+   */
+   uint32_t zero = 0;
+   rf.PC = &zero;
+    printf("At address 0, should store 50462976\nActually stores            %d\n", fetch(mem));
+    printf("At address 4, should store 117835012\nActually stores            %d\n", fetch(mem));
+    printf("At address 8, should store 185207048\nActually stores            %d\n", fetch(mem));
+    printf("At address 12, should store 252579084\nActually stores             %d\n", fetch(mem));
+    free(mem);
+    printf("\n");
+}
+
+void testGetInstType(void) {
+  printf("testing getInstType\n");
+  int32_t instruction = 183562240; // Branch : xxxx1010xx...
+  printf("Should be a branch statement, code: %d\n actual code: %d\n", BRANCH, getInstType(instruction));
+  instruction = 250671104; // Branch : xxxx11xx...
+  printf("Should be a branch statement, code: %d\n actual code: %d\n", BRANCH, getInstType(instruction));
+  instruction = 116453376; // DataTrans : xxxx01xx...
+  printf("Should be a data trans statement, code: %d\n actual code: %d\n", DATA_TRANS, getInstType(instruction));
+  instruction = 144; // Mult : ...xx1001xxxx
+  printf("Should be a mult statement, code: %d\n actual code: %d\n", MULT, getInstType(instruction));
+  instruction = 33554576; // DataProc : xxxxxx1xx...xx1001xxxx
+  printf("Should be a dataProc statement, code: %d\n actual code: %d\n", DATA_PROC, getInstType(instruction));
+  instruction = 1; // DataProc : xxxxxx0xx...xx0000xxx1
+  printf("Should be a dataProc statement, code: %d\n actual code: %d\n", DATA_PROC, getInstType(instruction));
+  instruction = 33554432; // DataProc : xxxxxx1xx...
+  printf("Should be a dataProc statement, code: %d\n actual code: %d\n", DATA_PROC, getInstType(instruction));
+  instruction = 0; // Halt : 0
+  printf("Should be a halt statement, code: %d\n actual code: %d\n", HALT, getInstType(instruction));
+  printf("\n");
+}
 
 /*  End of test functions*/
