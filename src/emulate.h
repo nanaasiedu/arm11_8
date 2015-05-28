@@ -16,6 +16,8 @@ typedef int bool;
 #define MEM16BIT 65536
 #endif
 
+const uint32_t MAX_UINT32 = 4294967296 - 1; //32 1s
+
 //execute return values
 const int EXE_HALT = 0;
 const int EXE_CONTINUE = -1;
