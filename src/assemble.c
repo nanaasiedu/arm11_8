@@ -292,12 +292,12 @@ void generateDataProcessingOpcode(int32_t opcode,
 
   //If immediate must calculate rotation
   if (i == 1 && operand > 0xfff) {
-    int rotation = 31;
+    int rotation = 32;
     int32_t imm = operand;
 
     while (imm % 4 == 0) {
       rotation--;
-      imm = imm << 2;
+      imm = imm >> 2;
     }
 
     instr |= (rotation & 0xf) << 8;
