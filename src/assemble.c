@@ -128,7 +128,7 @@ void parseInstruction(Token *token) {
     case ORR: parseTurnaryDataProcessing(token); break;
     case MOV: case TST: case TEQ: case CMP: case MUL:
     case MLA: parseBinaryDataProcessing(token); break;
-    case LDR: 
+    case LDR:
     case STR: parseSingleDataTransfer(token); break;
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
     case B: parseB(token); break;
@@ -151,7 +151,7 @@ void parseTurnaryDataProcessing(Token *token) {
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
-  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rd,rn,operand,0);
+  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), 1, rd,rn,operand,0);
 }
 
 void parseBinaryDataProcessing(Token *token) {
@@ -166,9 +166,11 @@ void parseBinaryDataProcessing(Token *token) {
     operand = map_get(&registerTable, operand_token->value);
   }
   if (strcmp(token->value,"mov") == 0) {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rdOrRn,0,operand,0);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),
+    1, rdOrRn, 0, operand, 0);
   } else {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),0,rdOrRn,operand,1);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),
+    0, 0, rdOrRn, operand, 1);
   }
 }
 
@@ -207,7 +209,7 @@ void parseSingleDataTransfer(Token *token) {
   //p, i, rn, offset, u
   if (addrToken->type == EXPRESSION) {
     p = 1;
-    i = 0;
+    i = 1;
     rn = map_get(&registerTable, PC);
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
@@ -219,34 +221,40 @@ void parseSingleDataTransfer(Token *token) {
       u = 1;
     }
     if (offset <= 0xFF) {
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, 0);
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), i, rd, 0, offset, 0);
     } else {
       generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
   }
   else {
-    i = 1;
+    char *addrValue = malloc(100);
+    strcpy(addrValue, addrToken->value);
     if ((token+3)->type == NEWLINE) {
       //Pre-Index, just base register
       p = 1;
-      rn = map_get(&registerTable, stripBrackets(addrToken->value));
+      i = 0;
+      rn = map_get(&registerTable, stripBrackets(addrValue));
       offset = 0;
       u = 1;
-    } else if (isPreIndex(addrToken->value)) {
+    } else if (isPreIndex(addrValue)) {
       //Pre-Index, base and offset
+      i = 1;
       p = 1;
-      rn = map_get(&registerTable, addrToken->value+1);
+      rn = map_get(&registerTable, addrValue+1);
       char *ptr;
       offset = (int) strtol((token+3)->value, &ptr, 0);
       u = 1;
     } else {
       //Post-Index
       p = 0;
-      rn = map_get(&registerTable, addrToken->value+1);
+      i = 1;
+      rn = map_get(&registerTable, addrValue+1);
       char *ptr;
-      offset = (int) strtol(stripLastBracket((token+3)->value), &ptr, 0);
+      stripLastBracket((token+3)->value);
+      offset = (int) strtol((token+3)->value, &ptr, 0);
       u = 1;
     }
+    free(addrValue);
     generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
   }
 }
@@ -265,13 +273,14 @@ void parseLsl(Token *token) {
 
 //Generators
 void generateDataProcessingOpcode(int32_t opcode,
+                                  int32_t i,
                                   int32_t rd,
                                   int32_t rn,
                                   int32_t operand,
                                   int32_t S) {
   instruction instr = 14;
   instr = instr << 28;
-  instr |= 1 << 25;//I is always set
+  instr |= i << 25;
   opcode = opcode << 21;
   instr |= opcode;
   S = S << 20;
@@ -338,6 +347,7 @@ void generateSingleDataTransferOpcode(uint32_t cond,
   rd = rd << 12;
   instr |= rd;
   instr |= offset;
+  outputData(instr);
 }
 
 void generateHaltOpcode() {
@@ -376,7 +386,7 @@ void tokenise() {
     for (token = strtok(line, sep); token; token = strtok(NULL, sep)) {
       if (isLabel(token)) {
         char *pch = strstr(token, ":");
-        strncpy(pch, "\0", 1);
+        strncpy(pch, "", 1);
         tokens_add(tokens, token, LABEL);
       }
       else if (isLiteral(token)) {
@@ -408,13 +418,11 @@ int index_of(char *value, char **arr) {
 
 char* stripBrackets(char *str) {
   stripLastBracket(str);
-  return str+1;
+  return ++str;
 }
 
-char* stripLastBracket(char *str) {
-  char *pch = strstr(str, "]");
-  strncpy(pch, "\0", 1);
-  return str;
+void stripLastBracket(char *str) {
+  str[strlen(str)-1] = '\0';
 }
 
 bool isPreIndex(char *str) {

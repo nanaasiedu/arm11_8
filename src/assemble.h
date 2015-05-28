@@ -55,7 +55,7 @@ void parseB(Token *token);
 void parseLsl(Token *token);
 void parseSingleDataTransfer(Token *token);
 //Opcode Generators
-void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S);
+void generateDataProcessingOpcode(int32_t opcode, int32_t i, int32_t rd, int32_t rn, int32_t operand, int32_t S);
 void generateMultiplyOpcode(int32_t opcode, int32_t rd, int32_t rm, int32_t rs, int32_t rn, int32_t A);
 void generateSingleDataTransferOpcode(uint32_t cond, uint32_t i, uint32_t p, uint32_t u, uint32_t l, uint32_t rd, uint32_t rn, uint32_t offset);
 void generateBranchOpcode(int32_t cond, int32_t offset);
@@ -64,7 +64,7 @@ void generateHaltOpcode();
 void dealloc();
 int index_of(char *value, char **arr);
 char* stripBrackets(char *str);
-char* stripLastBracket(char *str);
+void stripLastBracket(char *str);
 bool isPreIndex(char *str);
 //Tokens
 void tokenise();
