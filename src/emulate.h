@@ -100,6 +100,7 @@ uint8_t getInstType(int32_t instruction);
 
 // dont keep getFlags()
 //***********************
+void testFetch(void);
 
 void decodeForDataProc(int32_t instruction, DecodedInst *di);
 void decodeForMult(int32_t instruction, DecodedInst *di);

@@ -20,12 +20,12 @@ int main(int argc, char const *argv[]) {
 
   printf("running tests...\n\n");
 
-  // testFetch();
-  // testGetInstType();
-  // testDecodeForDataProc();
-  // testDecodeForMult();
-  // testDecodeForDataTrans();
-  // testDecodeForBranch();
+  testFetch();
+  testGetInstType();
+  testDecodeForDataProc();
+  testDecodeForMult();
+  testDecodeForDataTrans();
+  testDecodeForBranch();
   printf("All test passed\n");
 
   printf("\n...tests complete\n");
@@ -38,7 +38,7 @@ int32_t fetch(uint8_t *mem){
     instruction <<= 8;
     instruction += mem[*rf.PC + i];
   }
-  *rf.PC = *rf.PC + 4;
+  *rf.PC += 4;
   return instruction;
 }
 

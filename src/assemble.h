@@ -10,12 +10,20 @@
 #define WORD_SIZE 4
 #endif
 
+#ifndef ARM_OFFSET
+#define ARM_OFFSET 8
+#endif
+
+#ifndef PC
+#define PC "r15"
+#endif
+
 #ifndef NOT_FOUND
 #define NOT_FOUND -1
 #endif
 
-typedef uint16_t address;
-typedef uint32_t instruction;
+typedef int16_t address;
+typedef int32_t instruction;
 
 #ifndef N_MNEMONICS
 #define N_MNEMONICS 23
@@ -32,6 +40,7 @@ typedef enum {
 
 //IO
 void setUpIO(char *in, char *out);
+void outputData(uint32_t i);
 //Compile
 void resolveLabelAddresses();
 void parseProgram(SymbolTable *map);
@@ -44,13 +53,19 @@ void parseMul(Token *token);
 void parseMla(Token *token);
 void parseB(Token *token);
 void parseLsl(Token *token);
+void parseSingleDataTransfer(Token *token);
 //Opcode Generators
-void generateDataProcessingOpcode();
-void generateMultiplyOpcode();
-void generateBranchOpcode(uint8_t cond, int offset);
+void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S);
+void generateMultiplyOpcode(int32_t opcode, int32_t rd, int32_t rm, int32_t rs, int32_t rn, int32_t A);
+void generateSingleDataTransferOpcode(uint32_t cond, uint32_t i, uint32_t p, uint32_t u, uint32_t l, uint32_t rd, uint32_t rn, uint32_t offset);
+void generateBranchOpcode(int32_t cond, int32_t offset);
 void generateHaltOpcode();
 //Helper
 void dealloc();
+int index_of(char *value, char **arr);
+char* stripBrackets(char *str);
+char* stripLastBracket(char *str);
+bool isPreIndex(char *str);
 //Tokens
 void tokenise();
 int mnemonic_name(Token *token);

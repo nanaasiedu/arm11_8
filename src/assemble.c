@@ -17,7 +17,7 @@ char *mnemonicStrings[23] = {
 };
 
 char *registerStrings[16] = {
-  "r0","r1","r3","r4","r5","r6","r7",
+  "r0","r1","r2","r3","r4","r5","r6","r7",
   "r8","r9","r10","r11","r12","r13","r14","r15"
 };
 
@@ -77,7 +77,7 @@ void setUpIO(char *in, char *out) {
     exit(EXIT_FAILURE);
   }
 
-  if ((output = fopen(out, "w")) == NULL) {
+  if ((output = fopen(out, "wa")) == NULL) {
     perror(out);
     exit(EXIT_FAILURE);
   }
@@ -99,7 +99,7 @@ void resolveLabelAddresses() {
       default: break;
     }
   }
-  map_print(lblToAddr);
+  // map_print(lblToAddr);
 }
 
 void parseProgram(SymbolTable *map) {
@@ -109,7 +109,9 @@ void parseProgram(SymbolTable *map) {
     do {
       tokenArray++;
     } while(tokenArray->type != NEWLINE);
-    tokenArray++;
+    do {
+      tokenArray++;
+    } while(tokenArray->type == NEWLINE);
     addr += WORD_SIZE;
   }
 }
@@ -121,26 +123,14 @@ void parseLine(Token *token) {
 }
 
 void parseInstruction(Token *token) {
-  switch(map_get(&mnemonicTable, token->value)) {
-    case ADD: 
-    case SUB: 
-    case RSB: 
-    case AND: 
-    case EOR: 
+  switch(index_of(token->value, mnemonicStrings)) {
+    case ADD: case SUB: case RSB: case AND: case EOR:
     case ORR: parseTurnaryDataProcessing(token); break;
-    case MOV: 
-    case TST: 
-    case TEQ: 
-    case CMP: 
-    case MUL: 
+    case MOV: case TST: case TEQ: case CMP: case MUL:
     case MLA: parseBinaryDataProcessing(token); break;
-    case LDR:
-    case BEQ:
-    case BNE:
-    case BGE:
-    case BLT:
-    case BGT:
-    case BLE:
+    case LDR: 
+    case STR: parseSingleDataTransfer(token); break;
+    case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
     case B: parseB(token); break;
     case LSL: parseLsl(token); break;
     case ANDEQ: generateHaltOpcode(); break;
@@ -149,34 +139,37 @@ void parseInstruction(Token *token) {
 
 //Parse Instructions
 void parseTurnaryDataProcessing(Token *token) {
-  Token *rd_token;
-  rd_token = token + 1;
-  Token *rn_token; 
-  rn_token = token + 2;
-  Token *operand_token;
-  operand_token = token + 3;
+  Token *rd_token = token + 1;
+  Token *rn_token = token + 2;
+  Token *operand_token = token + 3;
   int rd,rn,operand;
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
   if(operand_token->type == LITERAL) {
-    sscanf((operand_token->value),"%d",&operand);
+    char *ptr;
+    operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
-  generateDataProcessingOpcode();
+  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rd,rn,operand,0);
 }
 
 void parseBinaryDataProcessing(Token *token) {
-  Token *rd_token = token + 1;
+  Token *rdOrRn_token = token + 1;
   Token *operand_token = token + 2;
-  int rd,operand;
-  rd = map_get(&registerTable, rd_token->value);
+  int rdOrRn,operand;
+  rdOrRn = map_get(&registerTable, rdOrRn_token->value);
   if(operand_token->type == LITERAL) {
-    sscanf((operand_token->value),"%d",&operand);
+    char *ptr;
+    operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
     operand = map_get(&registerTable, operand_token->value);
   }
-  generateDataProcessingOpcode();
+  if (strcmp(token->value,"mov") == 0) {
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),rdOrRn,0,operand,0);
+  } else {
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),0,rdOrRn,operand,1);
+  }
 }
 
 void parseMul(Token *token) {
@@ -187,7 +180,7 @@ void parseMul(Token *token) {
   rd = map_get(&registerTable, rd_token->value);
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
-  generateMultiplyOpcode();
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,0,0);
 }
 
 void parseMla(Token *token) {
@@ -200,36 +193,177 @@ void parseMla(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
-
-  generateMultiplyOpcode();
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,rn,1);
 }
 
+void parseSingleDataTransfer(Token *token) {
+  uint32_t cond, i, p, u, l, rd, rn;
+  int offset;
+  cond = 14;
+  l = 1;
+  Token *rdToken = token+1;
+  Token *addrToken = token+2;
+  rd = map_get(&registerTable, rdToken->value);
+  //p, i, rn, offset, u
+  if (addrToken->type == EXPRESSION) {
+    p = 1;
+    i = 0;
+    rn = map_get(&registerTable, PC);
+    char *ptr;
+    uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
+    offset = ex - addr;
+    if (offset < 0) {
+      offset *= -1;
+      u = 0;
+    } else {
+      u = 1;
+    }
+    if (offset <= 0xFF) {
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, 0);
+    } else {
+      generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
+    }
+  }
+  else {
+    i = 1;
+    if ((token+3)->type == NEWLINE) {
+      //Pre-Index, just base register
+      p = 1;
+      rn = map_get(&registerTable, stripBrackets(addrToken->value));
+      offset = 0;
+      u = 1;
+    } else if (isPreIndex(addrToken->value)) {
+      //Pre-Index, base and offset
+      p = 1;
+      rn = map_get(&registerTable, addrToken->value+1);
+      char *ptr;
+      offset = (int) strtol((token+3)->value, &ptr, 0);
+      u = 1;
+    } else {
+      //Post-Index
+      p = 0;
+      rn = map_get(&registerTable, addrToken->value+1);
+      char *ptr;
+      offset = (int) strtol(stripLastBracket((token+3)->value), &ptr, 0);
+      u = 1;
+    }
+    generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
+  }
+}
 
 void parseB(Token *token) {
   uint8_t cond; int offset;
+  Token *lblToken = token+1;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = addr - map_get(lblToAddr, token->value);
+  offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
   generateBranchOpcode(cond, offset);
 }
+
 void parseLsl(Token *token) {
 
 }
 
 //Generators
-void generateDataProcessingOpcode() {
-
+void generateDataProcessingOpcode(int32_t opcode,
+                                  int32_t rd,
+                                  int32_t rn,
+                                  int32_t operand,
+                                  int32_t S) {
+  instruction instr = 14;
+  instr = instr << 28;
+  instr |= 1 << 25;//I is always set
+  opcode = opcode << 21;
+  instr |= opcode;
+  S = S << 20;
+  instr |= S;
+  rn = rn << 16;
+  instr |= rn;
+  rd = rd << 12;
+  instr |= rd;
+  instr |= operand;
+  outputData(instr);
 }
 
-void generateMultiplyOpcode() {
-
+void generateMultiplyOpcode(int32_t opcode,
+                            int32_t rd,
+                            int32_t rm,
+                            int32_t rs,
+                            int32_t rn,
+                            int32_t A) {
+  instruction instr = 14;
+  instr = instr << 28;
+  A = A << 21;
+  instr |= A;
+  rd = rd << 16;
+  instr |= rn;
+  rn = rn << 12;
+  instr |= rd;
+  rs = rs << 8;
+  instr |= rs;
+  instr |= 9 << 4;//bits 7 to 4 = 1001;
+  instr |= rm;
+  outputData(instr);
 }
 
-void generateBranchOpcode(uint8_t cond, int offset) {
+void generateBranchOpcode(int32_t cond, int32_t offset) {
+  instruction instr = cond;
+  instr = instr << 28;
+  instr |= 10 << 24;//bits 27 to 24 = 1010;
+  instr |= offset;
+  outputData(instr);
+}
 
+void generateSingleDataTransferOpcode(uint32_t cond,
+                                      uint32_t i,
+                                      uint32_t p,
+                                      uint32_t u,
+                                      uint32_t l,
+                                      uint32_t rd,
+                                      uint32_t rn,
+                                      uint32_t offset) {
+
+  uint32_t instr = 14;
+  instr = instr << 28;
+  instr |= 1 << 26;//bits 27,26 = 01
+  i = i << 25;
+  instr |= i;
+  p = p << 24;
+  instr |= p;
+  u = u << 23;
+  instr |= u;
+  l = l << 20;
+  instr |= l;
+  rn = rn << 16;
+  instr |= rn;
+  rd = rd << 12;
+  instr |= rd;
+  instr |= offset;
 }
 
 void generateHaltOpcode() {
+  int32_t instr = 0;
+  outputData(instr);
+}
 
+void outputData(uint32_t i) {
+  uint8_t b0,b1,b2,b3;
+  uint32_t littleEndian_format = 0;
+
+  b0 = i;// & 0xff);
+  b1 = i >> 8;// & 0xff);
+  b2 = i >> 16;// & 0xff);
+  b3 = i >> 24;// & 0xff);
+
+  littleEndian_format = (littleEndian_format | b0) << 8;
+  littleEndian_format = (littleEndian_format | b1) << 8;
+  littleEndian_format = (littleEndian_format | b2) << 8;
+  littleEndian_format = (littleEndian_format | b3);
+
+  printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
+
+  if (output != NULL) {
+    fprintf(output, "%c%c%c%c", b0,b1,b2,b3);
+  }
 }
 
 #pragma mark - Helper Functions
@@ -237,7 +371,7 @@ void generateHaltOpcode() {
 void tokenise() {
   char line[512];
   while (fgets(line, sizeof(line), input) != NULL) {
-    char *sep = " ,\n[]";
+    char *sep = " ,\n";
     char *token;
     for (token = strtok(line, sep); token; token = strtok(NULL, sep)) {
       if (isLabel(token)) {
@@ -260,16 +394,32 @@ void tokenise() {
     tokens_add(tokens, "nl", NEWLINE);
   }
   tokens_add(tokens, "end", ENDFILE);
-  tokens_print(tokens);
+  // print_tokens(tokens);
 }
 
-// int index_of(Token *token, char *arr) {
-//   int i = 0;
-//   while (strcmp(token->value,arr[i]) != 0) {
-//     i++;
-//   }
-//   return i;
-// }
+int index_of(char *value, char **arr) {
+  for (int i = 0; i < 23; i++) {
+    if (strcmp(arr[i], value) == 0) {
+       return i;
+    }
+  }
+  return -1;
+}
+
+char* stripBrackets(char *str) {
+  stripLastBracket(str);
+  return str+1;
+}
+
+char* stripLastBracket(char *str) {
+  char *pch = strstr(str, "]");
+  strncpy(pch, "\0", 1);
+  return str;
+}
+
+bool isPreIndex(char *str) {
+  return FALSE;
+}
 
 void dealloc() {
   fclose(input);

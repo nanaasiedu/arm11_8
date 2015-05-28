@@ -21,7 +21,7 @@ void tokens_add(Tokens *tokens, char *value, TokenType type) {
   tokens->size++;
 }
 
-void tokens_print(Tokens *tokens) {
+void print_tokens(Tokens *tokens) {
   for (size_t i = 0; i < tokens->size; i++) {
     printf("Token: %s, %s\n",
       tokens->tokens[i].value,
