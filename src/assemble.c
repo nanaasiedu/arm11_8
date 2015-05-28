@@ -305,7 +305,7 @@ void generateDataProcessingOpcode(int32_t opcode,
       imm = imm >> 1;
     }
 
-    instr |= (rotation & 0xf) << 8;
+    instr |= (rotation & 0xf) << 7;
     instr |= imm & 0xff;
   } else {
     instr |= operand &  0xfff;
