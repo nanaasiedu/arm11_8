@@ -285,19 +285,31 @@ void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t operand,
                                   int32_t S,
                                   int32_t i) {
+  //Instrustion withh all condition
   instruction instr = 14;
-  instr = instr << 28;
-  i = i << 25;
-  instr |= i;
-  opcode = opcode << 21;
-  instr |= opcode;
-  S = S << 20;
-  instr |= S;
-  rn = rn << 16;
-  instr |= rn;
-  rd = rd << 12;
-  instr |= rd;
-  instr |= operand & 0xfff;
+  //Append all fields
+  instr  = instr  << 28;
+  instr |= i      << 25;
+  instr |= opcode << 21;
+  instr |= S      << 20;
+  instr |= rn     << 16;
+  instr |= rd     << 12;
+
+  //If immediate must calculate rotation
+  if (i == 1) {
+    int rotation = 0;
+    int32_t imm = operand;
+
+    while (imm % 2 != 1) {
+      rotation++;
+      imm = imm >> 1;
+    }
+
+    instr |= (rotation & 0xf) << 8;
+    instr |= imm & 0xff;
+  } else {
+    instr |= operand &  0xfff;
+  }
   outputData(instr);
 }
 
