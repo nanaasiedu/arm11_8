@@ -7,8 +7,8 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 all: emulate
 
-emulate: emulateDefs.c
-	$(CC) $(CFLAGS) emulateDefs.c -o emulateDefs
+emulate: emulate.c
+	$(CC) $(CFLAGS) emulate.c -o emulate
 
 clean:
 	rm -f $(wildcard *.o)
