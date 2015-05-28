@@ -62,6 +62,7 @@ int32_t fetch(uint8_t *mem){
 
 DecodedInst decode(int32_t instruction) {
   DecodedInst di;
+  di.cond = getBinarySeg(instruction, 31, 4);
   di.instType = getInstType(instruction); // only has correct 4 MSBs
   switch(di.instType){
     case 16 : //DATA_PROC
@@ -492,11 +493,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 }
 
 void executeBranch(int offset) {
-<<<<<<< HEAD
-  rf.PC += offset << 2;
-=======
   *rf.PC += offset << 2;
->>>>>>> elyasaddo/master
 }
 
 void testingExecute(void) { //PASSED
@@ -1032,11 +1029,8 @@ void outputMemReg(void) {
   while(*rf.PC < MEM16BIT) {
     instruction = fetch(mem);
     if (instruction != 0){
-      printf("%X: ",addr);
-      /////////////
-      printf("%X\n", instruction);
-      /////////////
-      // outputData(instruction);
+      printf("%X: ", *rf.PC - 4); // since fetch automatically inc. PC
+      outputData(instruction);
     }
   }
   printf("---\n\n");
@@ -1066,10 +1060,10 @@ void outputData(uint32_t i) {
   uint8_t b0,b1,b2,b3;
   uint32_t littleEndian_format = 0;
 
-  b3 = i;// & 0xff);
-  b2 = i >> 8;// & 0xff);
-  b1 = i >> 16;// & 0xff);
-  b0 = i >> 24;// & 0xff);
+  b0 = i;// & 0xff);
+  b1 = i >> 8;// & 0xff);
+  b2 = i >> 16;// & 0xff);
+  b3 = i >> 24;// & 0xff);
 
   littleEndian_format = (littleEndian_format | b0) << 8;
   littleEndian_format = (littleEndian_format | b1) << 8;
