@@ -297,7 +297,7 @@ void generateDataProcessingOpcode(int32_t opcode,
 
     while (imm % 4 == 0) {
       rotation++;
-      imm = imm >> 2;
+      imm = ((imm << 2) | (imm >> (30)));
     }
 
     instr |= (rotation & 0xf) << 8;
