@@ -74,6 +74,8 @@ void printSpecialReg(uint32_t value, char message[]);
 int64_t ipow(int x, int y);
 int rotr8(uint8_t x, int n);
 int rotr32(uint32_t x, int n);
+uint32_t wMem(uint16_t startAddr);
+void writewMem(uint32_t value, uint16_t startAddr);
 void enterC(void);  //WILL REMOVE
 void alterC(bool set);
 void alterZ(bool set);
@@ -109,6 +111,7 @@ void decodeForBranch(int32_t instruction, DecodedInst *di);
 
 //******Testing Functions**********//
 void testingDataProc(void);
+void testingDataTrans(void);
 void testingExecute(void);
 void testingExecuteBranch(void);
 #endif /* end of include guard: EMULATEDEFS */

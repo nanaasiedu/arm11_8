@@ -6,10 +6,10 @@
 #include <limits.h>
 
 // TODO: CPSR bit const / opcode const / shift type const
-// TODO: Redo reg mem output
+// TODO: TELL ELYAS TO CHECK OUTPUT FORMAT AND REG OUTPUT
 
 FILE *binFile = NULL; //Binary file containing instructions
-uint8_t *mem = NULL;  //Memory
+uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
 struct regFile rf;    //sets register file
 
 int main (int argc, char const *argv[]) {
@@ -43,6 +43,7 @@ int main (int argc, char const *argv[]) {
   //testingDataProc(); //PASSED
   //testingExecuteBranch(); // PASSED
   //testingHelpers(); //PASSED
+  //testingDataTrans();
 
   outputMemReg();
   printf("The program is closing\n");
@@ -454,40 +455,45 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   bool p = getBit(instType,1); // Pre/Post, set = Pre
   bool u = getBit(instType,0); // Up bit
 
+  printf("i = %d l = %d p = %d u = %d\n",i,l,p,u); //TEST
+  printf("rn = %d rd = %d offset = %u\n",rn,rd,offset);
+
   int shiftSeg = (offset >> 4); // 8 bit shift segment if i = 0
-  int rm = offset & (ipow(2,4)-1); // 4 bit
+  int rm = getBinarySeg(offset,3,4); // 4 bit
 
   if (!i) { // if offset is immediate
-    offset = offset & (ipow(2,12)-1); // offset = Immediate
+    offset = getBinarySeg(offset,11,12); // offset = Immediate
   } else {// offset is a register
-    offset = barrelShift(rf.reg[rm], shiftSeg, 0);
+    offset = barrelShift(rf.reg[rm], shiftSeg, 1);
   }
 
   int soffset = offset; // signed offset
-  int pcoffset = 0;     // if rn = PC we must add 8 bytes to account for pipeline
+  
   if (!u) { // if we are subtracting soffset will be negative
-    soffset *= -1;
+    soffset = -soffset;
   }
 
-  if(rn == 15) {
-    pcoffset = 8*8; // 8 bytes
-  }
+
 
   if (p) { //pre-indexing
     if (l) { //load
-      rf.reg[rd] = mem[rf.reg[rn]+soffset+pcoffset];
+      if(rn == 15) {
+        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
+      } else {
+        rf.reg[rd] = rf.reg[rn+soffset];
+      }
     } else { //store
-      mem[rf.reg[rn]+soffset+pcoffset] = rf.reg[rd];
+      writewMem(rf.reg[rd], rf.reg[rn+soffset]);
     }
 
   } else { //post-indexing
     if (l) { //load
-      rf.reg[rd] = mem[rf.reg[rn]+pcoffset];
+      rf.reg[rd] = wMem(rf.reg[rn]);
     } else { //store
-      mem[rf.reg[rn]+pcoffset] = rf.reg[rd];
+      writewMem(rf.reg[rd],rf.reg[rn]);
     }
 
-    rf.reg[rn] = rf.reg[rn] + soffset +pcoffset;
+    rf.reg[rn] = rf.reg[rn] + soffset;
   }
 
 }
@@ -834,6 +840,27 @@ void testingDataProc(void) { //PASSED
   printf("end testing\n");
 }
 
+void testingDataTrans(void) { // TESTING
+  printf("start testing\n\n");
+
+  printf("Test 1 DataTrans====\n");
+  writewMem(32+16, 512);
+  rf.reg[2] = 3;
+  rf.reg[1] = 512; // 0x200
+  uint8_t instType =  64 + 11;// 0100 (4) | 1011 (11)
+  uint8_t rn = 1;
+  uint8_t rd = 0;
+  uint32_t offset = 256 + 2; // ...10 (2)| 00 (lsl) | 0 | 0010 (2)
+
+  executeSingleDataTransfer(instType, rn, rd,
+                                 offset);
+
+
+  printf("====\n\n");
+
+  printf("end testing\n");
+}
+
 void testingExecuteBranch(void) {
   printf("testing executeBranch\n");
   DecodedInst di = decode(0x0A000009);
@@ -862,6 +889,25 @@ void loadFileToMem(char const *file) {
 
   fread(mem,1,MEM16BIT,binFile);
 
+
+}
+
+uint32_t wMem(uint16_t startAddr) { //confirmed
+  // Returns 32 bit word starting from addr startAddr
+  uint32_t word = 0;
+  for (int i = 0; i < 4; i++) {
+    word = word | ((uint32_t)mem[startAddr + i] << (8*i));
+  }
+
+  return word;
+}
+
+void writewMem(uint32_t value, uint16_t startAddr) { //confirmed
+  // Stores 32 bit word starting from addr startAddr
+
+  for (int i = 0; i < 4; i++) {
+    mem[startAddr+i] = getBinarySeg(value,8*(i+1) - 1 ,8);
+  }
 
 }
 
@@ -1015,6 +1061,29 @@ void testingHelpers(void) { //PASSED
 
   printf("====\n\n");
 
+  printf("Test wMem ====\n");
+  mem[12] = 85;
+  mem[15] = 64;
+  printf("wMem[12] = %u\n", wMem(12));
+  printf("expected %u\n", (uint32_t)ipow(2,30) + 85);
+
+  mem[80] = 3;
+  mem[81] = 1;
+  mem[83] = 96;
+  printf("wMem[80] = %u\n", wMem(80));
+  printf("expected %u\n", (uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3);
+  printf("====\n\n");
+
+  printf("Test writewMem ====\n");
+  writewMem((uint32_t)ipow(2,30) + 85,12);
+  printf("wMem[12] = %u\n", wMem(12));
+  printf("expected %u\n", (uint32_t)ipow(2,30) + 85);
+
+  writewMem((uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3,80);
+  printf("wMem[80] = %u\n", wMem(80));
+  printf("expected %u\n", (uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3);
+  printf("====\n\n");
+
   printf("end testing\n");
 }
 
@@ -1059,7 +1128,7 @@ void outputMemReg(void) {
 void outputData(uint32_t i) {
   uint8_t b0,b1,b2,b3;
   uint32_t littleEndian_format = 0;
-
+  printf("i = %d\t",i); //REMOVE
   b0 = i;// & 0xff);
   b1 = i >> 8;// & 0xff);
   b2 = i >> 16;// & 0xff);
