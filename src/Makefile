@@ -20,7 +20,7 @@ symbolmap.o: symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 emulate: emulateDefs.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) $< -o emulate
 
 clean:
 	rm -f $(wildcard *.o)

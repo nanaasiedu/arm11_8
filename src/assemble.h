@@ -6,45 +6,13 @@
 #include "symbolmap.h"
 #include "tokenise.h"
 
-#ifndef WORD_SIZE
 #define WORD_SIZE 4
-#endif
-
-#ifndef ARM_OFFSET
 #define ARM_OFFSET 8
-#endif
-
-#ifndef PC
 #define PC "r15"
-#endif
-
-#ifndef NOT_FOUND
 #define NOT_FOUND -1
-#endif
-
-#ifndef NOT_NEEDED
 #define NOT_NEEDED 0
-#endif
-
-#ifndef S_NOT_SET
-#define S_NOT_SET 0
-#endif
-
-#ifndef S_SET
-#define S_SET 1
-#endif
-
-#ifndef A_NOT_SET
-#define A_NOT_SET 0
-#endif
-
-#ifndef A_SET
-#define A_SET 1
-#endif
-
-#ifndef I_SET
-#define I_SET 1
-#endif
+#define NOT_SET 0
+#define SET 1
 
 typedef int16_t address;
 typedef int32_t instruction;
@@ -88,7 +56,7 @@ void generateHaltOpcode();
 void dealloc();
 int index_of(char *value, char **arr);
 char* stripBrackets(char *str);
-char* stripLastBracket(char *str);
+void stripLastBracket(char *str);
 bool isPreIndex(char *str);
 //Tokens
 void tokenise();
