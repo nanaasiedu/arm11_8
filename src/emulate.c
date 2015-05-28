@@ -25,7 +25,7 @@ int main (int argc, char const *argv[]) {
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into
                           //mem
 
-  /*int executeResult;
+  int executeResult;
   int32_t instruction;
   DecodedInst di;
   // PC = 0 before entering loop
@@ -37,14 +37,15 @@ int main (int argc, char const *argv[]) {
       executeResult = execute(di);
     } while(executeResult == EXE_CONTINUE);
   } while(executeResult != EXE_HALT); //fetch again if EXE_BRANCH
-  */
+
 
   //testingExecute(); //PASSED
   //testingDataProc(); //PASSED
+  //testingExecuteBranch(); // PASSED
   //testingHelpers(); //PASSED
 
-  //outputMemReg();
-  printf("The program is closing");
+  outputMemReg();
+  printf("The program is closing\n");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
 }
@@ -212,7 +213,7 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
 }
 
 int execute(DecodedInst di) { //confirmed
-  if (di.instType == EXE_HALT) {
+  if (di.instType == HALT) {
     return EXE_HALT;
   }
 
@@ -272,7 +273,6 @@ int execute(DecodedInst di) { //confirmed
   }/* else {
     printf("Cond failed\n"); // FOR TESTING
   }*/
-
   return res;
 
 }
@@ -492,7 +492,11 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 }
 
 void executeBranch(int offset) {
+<<<<<<< HEAD
   rf.PC += offset << 2;
+=======
+  *rf.PC += offset << 2;
+>>>>>>> elyasaddo/master
 }
 
 void testingExecute(void) { //PASSED
@@ -833,6 +837,25 @@ void testingDataProc(void) { //PASSED
   printf("end testing\n");
 }
 
+void testingExecuteBranch(void) {
+  printf("testing executeBranch\n");
+  DecodedInst di = decode(0x0A000009);
+  // offset = 9
+  uint32_t pcValue = *rf.PC;
+  printf("%d\n", pcValue);
+  executeBranch(di.operandOffset);
+  printf("\nfield\texpected\tactual\n");
+  printf("PC\t%d\t%d\n", (pcValue + 36), *rf.PC);
+  di = decode(0x0AFFFFF7);
+  // offset = -9
+  pcValue = *rf.PC;
+  printf("%d\n", pcValue);
+  executeBranch(di.operandOffset);
+  printf("PC\t%d\t%d\n", (pcValue - 36), *rf.PC);
+  printf("==========\n");
+  printf("\n");
+}
+
 void loadFileToMem(char const *file) {
   // Reads bytes from file and inserts them into the mem array
   if ((binFile = fopen(file,"r")) == NULL){
@@ -841,6 +864,8 @@ void loadFileToMem(char const *file) {
   }
 
   fread(mem,1,MEM16BIT,binFile);
+
+
 }
 
 void clearRegfile (void) {
@@ -999,98 +1024,61 @@ void testingHelpers(void) { //PASSED
 void outputMemReg(void) {
   //outputs the state of the main memory and register file
   // output mem -----------------------
-  uint8_t addr = 0; //current address
+  printf("\nOutput in Little Endian format\n");
   printf("Main memory --- \n");
-
-  while(addr < MEM16BIT) {
-    printf("%X: ",addr);
-
-    for (int i = 0; i < 4; i++) {
-      printf(BYTETOBINARYPATTERN" ", BYTETOBINARY(mem[addr+i]));
-    }
-
-    printf("\n");
-    addr += 4; // go to next byte
-
-    if (mem[addr] == 0 && mem[addr+1] == 0 && mem[addr+2] == 0 && mem[addr+3] == 0) {
-      break; // we have reached a halt intruction
+  uint32_t pcValue = *rf.PC;
+  *rf.PC = 0;
+  uint32_t instruction;
+  while(*rf.PC < MEM16BIT) {
+    instruction = fetch(mem);
+    if (instruction != 0){
+      printf("%X: ",addr);
+      /////////////
+      printf("%X\n", instruction);
+      /////////////
+      // outputData(instruction);
     }
   }
-
   printf("---\n\n");
+
+  // reset PC
+  *rf.PC = pcValue;
 
   // Output registers ------------
   printf("Register file --- \n");
   for (int i = 0; i < NUM_GREG; i++) {
-    printf(
-    "register %d: "BYTETOBINARYPATTERN" "
-    BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-    BYTETOBINARYPATTERN"\n", i,
-    BYTETOBINARY(getBinarySeg(rf.reg[i],31,8)),
-    BYTETOBINARY(getBinarySeg(rf.reg[i],23,8)),
-    BYTETOBINARY(getBinarySeg(rf.reg[i],15,8)),
-    BYTETOBINARY(getBinarySeg(rf.reg[i],7,8))
-    );
+    printf("register %d: ", i);
+    outputData(rf.reg[i]);
   }
-
-  printf(
-  "SP: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.SP,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.SP,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.SP,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.SP,7,8))
-  );
-
-  printf(
-  "LR: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.LR,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.LR,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.LR,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.LR,7,8))
-  );
-
-  printf(
-  "PC: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.PC,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.PC,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.PC,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.PC,7,8))
-  );
-
-  printf(
-  "CPSR: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,7,8))
-  );
-
+  printf("SP: ");
+  outputData(*rf.SP);
+  printf("LR: ");
+  outputData(*rf.LR);
+  printf("PC: ");
+  outputData(*rf.PC);
+  printf("CPSR: ");
+  outputData(*rf.CPSR);
   printf("---\n\n");
 
 }
 
-/*
-void printSpecialReg(uint32_t value, char *message) {
-  // Takes in a register value and prints it out in binary form
-  printf(
-  "%s "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n", *message
-  BYTETOBINARY(getBinarySeg(value,31,8)),
-  BYTETOBINARY(getBinarySeg(value,23,8)),
-  BYTETOBINARY(getBinarySeg(value,15,8)),
-  BYTETOBINARY(getBinarySeg(value,7,8))
-  );
+void outputData(uint32_t i) {
+  uint8_t b0,b1,b2,b3;
+  uint32_t littleEndian_format = 0;
+
+  b3 = i;// & 0xff);
+  b2 = i >> 8;// & 0xff);
+  b1 = i >> 16;// & 0xff);
+  b0 = i >> 24;// & 0xff);
+
+  littleEndian_format = (littleEndian_format | b0) << 8;
+  littleEndian_format = (littleEndian_format | b1) << 8;
+  littleEndian_format = (littleEndian_format | b2) << 8;
+  littleEndian_format = (littleEndian_format | b3);
+
+  printf("0x%.8x\n", littleEndian_format);
+
 }
-*/
 
 void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
