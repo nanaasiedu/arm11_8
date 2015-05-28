@@ -25,7 +25,7 @@ int main (int argc, char const *argv[]) {
   loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into
                           //mem
 
-  /*int executeResult;
+  int executeResult;
   int32_t instruction;
   DecodedInst di;
   // PC = 0 before entering loop
@@ -37,11 +37,11 @@ int main (int argc, char const *argv[]) {
       executeResult = execute(di);
     } while(executeResult == EXE_CONTINUE);
   } while(executeResult != EXE_HALT); //fetch again if EXE_BRANCH
-  */
+
 
   //testingExecute(); //PASSED
-  testingDataProc();
-  testingExecuteBranch();
+  //testingDataProc();
+  testingExecuteBranch(); // PASSED
   //testingHelpers(); //PASSED
 
   outputMemReg();
@@ -57,6 +57,9 @@ int32_t fetch(uint8_t *mem){
     instruction += mem[*rf.PC + i];
   }
   *rf.PC = *rf.PC + 4;
+  /////////////
+  printf("%X\n", instruction);
+  /////////////
   return instruction;
 }
 
@@ -213,7 +216,7 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
 }
 
 int execute(DecodedInst di) { //confirmed
-  if (di.instType == EXE_HALT) {
+  if (di.instType == HALT) {
     return EXE_HALT;
   }
 
@@ -273,7 +276,6 @@ int execute(DecodedInst di) { //confirmed
   }/* else {
     printf("Cond failed\n"); // FOR TESTING
   }*/
-
   return res;
 
 }
