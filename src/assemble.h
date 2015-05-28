@@ -6,21 +6,16 @@
 #include "symbolmap.h"
 #include "tokenise.h"
 
-#ifndef WORD_SIZE
 #define WORD_SIZE 4
-#endif
-
-#ifndef ARM_OFFSET
 #define ARM_OFFSET 8
-#endif
-
-#ifndef PC
 #define PC "r15"
-#endif
-
-#ifndef NOT_FOUND
 #define NOT_FOUND -1
-#endif
+#define NOT_NEEDED 0
+#define S_NOT_SET 0
+#define S_SET 1
+#define A_NOT_SET 0
+#define A_SET 1
+#define I_SET 1
 
 typedef int16_t address;
 typedef int32_t instruction;
@@ -55,7 +50,11 @@ void parseB(Token *token);
 void parseLsl(Token *token);
 void parseSingleDataTransfer(Token *token);
 //Opcode Generators
+<<<<<<< HEAD
 void generateDataProcessingOpcode(int32_t opcode, int32_t i, int32_t rd, int32_t rn, int32_t operand, int32_t S);
+=======
+void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S, int32_t i);
+>>>>>>> florian_emile/master
 void generateMultiplyOpcode(int32_t opcode, int32_t rd, int32_t rm, int32_t rs, int32_t rn, int32_t A);
 void generateSingleDataTransferOpcode(uint32_t cond, uint32_t i, uint32_t p, uint32_t u, uint32_t l, uint32_t rd, uint32_t rn, uint32_t offset);
 void generateBranchOpcode(int32_t cond, int32_t offset);

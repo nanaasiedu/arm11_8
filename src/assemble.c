@@ -9,42 +9,42 @@ FILE *input = NULL, *output = NULL;
 Tokens *tokens = NULL;
 
 char *mnemonicStrings[23] = {
-  "add","sub","rsb","and","eor","orr","mov","tst","teq","cmp",
-  "mul","mla",
-  "ldr","str",
-  "beq","bne", "bge","blt","bgt","ble","b",
-  "lsl","andeq"
+  "add", "sub", "rsb", "and", "eor", "orr", "mov", "tst", "teq", "cmp",
+  "mul", "mla",
+  "ldr", "str",
+  "beq", "bne", "bge", "blt", "bgt", "ble", "b",
+  "lsl", "andeq"
 };
 
 char *registerStrings[16] = {
-  "r0","r1","r2","r3","r4","r5","r6","r7",
-  "r8","r9","r10","r11","r12","r13","r14","r15"
+  "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+  "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
 };
 
 int mnemonicInts[23] = {
-  4,2,3,0,1,12,13,8,9,10,
-  0,1,
-  0,0,
-  0,1,10,11,12,13,14,
-  0,1
+  4, 2, 3, 0, 1, 12, 13, 8, 9, 10,
+  0, 1,
+  0, 0,
+  0, 1, 10, 11, 12, 13, 14,
+  0, 1
 };
 
 int numberOfArguments[23] = {
-  3,3,3,3,3,3,2,2,2,2,
-  3,4,
-  2,2,
-  1,1,1,1,1,1,1,
-  3,2
+  3, 3, 3, 3, 3, 3, 2, 2, 2,2 ,
+  3, 4,
+  2, 2,
+  1, 1, 1, 1, 1, 1, 1,
+  3, 2
 };
 
 int registerInts[16] = {
-  0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
 SymbolTable *lblToAddr = NULL;
-SymbolTable mnemonicTable = {23,23,mnemonicStrings,mnemonicInts};
-SymbolTable argumentTable = {23,23,mnemonicStrings,numberOfArguments};
-SymbolTable registerTable = {16,16,registerStrings,registerInts};
+SymbolTable mnemonicTable = {23, 23, mnemonicStrings, mnemonicInts};
+SymbolTable argumentTable = {23, 23, mnemonicStrings, numberOfArguments};
+SymbolTable registerTable = {16, 16, registerStrings, registerInts};
 
 int main(int argc, char **argv) {
 
@@ -126,8 +126,10 @@ void parseInstruction(Token *token) {
   switch(index_of(token->value, mnemonicStrings)) {
     case ADD: case SUB: case RSB: case AND: case EOR:
     case ORR: parseTurnaryDataProcessing(token); break;
-    case MOV: case TST: case TEQ: case CMP: case MUL:
-    case MLA: parseBinaryDataProcessing(token); break;
+    case MOV: case TST: case TEQ:
+    case CMP: parseBinaryDataProcessing(token); break;
+    case MUL: parseMul(token); break;
+    case MLA: parseMla(token); break;
     case LDR:
     case STR: parseSingleDataTransfer(token); break;
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
@@ -142,35 +144,37 @@ void parseTurnaryDataProcessing(Token *token) {
   Token *rd_token = token + 1;
   Token *rn_token = token + 2;
   Token *operand_token = token + 3;
-  int rd,rn,operand;
+  int rd,rn,operand,i;
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
   if(operand_token->type == LITERAL) {
+    i = 0;
     char *ptr;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
+    i = 1;
     operand = map_get(&registerTable, operand_token->value);
   }
-  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), 1, rd,rn,operand,0);
+  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i);
 }
 
 void parseBinaryDataProcessing(Token *token) {
   Token *rdOrRn_token = token + 1;
   Token *operand_token = token + 2;
-  int rdOrRn,operand;
+  int rdOrRn,operand,i;
   rdOrRn = map_get(&registerTable, rdOrRn_token->value);
   if(operand_token->type == LITERAL) {
     char *ptr;
+    i = 1;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
+    i = 0;
     operand = map_get(&registerTable, operand_token->value);
   }
   if (strcmp(token->value,"mov") == 0) {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),
-    1, rdOrRn, 0, operand, 0);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, S_NOT_SET, i);
   } else {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value),
-    0, 0, rdOrRn, operand, 1);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), NOT_NEEDED, rdOrRn, operand, S_SET, i);
   }
 }
 
@@ -182,7 +186,8 @@ void parseMul(Token *token) {
   rd = map_get(&registerTable, rd_token->value);
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,0,0);
+  //set rn to 0 as rn not needed ; A is not set
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, A_NOT_SET);
 }
 
 void parseMla(Token *token) {
@@ -195,7 +200,8 @@ void parseMla(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value),rd,rm,rs,rn,1);
+  // A is set
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, A_SET);
 }
 
 void parseSingleDataTransfer(Token *token) {
@@ -203,8 +209,8 @@ void parseSingleDataTransfer(Token *token) {
   int offset;
   cond = 14;
   l = 1;
-  Token *rdToken = token+1;
-  Token *addrToken = token+2;
+  Token *rdToken = token + 1;
+  Token *addrToken = token + 2;
   rd = map_get(&registerTable, rdToken->value);
   //p, i, rn, offset, u
   if (addrToken->type == EXPRESSION) {
@@ -221,7 +227,7 @@ void parseSingleDataTransfer(Token *token) {
       u = 1;
     }
     if (offset <= 0xFF) {
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), i, rd, 0, offset, 0);
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, S_NOT_SET,I_SET);
     } else {
       generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
@@ -242,7 +248,7 @@ void parseSingleDataTransfer(Token *token) {
       p = 1;
       rn = map_get(&registerTable, addrValue+1);
       char *ptr;
-      offset = (int) strtol((token+3)->value, &ptr, 0);
+      offset = (int) strtol((token + 3)->value, &ptr, 0);
       u = 1;
     } else {
       //Post-Index
@@ -261,7 +267,7 @@ void parseSingleDataTransfer(Token *token) {
 
 void parseB(Token *token) {
   uint8_t cond; int offset;
-  Token *lblToken = token+1;
+  Token *lblToken = token + 1;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
   generateBranchOpcode(cond, offset);
@@ -272,15 +278,18 @@ void parseLsl(Token *token) {
 }
 
 //Generators
+//TODO:deal with i;
 void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t i,
                                   int32_t rd,
                                   int32_t rn,
                                   int32_t operand,
-                                  int32_t S) {
+                                  int32_t S,
+                                  int32_t i) {
   instruction instr = 14;
   instr = instr << 28;
-  instr |= i << 25;
+  i = i << 25;
+  instr |= i;
   opcode = opcode << 21;
   instr |= opcode;
   S = S << 20;
@@ -309,7 +318,8 @@ void generateMultiplyOpcode(int32_t opcode,
   instr |= rd;
   rs = rs << 8;
   instr |= rs;
-  instr |= 9 << 4;//bits 7 to 4 = 1001;
+  //bits 7 to 4 = 1001;
+  instr |= 9 << 4;
   instr |= rm;
   outputData(instr);
 }
@@ -317,7 +327,8 @@ void generateMultiplyOpcode(int32_t opcode,
 void generateBranchOpcode(int32_t cond, int32_t offset) {
   instruction instr = cond;
   instr = instr << 28;
-  instr |= 10 << 24;//bits 27 to 24 = 1010;
+  //bits 27 to 24 = 1010;
+  instr |= 10 << 24;
   instr |= offset;
   outputData(instr);
 }
@@ -333,7 +344,8 @@ void generateSingleDataTransferOpcode(uint32_t cond,
 
   uint32_t instr = 14;
   instr = instr << 28;
-  instr |= 1 << 26;//bits 27,26 = 01
+  //bits 27,26 = 01
+  instr |= 1 << 26;
   i = i << 25;
   instr |= i;
   p = p << 24;
@@ -359,10 +371,10 @@ void outputData(uint32_t i) {
   uint8_t b0,b1,b2,b3;
   uint32_t littleEndian_format = 0;
 
-  b0 = i;// & 0xff);
-  b1 = i >> 8;// & 0xff);
-  b2 = i >> 16;// & 0xff);
-  b3 = i >> 24;// & 0xff);
+  b0 = (uint8_t) (i  & 0xff);
+  b1 = (uint8_t) ((i >> 8) & 0xff);
+  b2 = (uint8_t) ((i >> 16) & 0xff);
+  b3 = (uint8_t) ((i >> 24) & 0xff);
 
   littleEndian_format = (littleEndian_format | b0) << 8;
   littleEndian_format = (littleEndian_format | b1) << 8;
@@ -372,7 +384,7 @@ void outputData(uint32_t i) {
   printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
 
   if (output != NULL) {
-    fprintf(output, "%c%c%c%c", b0,b1,b2,b3);
+    fprintf(output, "%c%c%c%c", b0, b1, b2, b3);
   }
 }
 
@@ -413,7 +425,7 @@ int index_of(char *value, char **arr) {
        return i;
     }
   }
-  return -1;
+  return NOT_FOUND;
 }
 
 char* stripBrackets(char *str) {
