@@ -148,11 +148,11 @@ void parseTurnaryDataProcessing(Token *token) {
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
   if(operand_token->type == LITERAL) {
-    i = 0;
+    i = 1;
     char *ptr;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
-    i = 1;
+    i = 0;
     operand = map_get(&registerTable, operand_token->value);
   }
   generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i);
@@ -227,7 +227,7 @@ void parseSingleDataTransfer(Token *token) {
       u = 1;
     }
     if (offset <= 0xFF) {
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, S_NOT_SET,I_SET);
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, S_NOT_SET, I_SET);
     } else {
       generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
@@ -280,7 +280,6 @@ void parseLsl(Token *token) {
 //Generators
 //TODO:deal with i;
 void generateDataProcessingOpcode(int32_t opcode,
-                                  int32_t i,
                                   int32_t rd,
                                   int32_t rn,
                                   int32_t operand,
@@ -298,7 +297,7 @@ void generateDataProcessingOpcode(int32_t opcode,
   instr |= rn;
   rd = rd << 12;
   instr |= rd;
-  instr |= operand;
+  instr |= operand & 0xfff;
   outputData(instr);
 }
 
