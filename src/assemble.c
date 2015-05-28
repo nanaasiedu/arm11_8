@@ -300,9 +300,9 @@ void generateDataProcessingOpcode(int32_t opcode,
     int rotation = 0;
     int32_t imm = operand;
 
-    while (imm % 2 != 1) {
+    while (imm % 4 == 0) {
       rotation++;
-      imm = imm >> 1;
+      imm = imm >> 2;
     }
 
     instr |= (rotation & 0xf) << 7;
