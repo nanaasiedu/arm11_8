@@ -299,13 +299,14 @@ void generateDataProcessingOpcode(int32_t opcode,
   if (i == 1) {
     int rotation = 0;
     int32_t imm = operand;
-
-    while (imm % 4 == 0) {
-      rotation++;
-      imm = imm >> 2;
+    if (operand != 0) {
+      while (imm % 4 == 0) {
+        rotation++;
+        imm = imm >> 2;
+      }
     }
 
-    instr |= (rotation & 0xf) << 7;
+    instr |= (rotation & 0xf) << 8;
     instr |= imm & 0xff;
   } else {
     instr |= operand &  0xfff;
