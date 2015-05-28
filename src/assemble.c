@@ -112,7 +112,9 @@ void parseProgram(SymbolTable *map) {
     do {
       tokenArray++;
     } while(tokenArray->type == NEWLINE);
-    addr += WORD_SIZE;
+    if (tokenArray->type == OTHER) {
+      addr += WORD_SIZE;
+    }
   }
 }
 
@@ -270,6 +272,7 @@ void parseB(Token *token) {
   Token *lblToken = token + 1;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
+  printf("%d - %d - %d = %d\n",  map_get(lblToAddr, lblToken->value), addr, ARM_OFFSET, offset);
   generateBranchOpcode(cond, offset);
 }
 
@@ -278,7 +281,6 @@ void parseLsl(Token *token) {
 }
 
 //Generators
-//TODO:deal with i;
 void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t rd,
                                   int32_t rn,
@@ -337,8 +339,8 @@ void generateBranchOpcode(int32_t cond, int32_t offset) {
   instruction instr = cond;
   instr = instr << 28;
   //bits 27 to 24 = 1010;
-  instr |= 10 << 24;
-  instr |= offset;
+  instr |= 0xA << 24;
+  instr |= offset & 0xFFFFFF;
   outputData(instr);
 }
 
