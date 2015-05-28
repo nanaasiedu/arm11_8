@@ -172,9 +172,9 @@ void parseBinaryDataProcessing(Token *token) {
     operand = map_get(&registerTable, operand_token->value);
   }
   if (strcmp(token->value,"mov") == 0) {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, S_NOT_SET, i);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, NOT_SET, i);
   } else {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), NOT_NEEDED, rdOrRn, operand, S_SET, i);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), NOT_NEEDED, rdOrRn, operand, SET, i);
   }
 }
 
@@ -187,7 +187,7 @@ void parseMul(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   //set rn to 0 as rn not needed ; A is not set
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, A_NOT_SET);
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, NOT_SET);
 }
 
 void parseMla(Token *token) {
@@ -201,7 +201,7 @@ void parseMla(Token *token) {
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
   // A is set
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, A_SET);
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, SET);
 }
 
 void parseSingleDataTransfer(Token *token) {
@@ -227,7 +227,7 @@ void parseSingleDataTransfer(Token *token) {
       u = 1;
     }
     if (offset <= 0xFF) {
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, rn, offset, S_NOT_SET, I_SET);
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, SET);
     } else {
       generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
@@ -237,23 +237,23 @@ void parseSingleDataTransfer(Token *token) {
     strcpy(addrValue, addrToken->value);
     if ((token+3)->type == NEWLINE) {
       //Pre-Index, just base register
-      p = 1;
-      i = 0;
+      p = SET;
+      i = NOT_SET;
       rn = map_get(&registerTable, stripBrackets(addrValue));
-      offset = 0;
-      u = 1;
+      offset = NOT_SET;
+      u = SET;
     } else if (isPreIndex(addrValue)) {
       //Pre-Index, base and offset
-      i = 1;
-      p = 1;
+      i = SET;
+      p = SET;
       rn = map_get(&registerTable, addrValue+1);
       char *ptr;
       offset = (int) strtol((token + 3)->value, &ptr, 0);
-      u = 1;
+      u = SET;
     } else {
       //Post-Index
-      p = 0;
-      i = 1;
+      i = NOT_SET;
+      p = SET;
       rn = map_get(&registerTable, addrValue+1);
       char *ptr;
       stripLastBracket((token+3)->value);
@@ -297,14 +297,13 @@ void generateDataProcessingOpcode(int32_t opcode,
 
   //If immediate must calculate rotation
   if (i == 1 && operand > 0xfff) {
-    int rotation = 31;
+    int rotation = 32;
     int32_t imm = operand;
     while (imm % 4 == 0) {
       rotation--;
-      imm = imm << 2;
+      imm = imm >> 2;
     }
     instr |= (rotation & 0xf) << 8;
-    printf("Instr: %.4x\n", instr);
     instr |= imm & 0xff;
   } else {
     instr |= operand &  0xfff;

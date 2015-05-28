@@ -11,11 +11,8 @@
 #define PC "r15"
 #define NOT_FOUND -1
 #define NOT_NEEDED 0
-#define S_NOT_SET 0
-#define S_SET 1
-#define A_NOT_SET 0
-#define A_SET 1
-#define I_SET 1
+#define NOT_SET 0
+#define SET 1
 
 typedef int16_t address;
 typedef int32_t instruction;
