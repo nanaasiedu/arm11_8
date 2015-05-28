@@ -40,7 +40,7 @@ int main (int argc, char const *argv[]) {
   */
 
   //testingExecute(); //PASSED
-  testingDataProc();
+  //testingDataProc(); //PASSED
   //testingHelpers(); //PASSED
 
   //outputMemReg();
@@ -278,7 +278,7 @@ int execute(DecodedInst di) { //confirmed
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
-                           rd, uint32_t operand) {//TESTING
+                           rd, uint32_t operand) {//confirmed
   bool i = getBit(instType,3); // Immediate Operand
   int rotate = getBinarySeg(operand,11,4); // 4 bit rotate segment if i = 1
 
@@ -291,7 +291,13 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
   if (i) { // if operand is immediate
     operand = getBinarySeg(operand,7,8); // operand = Immediate segment
+
+    if (s) {
+      alterC(getBit(operand,rotate*2 - 1));
+    }
+
     operand = rotr32(operand,rotate*2);
+
   } else { // operand is a register
     operand = barrelShift(rf.reg[rm], shiftSeg, s);
   }
@@ -307,20 +313,32 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 2:// sub
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
-      alterC((int)operand > (int)rf.reg[rn]); // borrow
-      //will occur if subtraend > minuend
+
+      if (s) {
+        alterC((int)operand > (int)rf.reg[rn]); // borrow
+        //will occur if subtraend > minuend
+      }
+
       setCPSRZN(rf.reg[rd],s);
     break;
     case 3: // rsb
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
+
+      if (s) {
+        alterC((int)operand < (int)rf.reg[rn]); // borrow
+        //will occur if subtraend > minuend
+      }
+
       setCPSRZN(rf.reg[rd],s);
-      alterC((int)operand < (int)rf.reg[rn]);
     break;
     case 4: // add
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
-      alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn])); // overflow
-      // will occur based on this condition
+      if (s) {
+        alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]));
+         // overflow will occur based on this condition
+      }
+
       setCPSRZN(rf.reg[rd],s);
     break;
     case 8: // tst
@@ -333,10 +351,16 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 10: // cmp
       testRes = rf.reg[rn] - operand;
+
+      if (s) {
+        alterC((int)operand > (int)rf.reg[rn]); // borrow
+        //will occur if subtraend > minuend
+      }
+
       setCPSRZN(testRes,s);
     break;
     case 12: // orr
-      testRes = rf.reg[rn] | operand;
+      rf.reg[rd] = rf.reg[rn] | operand;
       setCPSRZN(testRes,s);
     break;
     case 13: // mov
@@ -468,7 +492,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 }
 
 void executeBranch(int offset) {
-  rf.CPSR += offset;
+  rf.PC += offset << 2;
 }
 
 void testingExecute(void) { //PASSED
@@ -577,7 +601,7 @@ void testingExecute(void) { //PASSED
   printf("end testing\n");
 }
 
-void testingDataProc(void) {
+void testingDataProc(void) { //PASSED
   printf("start testing\n\n");
 
   printf("Test 1 CPSRZN====\n");
@@ -644,6 +668,167 @@ void testingDataProc(void) {
   printf("expected %u and ?\n", (uint32_t)(ipow(2,31) + ipow(2,30) + (uint64_t)4));
 
   printf("====\n\n");
+
+  printf("Test 3 DataProc====\n");
+  rf.reg[1] = 1; // ...1
+  rf.reg[2] = 85; // ...01010101
+  rf.reg[3] = 252; // ...1111100
+  rf.reg[4] = ipow(2,30) + 85 + 512; // 01...1001010101
+  rf.reg[5] = ipow(2,31) + ipow(2,28) + ipow(2,27); //10011..
+  rf.reg[6] = -ipow(2,31); // 1...
+  rf.reg[7] = 29;
+  rf.reg[8] = (85 + 512) << 9;
+  rf.reg[9] = 1;
+  rf.reg[10] = INT_MAX; // 0111....1
+
+  alterC(1);
+
+  uint8_t instType = 28; // 0001 | 1 (I) | 1 (S) | 00
+  uint8_t opcode = 0; // AND
+  uint8_t rn = 2;
+  uint8_t rd = 1;
+  uint32_t operand =  512 + 256; // ...0011 (3*2) | 0...0
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+  printf("rf.reg[1] = %u C = %d Z = %d N = %d \n",rf.reg[1],
+         getBit(*rf.CPSR,Cbit),getBit(*rf.CPSR,Zbit), getBit(*rf.CPSR,Nbit));
+  printf("expected 0 and C = 0 Z = 1 N = 0\n");
+
+
+  instType = 24; // 0001 | 1 (I) | 0 (S) | 00
+  opcode = 1; // EOR
+  rn = 2;
+  rd = 1;
+  operand =  2048 + 1024 + 512 + 7; // ...1110 (14*2)| ...111(7)
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  alterC(1);
+
+  printf("rf.reg[1] = %u C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
+  printf("expected 37 and C = 1 (unchanged)\n");
+
+
+  instType = 29; // 0001 | 1 (I) | 1 (S) | 01
+  opcode = 2; // sub
+  rn = 7;
+  rd = 1;
+  operand =  2048 + 1024 + 512 + 256 + 8; // ...1111 (15*2)| .1000(8)
+
+  alterC(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
+  printf("expected -3 and C = 1 (borrow)\n");
+
+
+  instType = 17; // 0001 | 0 (I) | 0 (S) | 01
+  opcode = 3; // rsb
+  rn = 4;
+  rd = 1;
+  operand =   1024 + 128 + 32 + 8; // 0100 1 | 01 (lsr) | 0 | 1000(8)
+
+  alterC(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
+  printf("expected %d and C = 0 (unchanged)\n", -(int)ipow(2,30));
+
+
+  instType = 23; // 0001 | 0 (I) | 1 (S) | 11
+  opcode = 4; // add
+  rn = 9;
+  rd = 1;
+  operand =  10; // ...0 (0*2)| .1010(10)
+
+  alterC(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
+  printf("expected %d and C = 1 (OV)\n", -(int)ipow(2,31));
+
+
+  rf.reg[1] = 1; // ...1
+  instType = 23; // 0001 | 1 (I) | 1 (S) | 11
+  opcode = 8; // tst
+  rn = 10;
+  rd = 1;
+  operand =  1024 + 256; // ...101 (5*2)| ....000(0)
+
+  alterC(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d Z = %d\n",
+          rf.reg[1], getBit(*rf.CPSR,Cbit), getBit(*rf.CPSR,Zbit));
+  printf("expected 1 (unchanged) and C = 0 Z = 1\n");
+
+
+  rf.reg[1] = 1; // ...1
+  instType = 31; // 0001 | 1 (I) | 1 (S) | 11
+  opcode = 9; // teq
+  rn = 10;
+  rd = 1;
+  operand =  256 + 2; // ...01 (1*2)| ....010(2)
+
+  alterC(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d N = %d\n",
+          rf.reg[1], getBit(*rf.CPSR,Cbit), getBit(*rf.CPSR,Nbit));
+  printf("expected 1 (unchanged) and C = 1 N = 1\n");
+
+
+  rf.reg[1] = 1; // ...1
+  instType = 29; // 0001 | 1 (I) | 1 (S) | 01
+  opcode = 10; // cmp
+  rn = 7;
+  rd = 1;
+  operand =  2048 + 1024 + 512 + 256 + 8; // ...1111 (15*2)| .1000(8)
+
+  alterC(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
+  printf("expected 1 (unchanged) and C = 1 (borrow)\n");
+
+
+  instType = 29; // 0001 | 1 (I) | 0 (S) | 01
+  opcode = 12; // or
+  rn = 10;
+  rd = 1;
+  operand =  256 + 15; // ...01 (1*2)| .1111(15)
+
+  alterC(1);
+  alterN(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d N = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit),getBit(*rf.CPSR,Nbit));
+  printf("expected -1 and C = 1 (unchanged) N = 0 (unchanged)\n");
+
+
+  instType = 29; // 0001 | 1 (I) | 0 (S) | 01
+  opcode = 13; // mov
+  rn = 1;
+  rd = 1;
+  operand =  256 + 15; // ...01 (1*2)| .1111(15)
+
+  alterC(1);
+  alterN(0);
+  executeDataProcessing(instType, opcode, rn,
+                             rd, operand);
+
+  printf("rf.reg[1] = %d C = %d N = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit),getBit(*rf.CPSR,Nbit));
+  printf("expected %d and C = 1 (unchanged) N = 0 (unchanged)\n", (int)ipow(2,31) + (int)ipow(2,30) + 3);
+
+  printf("====\n\n");
+
 
   printf("end testing\n");
 }
