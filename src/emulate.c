@@ -43,8 +43,8 @@ int main (int argc, char const *argv[]) {
   testingDataProc();
   //testingHelpers(); //PASSED
 
-  //outputMemReg();
-  printf("The program is closing");
+  outputMemReg();
+  printf("The program is closing\n");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
 }
@@ -814,83 +814,64 @@ void testingHelpers(void) { //PASSED
 void outputMemReg(void) {
   //outputs the state of the main memory and register file
   // output mem -----------------------
-  uint8_t addr = 0; //current address
+  printf("\nOutput in Little Endian format\n");
+  unsigned int addr = 0; //current address
   printf("Main memory --- \n");
-
+  uint32_t pcValue = *rf.PC;
+  *rf.PC = 0;
+  uint32_t instruction;
   while(addr < MEM16BIT) {
-    printf("%X: ",addr);
-
-    for (int i = 0; i < 4; i++) {
-      printf(BYTETOBINARYPATTERN" ", BYTETOBINARY(mem[addr+i]));
+    instruction = fetch(mem);
+    if (instruction != 0){
+      printf("%X: ",addr);
+      outputData(instruction);
+      // for (int i = 0; i < 4; i++) {
+      //   printf(BYTETOBINARYPATTERN" ", BYTETOBINARY(mem[addr+i]));
+      // }
     }
-
-    printf("\n");
     addr += 4; // go to next byte
-
-    if (mem[addr] == 0 && mem[addr+1] == 0 && mem[addr+2] == 0 && mem[addr+3] == 0) {
-      break; // we have reached a halt intruction
-    }
   }
-
   printf("---\n\n");
+
+  // reset PC
+  *rf.PC = pcValue;
 
   // Output registers ------------
   printf("Register file --- \n");
   for (int i = 0; i < NUM_GREG; i++) {
-    printf(
-    "register %d: "BYTETOBINARYPATTERN" "
-    BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-    BYTETOBINARYPATTERN"\n", i,
-    BYTETOBINARY(getBinarySeg(rf.reg[i],31,8)),
-    BYTETOBINARY(getBinarySeg(rf.reg[i],23,8)),
-    BYTETOBINARY(getBinarySeg(rf.reg[i],15,8)),
-    BYTETOBINARY(getBinarySeg(rf.reg[i],7,8))
-    );
+    printf("register %d: ", i);
+    outputData(rf.reg[i]);
   }
-
-  printf(
-  "SP: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.SP,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.SP,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.SP,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.SP,7,8))
-  );
-
-  printf(
-  "LR: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.LR,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.LR,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.LR,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.LR,7,8))
-  );
-
-  printf(
-  "PC: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.PC,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.PC,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.PC,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.PC,7,8))
-  );
-
-  printf(
-  "CPSR: "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n",
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,31,8)),
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,23,8)),
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,15,8)),
-  BYTETOBINARY(getBinarySeg(*rf.CPSR,7,8))
-  );
-
+  printf("SP: ");
+  outputData(*rf.SP);
+  printf("LR: ");
+  outputData(*rf.LR);
+  printf("PC: ");
+  outputData(*rf.PC);
+  printf("CPSR: ");
+  outputData(*rf.CPSR);
   printf("---\n\n");
 
 }
+
+void outputData(uint32_t i) {
+  uint8_t b0,b1,b2,b3;
+  uint32_t littleEndian_format = 0;
+
+  b0 = i;// & 0xff);
+  b1 = i >> 8;// & 0xff);
+  b2 = i >> 16;// & 0xff);
+  b3 = i >> 24;// & 0xff);
+
+  littleEndian_format = (littleEndian_format | b0) << 8;
+  littleEndian_format = (littleEndian_format | b1) << 8;
+  littleEndian_format = (littleEndian_format | b2) << 8;
+  littleEndian_format = (littleEndian_format | b3);
+
+  printf("0x%.8x\n", littleEndian_format);
+
+}
+
 
 /*
 void printSpecialReg(uint32_t value, char *message) {

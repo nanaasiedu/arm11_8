@@ -89,6 +89,8 @@ int32_t fetch(uint8_t *mem);
 DecodedInst decode(int32_t instruction);
 uint8_t getInstType(int32_t instruction);
 
+void outputData(uint32_t i);
+/* WILL BE REMOVED*/
 #define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
 #define BYTETOBINARY(byte)  \
   (byte & 0x80 ? 1 : 0), \
@@ -99,9 +101,8 @@ uint8_t getInstType(int32_t instruction);
   (byte & 0x04 ? 1 : 0), \
   (byte & 0x02 ? 1 : 0), \
   (byte & 0x01 ? 1 : 0)
+//**********************************************
 
-// dont keep getFlags()
-//***********************
 void testFetch(void);
 
 void decodeForDataProc(int32_t instruction, DecodedInst *di);
