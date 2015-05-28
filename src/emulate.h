@@ -64,8 +64,6 @@ void setCPSRZN(int value, int trigger);
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm);
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset);
 void executeBranch(int offset);
-void testingDataProc(void);
-void testingExecute(void);
 // --
 void dealloc(void);
 void loadFileToMem(char const *file);
@@ -103,11 +101,14 @@ void outputData(uint32_t i);
   (byte & 0x01 ? 1 : 0)
 //**********************************************
 
-void testFetch(void);
-
 void decodeForDataProc(int32_t instruction, DecodedInst *di);
 void decodeForMult(int32_t instruction, DecodedInst *di);
 void decodeForDataTrans(int32_t instruction, DecodedInst *di);
 void decodeForBranch(int32_t instruction, DecodedInst *di);
 
+
+//******Testing Functions**********//
+void testingDataProc(void);
+void testingExecute(void);
+void testingExecuteBranch(void);
 #endif /* end of include guard: EMULATEDEFS */

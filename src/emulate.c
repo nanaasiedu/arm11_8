@@ -41,6 +41,7 @@ int main (int argc, char const *argv[]) {
 
   //testingExecute(); //PASSED
   testingDataProc();
+  testingExecuteBranch();
   //testingHelpers(); //PASSED
 
   outputMemReg();
@@ -468,7 +469,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 }
 
 void executeBranch(int offset) {
-  rf.CPSR += offset;
+  *rf.PC += offset << 2;
 }
 
 void testingExecute(void) { //PASSED
@@ -648,6 +649,25 @@ void testingDataProc(void) {
   printf("end testing\n");
 }
 
+void testingExecuteBranch(void) {
+  printf("testing executeBranch\n");
+  DecodedInst di = decode(0x0A000009);
+  // offset = 9
+  uint32_t pcValue = *rf.PC;
+  printf("%d\n", pcValue);
+  executeBranch(di.operandOffset);
+  printf("\nfield\texpected\tactual\n");
+  printf("PC\t%d\t%d\n", (pcValue + 36), *rf.PC);
+  di = decode(0x0AFFFFF7);
+  // offset = -9
+  pcValue = *rf.PC;
+  printf("%d\n", pcValue);
+  executeBranch(di.operandOffset);
+  printf("PC\t%d\t%d\n", (pcValue - 36), *rf.PC);
+  printf("==========\n");
+  printf("\n");
+}
+
 void loadFileToMem(char const *file) {
   // Reads bytes from file and inserts them into the mem array
   if ((binFile = fopen(file,"r")) == NULL){
@@ -825,9 +845,6 @@ void outputMemReg(void) {
     if (instruction != 0){
       printf("%X: ",addr);
       outputData(instruction);
-      // for (int i = 0; i < 4; i++) {
-      //   printf(BYTETOBINARYPATTERN" ", BYTETOBINARY(mem[addr+i]));
-      // }
     }
     addr += 4; // go to next byte
   }
@@ -871,22 +888,6 @@ void outputData(uint32_t i) {
   printf("0x%.8x\n", littleEndian_format);
 
 }
-
-
-/*
-void printSpecialReg(uint32_t value, char *message) {
-  // Takes in a register value and prints it out in binary form
-  printf(
-  "%s "BYTETOBINARYPATTERN" "
-  BYTETOBINARYPATTERN" "BYTETOBINARYPATTERN"  "
-  BYTETOBINARYPATTERN"\n", *message
-  BYTETOBINARY(getBinarySeg(value,31,8)),
-  BYTETOBINARY(getBinarySeg(value,23,8)),
-  BYTETOBINARY(getBinarySeg(value,15,8)),
-  BYTETOBINARY(getBinarySeg(value,7,8))
-  );
-}
-*/
 
 void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
