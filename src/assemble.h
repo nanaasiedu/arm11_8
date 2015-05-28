@@ -22,6 +22,30 @@
 #define NOT_FOUND -1
 #endif
 
+#ifndef NOT_NEEDED
+#define NOT_NEEDED 0
+#endif
+
+#ifndef S_NOT_SET
+#define S_NOT_SET 0
+#endif
+
+#ifndef S_SET
+#define S_SET 1
+#endif
+
+#ifndef A_NOT_SET
+#define A_NOT_SET 0
+#endif
+
+#ifndef A_SET
+#define A_SET 1
+#endif
+
+#ifndef I_SET
+#define I_SET 1
+#endif
+
 typedef int16_t address;
 typedef int32_t instruction;
 
@@ -55,7 +79,7 @@ void parseB(Token *token);
 void parseLsl(Token *token);
 void parseSingleDataTransfer(Token *token);
 //Opcode Generators
-void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S);
+void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S, int32_t i);
 void generateMultiplyOpcode(int32_t opcode, int32_t rd, int32_t rm, int32_t rs, int32_t rn, int32_t A);
 void generateSingleDataTransferOpcode(uint32_t cond, uint32_t i, uint32_t p, uint32_t u, uint32_t l, uint32_t rd, uint32_t rn, uint32_t offset);
 void generateBranchOpcode(int32_t cond, int32_t offset);
