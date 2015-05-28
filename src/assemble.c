@@ -296,17 +296,15 @@ void generateDataProcessingOpcode(int32_t opcode,
   instr |= rd     << 12;
 
   //If immediate must calculate rotation
-  if (i == 1) {
+  if (i == 1 && operand > 0xfff) {
     int rotation = 0;
     int32_t imm = operand;
-    if (operand != 0) {
-      while (imm % 4 == 0) {
-        rotation++;
-        imm = imm >> 2;
-      }
+    while (imm % 4 == 0) {
+      rotation++;
+      imm = imm >> 2;
     }
-
     instr |= (rotation & 0xf) << 8;
+    printf("Instr: %.4x\n", instr);
     instr |= imm & 0xff;
   } else {
     instr |= operand &  0xfff;
