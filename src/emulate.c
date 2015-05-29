@@ -2,8 +2,9 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "emulate.h"
 #include <limits.h>
+#include "emulate.h"
+#include "tests.h"
 
 // TODO: CPSR bit const / opcode const / shift type const
 // TODO: TELL ELYAS TO CHECK OUTPUT FORMAT AND REG OUTPUT
@@ -40,7 +41,7 @@ int main (int argc, char const *argv[]) {
 
   outputMemReg();
 
-  // runAllTests();
+  //runAllTests();
 
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
@@ -503,8 +504,6 @@ void loadFileToMem(char const *file) {
   }
 
   fread(mem,1,MEM16BIT,binFile);
-
-
 }
 
 uint32_t wMem(uint16_t startAddr) { //confirmed
@@ -598,56 +597,57 @@ int rotr32(uint32_t x, int n) { //Confirmed
 
 void outputMemReg(void) {
   //outputs the state of the main memory and register file
-
+  isRegister = TRUE;
   // Output registers ------------
   printf("Registers:\n");
   for (int i = 0; i < NUM_GREG; i++) {
-    printf("$%d: ", i);
-    outputData(rf.reg[i]);
+    printf("$%-3d :%11d ", i, rf.reg[i]);
+    outputData(rf.reg[i], isRegister);
   }
-  printf("SP: ");
-  outputData(*rf.SP);
-  printf("LR: ");
-  outputData(*rf.LR);
-  printf("PC: ");
-  outputData(*rf.PC);
-  printf("CPSR: ");
-  outputData(*rf.CPSR);
-  printf("---\n\n");
+  printf("PC  :%11d ", *rf.PC);
+  outputData(*rf.PC, isRegister);
+  printf("CPSR:%11d ", *rf.CPSR);
+  outputData(*rf.CPSR, isRegister);
 
   // output mem -----------------------
+  printf("Non-zero memory:\n");
   uint32_t pcValue = *rf.PC;
   *rf.PC = 0;
   uint32_t instruction;
   while(*rf.PC < MEM16BIT) {
     instruction = fetch(mem);
     if (instruction != 0){
-      printf("%X: ", *rf.PC - 4); // since fetch automatically inc. PC
-      outputData(instruction);
+      printf("%.8x: ", *rf.PC - 4); // since fetch automatically inc^ PC
+      outputData(instruction, !isRegister);
     }
   }
-  printf("---\n\n");
 
   // reset PC
   *rf.PC = pcValue;
 
 }
 
-void outputData(uint32_t i) {
+void outputData(uint32_t i, bool isRegister) {
   uint8_t b0,b1,b2,b3;
-  uint32_t littleEndian_format = 0;
-  printf("i = %d\t",i); //REMOVE
+  uint32_t hexFormat = 0;
   b0 = i;// & 0xff);
   b1 = i >> 8;// & 0xff);
   b2 = i >> 16;// & 0xff);
   b3 = i >> 24;// & 0xff);
 
-  littleEndian_format = (littleEndian_format | b0) << 8;
-  littleEndian_format = (littleEndian_format | b1) << 8;
-  littleEndian_format = (littleEndian_format | b2) << 8;
-  littleEndian_format = (littleEndian_format | b3);
-
-  printf("0x%.8x\n", littleEndian_format);
+  if (isRegister) {
+    hexFormat = (hexFormat | b3) << 8;
+    hexFormat = (hexFormat | b2) << 8;
+    hexFormat = (hexFormat | b1) << 8;
+    hexFormat = (hexFormat | b0);
+    printf("(0x%.8x)\n", littleEndian_format);
+  } else  {
+    hexFormat = (hexFormat | b0) << 8;
+    hexFormat = (hexFormat | b1) << 8;
+    hexFormat = (hexFormat | b2) << 8;
+    hexFormat = (hexFormat | b3);
+    printf("0x%.8x\n", littleEndian_format);
+  }
 
 }
 
@@ -655,9 +655,4 @@ void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
   free(rf.reg);
   free(mem);
-}
-
-void enterC(void) {
-  printf("Press enter");
-  while (getchar() != '\n');
 }

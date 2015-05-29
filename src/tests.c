@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "emulate.h"
+#include "tests.h"
 
 struct regFile rf;
 

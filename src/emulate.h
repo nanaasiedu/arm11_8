@@ -75,7 +75,6 @@ int rotr8(uint8_t x, int n);
 int rotr32(uint32_t x, int n);
 uint32_t wMem(uint16_t startAddr);
 void writewMem(uint32_t value, uint16_t startAddr);
-void enterC(void);  //WILL REMOVE
 void alterC(bool set);
 void alterZ(bool set);
 void alterV(bool set);
@@ -88,36 +87,11 @@ int32_t fetch(uint8_t *mem);
 DecodedInst decode(int32_t instruction);
 uint8_t getInstType(int32_t instruction);
 
-void outputData(uint32_t i);
+void outputData(uint32_t i, bool isRegister);
 
 void decodeForDataProc(int32_t instruction, DecodedInst *di);
 void decodeForMult(int32_t instruction, DecodedInst *di);
 void decodeForDataTrans(int32_t instruction, DecodedInst *di);
 void decodeForBranch(int32_t instruction, DecodedInst *di);
 
-
-//******Testing Functions**********//
-void runAllTests(void);
-void testingDataProc(void);
-void testingDataTrans(void);
-void testingExecute(void);
-void testingExecuteBranch(void);
-void testFetch(void);
-void testGetInstType(void);
-void testDecodeForDataProc(void);
-void testDecodeForMult(void);
-void testDecodeForDataTrans(void);
-void testDecodeForBranch(void);
-
-#define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
-#define BYTETOBINARY(byte)  \
-  (byte & 0x80 ? 1 : 0), \
-  (byte & 0x40 ? 1 : 0), \
-  (byte & 0x20 ? 1 : 0), \
-  (byte & 0x10 ? 1 : 0), \
-  (byte & 0x08 ? 1 : 0), \
-  (byte & 0x04 ? 1 : 0), \
-  (byte & 0x02 ? 1 : 0), \
-  (byte & 0x01 ? 1 : 0)
-//**********************************************
 #endif /* end of include guard: EMULATEDEFS */
