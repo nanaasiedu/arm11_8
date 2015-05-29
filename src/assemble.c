@@ -210,7 +210,12 @@ void parseSingleDataTransfer(Token *token) {
   uint32_t cond, i, p, u, l, rd, rn;
   int offset;
   cond = 14;
-  l = 1;
+  if (strcmp(token->value, "ldr") == 0) {
+    l = SET;
+  }
+  else {
+    l = NOT_SET;
+  }
   Token *rdToken = token + 1;
   Token *addrToken = token + 2;
   rd = map_get(&registerTable, rdToken->value);
@@ -298,7 +303,7 @@ void generateDataProcessingOpcode(int32_t opcode,
   instr |= rd     << 12;
 
   //If immediate must calculate rotation
-  if (i == 1 && operand > 0xfff) {
+  if (i == 1 && operand > 0xFF) {
     int rotation = 32;
     int32_t imm = operand;
     while (imm % 4 == 0) {
