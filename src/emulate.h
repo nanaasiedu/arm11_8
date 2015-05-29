@@ -89,7 +89,26 @@ DecodedInst decode(int32_t instruction);
 uint8_t getInstType(int32_t instruction);
 
 void outputData(uint32_t i);
-/* WILL BE REMOVED*/
+
+void decodeForDataProc(int32_t instruction, DecodedInst *di);
+void decodeForMult(int32_t instruction, DecodedInst *di);
+void decodeForDataTrans(int32_t instruction, DecodedInst *di);
+void decodeForBranch(int32_t instruction, DecodedInst *di);
+
+
+//******Testing Functions**********//
+void runAllTests(void);
+void testingDataProc(void);
+void testingDataTrans(void);
+void testingExecute(void);
+void testingExecuteBranch(void);
+void testFetch(void);
+void testGetInstType(void);
+void testDecodeForDataProc(void);
+void testDecodeForMult(void);
+void testDecodeForDataTrans(void);
+void testDecodeForBranch(void);
+
 #define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
 #define BYTETOBINARY(byte)  \
   (byte & 0x80 ? 1 : 0), \
@@ -101,16 +120,4 @@ void outputData(uint32_t i);
   (byte & 0x02 ? 1 : 0), \
   (byte & 0x01 ? 1 : 0)
 //**********************************************
-
-void decodeForDataProc(int32_t instruction, DecodedInst *di);
-void decodeForMult(int32_t instruction, DecodedInst *di);
-void decodeForDataTrans(int32_t instruction, DecodedInst *di);
-void decodeForBranch(int32_t instruction, DecodedInst *di);
-
-
-//******Testing Functions**********//
-void testingDataProc(void);
-void testingDataTrans(void);
-void testingExecute(void);
-void testingExecuteBranch(void);
 #endif /* end of include guard: EMULATEDEFS */
