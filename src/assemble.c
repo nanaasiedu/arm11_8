@@ -8,6 +8,7 @@ address addr = 0;
 FILE *input = NULL, *output = NULL;
 Tokens *tokens = NULL;
 
+//Set arrays for symbol tables
 char *mnemonicStrings[23] = {
   "add", "sub", "rsb", "and", "eor", "orr", "mov", "tst", "teq", "cmp",
   "mul", "mla",
@@ -41,6 +42,7 @@ int registerInts[16] = {
   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
+//Set symbol tables
 SymbolTable *lblToAddr = NULL;
 SymbolTable mnemonicTable = {23, 23, mnemonicStrings, mnemonicInts};
 SymbolTable argumentTable = {23, 23, mnemonicStrings, numberOfArguments};
@@ -128,51 +130,68 @@ void parseInstruction(Token *token) {
   switch(index_of(token->value, mnemonicStrings)) {
     case ADD: case SUB: case RSB: case AND: case EOR:
     case ORR: parseTurnaryDataProcessing(token); break;
+
     case MOV: case TST: case TEQ:
     case CMP: parseBinaryDataProcessing(token); break;
+
     case MUL: parseMul(token); break;
+
     case MLA: parseMla(token); break;
+
     case LDR:
     case STR: parseSingleDataTransfer(token); break;
+
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
     case B: parseB(token); break;
+
     case LSL: parseLsl(token); break;
+
     case ANDEQ: generateHaltOpcode(); break;
   }
 }
 
 //Parse Instructions
 void parseTurnaryDataProcessing(Token *token) {
+  //Get args in Token form
   Token *rd_token = token + 1;
   Token *rn_token = token + 2;
   Token *operand_token = token + 3;
+
+  //Get numbers associated to args
   int rd,rn,operand,i;
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
+  //Find if operand is an immediate value (i = 1)
   if(operand_token->type == LITERAL) {
-    i = 1;
+    i = SET;
     char *ptr;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
-    i = 0;
+    i = NOT_SET;
     operand = map_get(&registerTable, operand_token->value);
   }
+
   generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i);
 }
 
 void parseBinaryDataProcessing(Token *token) {
+  //Get args in Token form
   Token *rdOrRn_token = token + 1;
   Token *operand_token = token + 2;
+
+  //Get numbers associated to args
   int rdOrRn,operand,i;
   rdOrRn = map_get(&registerTable, rdOrRn_token->value);
+  //Find if operand is an immediate value (i = 1)
   if(operand_token->type == LITERAL) {
     char *ptr;
-    i = 1;
+    i = SET;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
-    i = 0;
+    i = NOT_SET;
     operand = map_get(&registerTable, operand_token->value);
   }
+
   if (strcmp(token->value,"mov") == 0) {
     generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, NOT_SET, i);
   } else {
@@ -181,28 +200,34 @@ void parseBinaryDataProcessing(Token *token) {
 }
 
 void parseMul(Token *token) {
+  //Get args in Token form
   Token *rd_token = token + 1;
   Token *rm_token = token + 2;
   Token *rs_token = token + 3;
+
+  //Get numbers associated to args
   int rd,rm,rs;
   rd = map_get(&registerTable, rd_token->value);
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
-  //set rn to 0 as rn not needed ; A is not set
+
   generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, NOT_SET);
 }
 
 void parseMla(Token *token) {
+  //Get args in Token form
   Token *rd_token = token + 1;
   Token *rm_token = token + 2;
   Token *rs_token = token + 3;
   Token *rn_token = token + 4;
+
+  //Get numbers associated to args
   int rd,rm,rs,rn;
   rd = map_get(&registerTable, rd_token->value);
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
-  // A is set
+
   generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, SET);
 }
 
@@ -268,11 +293,15 @@ void parseSingleDataTransfer(Token *token) {
 }
 
 void parseB(Token *token) {
-  uint8_t cond; int offset;
+  //Get args in Token form
   Token *lblToken = token + 1;
+
+  //Get numbers associated to args
+  uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
   printf("%d - %d - %d = %d\n",  map_get(lblToAddr, lblToken->value), addr, ARM_OFFSET, offset);
+
   generateBranchOpcode(cond, offset);
 }
 
@@ -285,20 +314,20 @@ void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t rd,
                                   int32_t rn,
                                   int32_t operand,
-                                  int32_t S,
+                                  int32_t s,
                                   int32_t i) {
-  //Instrustion withh all condition
-  instruction instr = 14;
+  //Cond set to 1110
+  instruction instr = 0xe << 28;
+
   //Append all fields
-  instr  = instr  << 28;
   instr |= i      << 25;
   instr |= opcode << 21;
-  instr |= S      << 20;
+  instr |= s      << 20;
   instr |= rn     << 16;
   instr |= rd     << 12;
 
   //If immediate must calculate rotation
-  if (i == 1 && operand > 0xfff) {
+  if (i == 1 && operand > 0xff) {
     int rotation = 32;
     int32_t imm = operand;
     while (imm % 4 == 0) {
@@ -308,8 +337,9 @@ void generateDataProcessingOpcode(int32_t opcode,
     instr |= (rotation & 0xf) << 8;
     instr |= imm & 0xff;
   } else {
-    instr |= operand &  0xfff;
+    instr |= operand & 0xfff;
   }
+
   outputData(instr);
 }
 
@@ -318,29 +348,31 @@ void generateMultiplyOpcode(int32_t opcode,
                             int32_t rm,
                             int32_t rs,
                             int32_t rn,
-                            int32_t A) {
-  instruction instr = 14;
-  instr = instr << 28;
-  A = A << 21;
-  instr |= A;
-  rd = rd << 16;
-  instr |= rn;
-  rn = rn << 12;
-  instr |= rd;
-  rs = rs << 8;
-  instr |= rs;
+                            int32_t a) {
+  //Cond set to 1110
+  instruction instr = 0xe << 28;
+
+  //Append all fields
+  instr |= a     << 21;
+  instr |= rd    << 16;
+  instr |= rn    << 12;
+  instr |= rs    << 8;
   //bits 7 to 4 = 1001;
-  instr |= 9 << 4;
+  instr |= 9     << 4;
   instr |= rm;
+
   outputData(instr);
 }
 
 void generateBranchOpcode(int32_t cond, int32_t offset) {
-  instruction instr = cond;
-  instr = instr << 28;
+  //Cond set to 1110
+  instruction instr = 0xe << 28;
+
+  //Append all fields
   //bits 27 to 24 = 1010;
-  instr |= 0xA << 24;
-  instr |= offset & 0xFFFFFF;
+  instr |= 0xa << 24;
+  instr |= offset & 0xffffff;
+
   outputData(instr);
 }
 
@@ -352,24 +384,20 @@ void generateSingleDataTransferOpcode(uint32_t cond,
                                       uint32_t rd,
                                       uint32_t rn,
                                       uint32_t offset) {
+  //Cond set to 1110
+  instruction instr = 0xe << 28;
 
-  uint32_t instr = 14;
-  instr = instr << 28;
+  //Append all fields
   //bits 27,26 = 01
-  instr |= 1 << 26;
-  i = i << 25;
-  instr |= i;
-  p = p << 24;
-  instr |= p;
-  u = u << 23;
-  instr |= u;
-  l = l << 20;
-  instr |= l;
-  rn = rn << 16;
-  instr |= rn;
-  rd = rd << 12;
-  instr |= rd;
+  instr |= 1     << 26;
+  instr |= i     << 25;
+  instr |= p     << 24;
+  instr |= u     << 23;
+  instr |= l     << 20;
+  instr |= rn    << 16;
+  instr |= rd    << 12;
   instr |= offset;
+
   outputData(instr);
 }
 
@@ -379,19 +407,21 @@ void generateHaltOpcode() {
 }
 
 void outputData(uint32_t i) {
+  //Gets each byte of i
   uint8_t b0,b1,b2,b3;
-  uint32_t littleEndian_format = 0;
-
-  b0 = (uint8_t) (i  & 0xff);
-  b1 = (uint8_t) ((i >> 8) & 0xff);
+  b0 = (uint8_t) ( i        & 0xff);
+  b1 = (uint8_t) ((i >> 8)  & 0xff);
   b2 = (uint8_t) ((i >> 16) & 0xff);
   b3 = (uint8_t) ((i >> 24) & 0xff);
 
+  //Convert to little endian format
+  instruction littleEndian_format = 0;
   littleEndian_format = (littleEndian_format | b0) << 8;
   littleEndian_format = (littleEndian_format | b1) << 8;
   littleEndian_format = (littleEndian_format | b2) << 8;
   littleEndian_format = (littleEndian_format | b3);
 
+  //Print to file
   printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
 
   if (output != NULL) {
