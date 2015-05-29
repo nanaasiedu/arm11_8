@@ -360,24 +360,16 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   uint32_t res = 0; // result
   int shift; // value to shift by
 
-  // printf("shifSeg = %d\n",shiftSeg);
-  // printf("shiftop = %d\n",shiftop);
-  // printf("rs = %d\n",rs);
-  // printf("shift type = %d\n", shiftType);
-  // printf("conint = %d\n", conint);
-
   if (shiftop) { // if shiftseg is in reg rs mode
     shift = rf.reg[rs] & 0xff;
   } else { // if shiftseg is in constant int mode
     shift = conint;
   }
 
-  // printf("shift = %d\n", shift);
-
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
+      alterCPSR(getBit(value,sizeof(value)*8 - shift), s, Cbit);
     break;
     case 1: // logical right
       res = value >> shift;
@@ -435,7 +427,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   if (!i) { // if offset is immediate
     offset = getBinarySeg(offset,11,12); // offset = Immediate
   } else {// offset is a register
-    offset = barrelShift(rf.reg[rm], shiftSeg, 1);
+    offset = barrelShift(rf.reg[rm], shiftSeg, 0);
   }
 
   int soffset = offset; // signed offset
