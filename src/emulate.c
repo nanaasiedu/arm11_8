@@ -661,7 +661,7 @@ void testingHelpers(void) { //PASSED
   mem[12] = 85;
   mem[15] = 64;
   printf("wMem[12] = %u\n", wMem(12));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + 85);
+  printf("expected %u\n", (1 << 30) + 85);
 
   mem[80] = 3;
   mem[81] = 1;
