@@ -404,7 +404,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
 void setCPSRZN(int value, bool trigger) { //Confirmed
   //will set the CPSR Z and N bits depending on value
   alterCPSR(value == 0, trigger, Zbit);
-  alterCPSR(value & (1 << 31), trigger, Nbit);//ALTERED
+  alterCPSR(getBit(value,31), trigger, Nbit);//ALTERED
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -449,7 +449,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
       if(rn == 15) {
         rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       } else {
-        rf.reg[rd] = rf.reg[rn+soffset];
+        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       }
     } else { //store
       writewMem(rf.reg[rd], rf.reg[rn+soffset]);
@@ -509,7 +509,7 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
-void alterCPSR(bool set, bool shouldSet, int nthBit) {
+void alterCPSR(bool set, bool shouldSet, int nthBit) { //confirmed
   if (shouldSet) {
     *rf.CPSR ^= (-set ^ *rf.CPSR) & (1 << nthBit);
   }
