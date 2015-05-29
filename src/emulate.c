@@ -263,13 +263,10 @@ int execute(DecodedInst di) { //confirmed
 
     } else if ((di.instType & BRANCH) != 0) { // Branch
       executeBranch(di.operandOffset);
-      //printf("Entered Branch\n"); // FOR TESTING
       res = EXE_BRANCH;
     }
 
-  }/* else {
-    printf("Cond failed\n"); // FOR TESTING
-  }*/
+  }
   return res;
 
 }
@@ -288,7 +285,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
   if (i) { // if operand is immediate
     operand = getBinarySeg(operand,7,8); // operand = Immediate segment
-
     alterCPSR(getBit(operand, rotate*2 - 1), s, Cbit);
 
     operand = rotr32(operand, rotate*2);
@@ -309,7 +305,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 2:// sub
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
-      alterCPSR((int)operand > (int)rf.reg[rn], s, Cbit); // borrow
+      alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
       //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
@@ -317,7 +313,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 3: // rsb
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
-      alterCPSR((int)operand < (int)rf.reg[rn], s, Cbit); // borrow
+      alterCPSR((int)operand >= (int)rf.reg[rn], s, Cbit); // borrow
         //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
@@ -327,7 +323,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
       alterCPSR((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s, Cbit);
        // overflow will occur based on this condition
-
       setCPSRZN(rf.reg[rd],s);
     break;
     case 8: // tst
@@ -340,10 +335,8 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 10: // cmp
       testRes = rf.reg[rn] - operand;
-
-        alterCPSR((int)operand > (int)rf.reg[rn], s, Cbit); // borrow
-        //will occur if subtraend > minuend
-
+      alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
+      //will occur if subtraend > minuend
       setCPSRZN(testRes,s);
     break;
     case 12: // orr
@@ -352,7 +345,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 13: // mov
       rf.reg[rd] = operand;
-      setCPSRZN(rf.reg[rd],s);
+      setCPSRZN(rf.reg[rd], s);
     break;
   }
 
@@ -425,7 +418,7 @@ void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
     rf.reg[rd] = rf.reg[rm]*rf.reg[rs] + rf.reg[rn];
   }
 
-  setCPSRZN(rf.reg[rd],s);
+  setCPSRZN(rf.reg[rd], s);
 
 }
 
@@ -555,12 +548,12 @@ void outputMemReg(void) {
   // Output registers ------------
   printf("Registers:\n");
   for (int i = 0; i < NUM_GREG; i++) {
-    printf("$%-3d:%11d ", i, rf.reg[i]);
+    printf("$%-3d: %10d ", i, rf.reg[i]);
     outputData(rf.reg[i], isRegister);
   }
-  printf("PC  :%11d ", *rf.PC);
+  printf("PC  : %10d ", *rf.PC);
   outputData(*rf.PC, isRegister);
-  printf("CPSR:%11d ", *rf.CPSR);
+  printf("CPSR: %10d ", *rf.CPSR);
   outputData(*rf.CPSR, isRegister);
 
   // output mem -----------------------
