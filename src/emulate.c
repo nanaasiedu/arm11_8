@@ -473,8 +473,13 @@ void loadFileToMem(char const *file) {
   fread(mem,1,MEM16BIT,binFile);
 }
 
-uint32_t wMem(uint16_t startAddr) { //confirmed
+uint32_t wMem(uint32_t startAddr) { //confirmed
   // Returns 32 bit word starting from addr startAddr
+  if (startAddr > MEM16BIT) {
+    printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
+    return 0;
+  }
+
   uint32_t word = 0;
   for (int i = 0; i < 4; i++) {
     word = word | ((uint32_t)mem[startAddr + i] << (8*i));
@@ -483,8 +488,13 @@ uint32_t wMem(uint16_t startAddr) { //confirmed
   return word;
 }
 
-void writewMem(uint32_t value, uint16_t startAddr) { //confirmed
+void writewMem(uint32_t value, uint32_t startAddr) { //confirmed
   // Stores 32 bit word starting from addr startAddr
+
+  if (startAddr > MEM16BIT - 3) {
+    printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
+    return;
+  }
 
   for (int i = 0; i < 4; i++) {
     mem[startAddr+i] = getBinarySeg(value,8*(i+1) - 1 ,8);
