@@ -273,7 +273,7 @@ void parseB(Token *token) {
   Token *lblToken = token + 1;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
-  printf("%d - %d - %d = %d\n",  map_get(lblToAddr, lblToken->value), addr, ARM_OFFSET, offset);
+  // printf("%d - %d - %d = %d\n",  map_get(lblToAddr, lblToken->value), addr, ARM_OFFSET, offset);
   generateBranchOpcode(cond, offset);
 }
 
