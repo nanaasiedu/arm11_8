@@ -289,7 +289,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
   if (i) { // if operand is immediate
     operand = getBinarySeg(operand,7,8); // operand = Immediate segment
 
-    alterC(getBit(operand, rotate*2 - 1), s);
+    alterCPSR(getBit(operand, rotate*2 - 1), s, Cbit);
 
     operand = rotr32(operand, rotate*2);
 
@@ -309,7 +309,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 2:// sub
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
-      alterC((int)operand > (int)rf.reg[rn], s); // borrow
+      alterCPSR((int)operand > (int)rf.reg[rn], s, Cbit); // borrow
       //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
@@ -317,7 +317,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 3: // rsb
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
-      alterC((int)operand < (int)rf.reg[rn], s); // borrow
+      alterCPSR((int)operand < (int)rf.reg[rn], s, Cbit); // borrow
         //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
@@ -325,7 +325,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 4: // add
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
-      alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s);
+      alterCPSR((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s, Cbit);
        // overflow will occur based on this condition
 
       setCPSRZN(rf.reg[rd],s);
@@ -341,7 +341,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 10: // cmp
       testRes = rf.reg[rn] - operand;
 
-        alterC((int)operand > (int)rf.reg[rn], s); // borrow
+        alterCPSR((int)operand > (int)rf.reg[rn], s, Cbit); // borrow
         //will occur if subtraend > minuend
 
       setCPSRZN(testRes,s);
@@ -384,11 +384,11 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterC(getBit(value,sizeof(value)*8 - shift), s);
+      alterCPSR(getBit(value,sizeof(value)*8 - shift), s, Cbit);
     break;
     case 1: // logical right
       res = value >> shift;
-      alterC(getBit(value,shift - 1), s);
+      alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
     case 2: // arithmetic right
       if (getBit(value,31)) { // if value is negative
@@ -396,11 +396,11 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
       } else {
         res = value >> shift;
       }
-      alterC(getBit(value,shift - 1), s);
+      alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
     case 3: // rotate right
       res = rotr32(value,shift);
-      alterC(getBit(value,shift - 1), s);
+      alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
   }
 
@@ -410,8 +410,8 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
 
 void setCPSRZN(int value, bool trigger) { //Confirmed
   //will set the CPSR Z and N bits depending on value
-  alterZ(value == 0, trigger);
-  alterN(value & (1 << 31), trigger);//ALTERED
+  alterCPSR(value == 0, trigger, Zbit);
+  alterCPSR(value & (1 << 31), trigger, Nbit);//ALTERED
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -516,46 +516,9 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
-void alterV(bool set, bool shouldSet) {
+void alterCPSR(bool set, bool shouldSet, int nthBit) {
   if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | (1 << Vbit);
-    } else {
-      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Vbit));
-    }
-  }
-}
-
-void alterC(bool set, bool shouldSet) {
-  // Sets/clears CPSR bit C depending on set
-  if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | (1 << Cbit);
-    } else {
-      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Cbit));
-    }
-  }
-  printf("Setting? %d, %d\n", set, shouldSet);
-}
-
-void alterZ(bool set, bool shouldSet) {
-  // Sets/clears CPSR bit Z depending on set
-  if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | (1 << Zbit);
-    } else {
-      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Zbit));
-    }
-  }
-}
-
-void alterN(bool set, bool shouldSet) {
-  if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | ((1 << Nbit));
-    } else {
-      *rf.CPSR = *rf.CPSR & 0x7fffffff; // 0111....
-    }
+    *rf.CPSR ^= (-set ^ *rf.CPSR) & (1 << nthBit);
   }
 }
 
