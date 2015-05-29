@@ -444,7 +444,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
         rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       }
     } else { //store
-      writewMem(rf.reg[rd], rf.reg[rn+soffset]);
+      writewMem(rf.reg[rd], rf.reg[rn]+soffset);
     }
 
   } else { //post-indexing
