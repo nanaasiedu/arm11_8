@@ -4,10 +4,9 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "emulate.h"
-#include "tests.h"
+// #include "tests.h"
 
 // TODO: CPSR bit const / opcode const / shift type const
-// TODO: TELL ELYAS TO CHECK OUTPUT FORMAT AND REG OUTPUT
 
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
@@ -597,7 +596,7 @@ int rotr32(uint32_t x, int n) { //Confirmed
 
 void outputMemReg(void) {
   //outputs the state of the main memory and register file
-  isRegister = TRUE;
+  bool isRegister = TRUE;
   // Output registers ------------
   printf("Registers:\n");
   for (int i = 0; i < NUM_GREG; i++) {
@@ -640,13 +639,13 @@ void outputData(uint32_t i, bool isRegister) {
     hexFormat = (hexFormat | b2) << 8;
     hexFormat = (hexFormat | b1) << 8;
     hexFormat = (hexFormat | b0);
-    printf("(0x%.8x)\n", littleEndian_format);
+    printf("(0x%.8x)\n", hexFormat);
   } else  {
     hexFormat = (hexFormat | b0) << 8;
     hexFormat = (hexFormat | b1) << 8;
     hexFormat = (hexFormat | b2) << 8;
     hexFormat = (hexFormat | b3);
-    printf("0x%.8x\n", littleEndian_format);
+    printf("0x%.8x\n", hexFormat);
   }
 
 }

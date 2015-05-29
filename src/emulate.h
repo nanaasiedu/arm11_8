@@ -1,5 +1,5 @@
-#ifndef EMULATEDEFS
-#define EMULATEDEFS
+#ifndef EMULATE_H
+#define EMULATE_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -16,7 +16,9 @@ typedef int bool;
 #define MEM16BIT 65536
 #endif
 
-const uint32_t MAX_UINT32 = 4294967296 - 1; //32 1s
+const uint32_t MAX_UINT32 = 0xFFFFFFFF; //32 1s
+
+extern uint8_t *mem;
 
 //execute return values
 const int EXE_HALT = 0;
@@ -94,4 +96,4 @@ void decodeForMult(int32_t instruction, DecodedInst *di);
 void decodeForDataTrans(int32_t instruction, DecodedInst *di);
 void decodeForBranch(int32_t instruction, DecodedInst *di);
 
-#endif /* end of include guard: EMULATEDEFS */
+#endif /* end of include guard: EMULATE_H */

@@ -6,8 +6,6 @@
 
 struct regFile rf;
 
-//int main(int argc, char const *argv[]) {
-
 void runAllTests(void){
   printf("running tests...\n\n");
 
@@ -25,9 +23,7 @@ void runAllTests(void){
   printf("All test passed\n");
 
   printf("\n...tests complete\n");
-  return EXIT_SUCCESS;
 }
-
 /*  Test functions */
 //  Remember to remove
 
@@ -409,7 +405,7 @@ void testingDataProc(void) { //PASSED
   rf.reg[7] = 29;
   rf.reg[8] = (85 + 512) << 9;
   rf.reg[9] = 1;
-  rf.reg[10] = INT_MAX; // 0111....1
+  rf.reg[10] = 0x7fffffff; // 0111....1
 
   alterC(1);
 
@@ -639,23 +635,23 @@ void testingHelpers(void) { //PASSED
   mem[12] = 85;
   mem[15] = 64;
   printf("wMem[12] = %u\n", wMem(12));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + 85);
+  printf("expected %u\n", (1 << 30) + 85);
 
   mem[80] = 3;
   mem[81] = 1;
   mem[83] = 96;
   printf("wMem[80] = %u\n", wMem(80));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3);
+  printf("expected %u\n", (1 << 30) + (1 << 29) + 256 + 3);
   printf("====\n\n");
 
   printf("Test writewMem ====\n");
-  writewMem((uint32_t)ipow(2,30) + 85,12);
+  writewMem((1 << 30) + 85,12);
   printf("wMem[12] = %u\n", wMem(12));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + 85);
+  printf("expected %u\n", (1 << 30) + 85);
 
-  writewMem((uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3,80);
+  writewMem((1 << 30) + (1 << 29) + 256 + 3,80);
   printf("wMem[80] = %u\n", wMem(80));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3);
+  printf("expected %u\n", (1 << 30) + (1 << 29) + 256 + 3);
   printf("====\n\n");
 
   printf("end testing\n");

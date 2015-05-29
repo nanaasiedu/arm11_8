@@ -1,6 +1,8 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include <stdlib.h>
+
 void runAllTests(void);
 void testingDataProc(void);
 void testingDataTrans(void);

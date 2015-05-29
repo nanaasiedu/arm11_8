@@ -19,7 +19,7 @@ assemble.o: assemble.c
 symbolmap.o: symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-emulate: emulate.o tests.o
+emulate: emulate.o 
 	$(CC) $^ -o $@
 
 emulate.o: emulate.c
