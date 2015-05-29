@@ -360,24 +360,16 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   uint32_t res = 0; // result
   int shift; // value to shift by
 
-  // printf("shifSeg = %d\n",shiftSeg);
-  // printf("shiftop = %d\n",shiftop);
-  // printf("rs = %d\n",rs);
-  // printf("shift type = %d\n", shiftType);
-  // printf("conint = %d\n", conint);
-
   if (shiftop) { // if shiftseg is in reg rs mode
     shift = rf.reg[rs] & 0xff;
   } else { // if shiftseg is in constant int mode
     shift = conint;
   }
 
-  // printf("shift = %d\n", shift);
-
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
+      alterCPSR(getBit(value,sizeof(value)*8 - shift), s, Cbit);
     break;
     case 1: // logical right
       res = value >> shift;
@@ -404,7 +396,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
 void setCPSRZN(int value, bool trigger) { //Confirmed
   //will set the CPSR Z and N bits depending on value
   alterCPSR(value == 0, trigger, Zbit);
-  alterCPSR(value & (1 << 31), trigger, Nbit);//ALTERED
+  alterCPSR(getBit(value,31), trigger, Nbit);//ALTERED
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -435,7 +427,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   if (!i) { // if offset is immediate
     offset = getBinarySeg(offset,11,12); // offset = Immediate
   } else {// offset is a register
-    offset = barrelShift(rf.reg[rm], shiftSeg, 1);
+    offset = barrelShift(rf.reg[rm], shiftSeg, 0);
   }
 
   int soffset = offset; // signed offset
@@ -449,7 +441,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
       if(rn == 15) {
         rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       } else {
-        rf.reg[rd] = rf.reg[rn+soffset];
+        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       }
     } else { //store
       writewMem(rf.reg[rd], rf.reg[rn+soffset]);
@@ -509,7 +501,7 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
-void alterCPSR(bool set, bool shouldSet, int nthBit) {
+void alterCPSR(bool set, bool shouldSet, int nthBit) { //confirmed
   if (shouldSet) {
     *rf.CPSR ^= (-set ^ *rf.CPSR) & (1 << nthBit);
   }
@@ -540,6 +532,83 @@ int rotr32(uint32_t x, int n) { //Confirmed
   // POST: rotr32 will return the 32 bit value of x rotated n spaces to the right
   uint32_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
+}
+
+void testingHelpers(void) { //PASSED
+  printf("start testing\n\n");
+
+  printf("Test getBit ====\n");
+
+  printf("getBit(5,7) = %d\n",getBit(5,7));
+  printf("expected 0\n");
+  printf("getBit(69,2) = %d\n",getBit(69,2));
+  printf("expected 1\n");
+  printf("getBit(78,6) = %d\n",getBit(78,6));
+  printf("expected 1\n");
+  printf("getBit((1 << 31),31) = %d\n",getBit((1 << 31),31));
+  printf("expected 1\n");
+  printf("getBit(78,45) = %d\n",getBit(78,45));
+  printf("expected 0\n");
+
+  printf("====\n\n");
+
+  printf("Test getBinarySeg ====\n");
+
+  printf("getBinarySeg(15,3,3) = %d\n", getBinarySeg(15,3,3));
+  printf("expected 7\n");
+  printf("getBinarySeg(179,7,6) = %d\n", getBinarySeg(179,7,6));
+  printf("expected 44\n");
+  printf("getBinarySeg((1 << 31)+(1 << 29),3,3) = %d\n", getBinarySeg((1 << 31)+(1 << 29),31,3));
+  printf("expected 5\n");
+
+  printf("====\n\n");
+
+  printf("Test rotr8 ====\n");
+
+  printf("rotr8(12,2) = %u\n", rotr8(12,2));
+  printf("expected 3\n");
+  printf("rotr8(69,3) = %u\n", rotr8(69,3));
+  printf("expected 168\n");
+  printf("rotr8(203,4) = %u\n", rotr8(203,4));
+  printf("expected 188\n");
+
+  printf("====\n\n");
+
+  printf("Test rotr32 ====\n");
+
+  printf("rotr32(12,2) = %u\n", rotr32(12,2));
+  printf("expected 3\n");
+  printf("rotr32((1 << 31),3) = %u\n", (uint32_t)rotr32((1 << 31),3));
+  printf("expected %u\n", (uint32_t)(1 << 28));
+  printf("rotr32(13,3) = %u\n", rotr32(13,3));
+  printf("expected %u\n", (uint32_t)((1 << 31) + (1 << 29) + 1));
+
+  printf("====\n\n");
+
+  printf("Test wMem ====\n");
+  mem[12] = 85;
+  mem[15] = 64;
+  printf("wMem[12] = %u\n", wMem(12));
+  printf("expected %u\n", (1 << 30) + 85);
+
+  mem[80] = 3;
+  mem[81] = 1;
+  mem[83] = 96;
+  printf("wMem[80] = %u\n", wMem(80));
+  printf("expected %u\n", (uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3);
+  printf("====\n\n");
+
+  printf("Test writewMem ====\n");
+  writewMem((uint32_t)(1 << 30) + 85,12);
+  printf("wMem[12] = %u\n", wMem(12));
+  printf("expected %u\n", (uint32_t)(1 << 30) + 85);
+
+  writewMem((uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3,80);
+  printf("wMem[80] = %u\n", wMem(80));
+  printf("expected %u\n", (uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3);
+  printf("====\n\n");
+
+  printf("end testing\n");
 }
 
 void outputMemReg(void) {
