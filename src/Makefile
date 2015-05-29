@@ -19,8 +19,14 @@ assemble.o: assemble.c
 symbolmap.o: symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-emulate: emulate.c
-	$(CC) $(CFLAGS) $< -o $@
+emulate: emulate.o tests.o
+	$(CC) $^ -o $@
+
+emulate.o: emulate.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+tests.o: tests.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:
 	rm -f $(wildcard *.o)
