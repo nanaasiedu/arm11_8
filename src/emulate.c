@@ -450,9 +450,6 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   bool p = getBit(instType,1); // Pre/Post, set = Pre
   bool u = getBit(instType,0); // Up bit
 
-  printf("i = %d l = %d p = %d u = %d\n",i,l,p,u); //TEST
-  printf("rn = %d rd = %d offset = %u\n",rn,rd,offset);
-
   int shiftSeg = (offset >> 4); // 8 bit shift segment if i = 0
   int rm = getBinarySeg(offset,3,4); // 4 bit
 
@@ -600,7 +597,7 @@ void outputMemReg(void) {
   // Output registers ------------
   printf("Registers:\n");
   for (int i = 0; i < NUM_GREG; i++) {
-    printf("$%-3d :%11d ", i, rf.reg[i]);
+    printf("$%-3d:%11d ", i, rf.reg[i]);
     outputData(rf.reg[i], isRegister);
   }
   printf("PC  :%11d ", *rf.PC);
@@ -616,7 +613,7 @@ void outputMemReg(void) {
   while(*rf.PC < MEM16BIT) {
     instruction = fetch(mem);
     if (instruction != 0){
-      printf("%.8x: ", *rf.PC - 4); // since fetch automatically inc^ PC
+      printf("0x%.8x: ", *rf.PC - 4); // since fetch automatically inc^ PC
       outputData(instruction, !isRegister);
     }
   }
