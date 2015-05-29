@@ -20,13 +20,13 @@ int main(int argc, char const *argv[]) {
 
   printf("running tests...\n\n");
 
-  testFetch();
-  testGetInstType();
+  // testFetch();
+  // testGetInstType();
   testDecodeForDataProc();
-  testDecodeForMult();
-  testDecodeForDataTrans();
-  testDecodeForBranch();
-  printf("All test passed\n");
+  // testDecodeForMult();
+  // testDecodeForDataTrans();
+  // testDecodeForBranch();
+  // printf("All test passed\n");
 
   printf("\n...tests complete\n");
   return EXIT_SUCCESS;
@@ -269,7 +269,7 @@ void testDecodeForDataProc(void) {
   printf("Operand\t\t%d\t\t%d\n", 3, di.operandOffset);
   printf("==========\n");
   di.instType = DATA_PROC;
-  instruction = 0x00B88FFE;
+  instruction = 0xF0B88FFE;
   // I = 0, S = 1, rn = 8, rd = 8
   // opcode = 5, operand = 4094
   decodeForDataProc(instruction, &di);
