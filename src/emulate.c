@@ -45,7 +45,6 @@ int main (int argc, char const *argv[]) {
   //testingHelpers(); //PASSED
 
   outputMemReg();
-  printf("The program is closing\n");
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
 }
@@ -917,13 +916,8 @@ int getBit(uint32_t x, int pos) { //Confirmed
 uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) { //Confirmed
   //PRE: sizeof(x) > start > 0 / length > 0
   //POST: res = int value of binary segment between start and end
-  uint32_t acc = 1 << start; // an accumulator which will set the positions of the bits with the segment we want to return
-
-  for (int i = 1; i < length; i++) {
-    acc += 1 << (start-i);
-  }
-
-  return (x & acc) >> (start - (length - 1));
+  long mask = (1 << length) - 1;
+  return (x >> (start-length+1)) & mask;
 }
 
 int rotr8(uint8_t x, int n) { //Confirmed
@@ -996,9 +990,24 @@ void testingHelpers(void) { //PASSED
 
 void outputMemReg(void) {
   //outputs the state of the main memory and register file
+
+  // Output registers ------------
+  printf("Registers:\n");
+  for (int i = 0; i < NUM_GREG; i++) {
+    printf("$%d: ", i);
+    outputData(rf.reg[i]);
+  }
+  printf("SP: ");
+  outputData(*rf.SP);
+  printf("LR: ");
+  outputData(*rf.LR);
+  printf("PC: ");
+  outputData(*rf.PC);
+  printf("CPSR: ");
+  outputData(*rf.CPSR);
+  printf("---\n\n");
+
   // output mem -----------------------
-  printf("\nOutput in Little Endian format\n");
-  printf("Main memory --- \n");
   uint32_t pcValue = *rf.PC;
   *rf.PC = 0;
   uint32_t instruction;
@@ -1013,22 +1022,6 @@ void outputMemReg(void) {
 
   // reset PC
   *rf.PC = pcValue;
-
-  // Output registers ------------
-  printf("Register file --- \n");
-  for (int i = 0; i < NUM_GREG; i++) {
-    printf("register %d: ", i);
-    outputData(rf.reg[i]);
-  }
-  printf("SP: ");
-  outputData(*rf.SP);
-  printf("LR: ");
-  outputData(*rf.LR);
-  printf("PC: ");
-  outputData(*rf.PC);
-  printf("CPSR: ");
-  outputData(*rf.CPSR);
-  printf("---\n\n");
 
 }
 

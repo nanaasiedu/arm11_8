@@ -69,8 +69,6 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 }
 
-#pragma mark - IO
-
 void setUpIO(char *in, char *out) {
   if ((input = fopen(in, "r")) == NULL) {
     perror(in);
@@ -82,8 +80,6 @@ void setUpIO(char *in, char *out) {
     exit(EXIT_FAILURE);
   }
 }
-
-#pragma mark - Compile
 
 void resolveLabelAddresses() {
   address currAddr = 0;
@@ -399,7 +395,6 @@ void outputData(uint32_t i) {
   }
 }
 
-#pragma mark - Helper Functions
 
 void tokenise() {
   char line[512];
