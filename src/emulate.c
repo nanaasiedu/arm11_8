@@ -309,7 +309,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 2:// sub
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
-      printf("S: %d - 315\n", s);
       alterC((int)operand > (int)rf.reg[rn], s); // borrow
       //will occur if subtraend > minuend
 
@@ -318,7 +317,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 3: // rsb
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
-      printf("S: %d - 323\n", s);
       alterC((int)operand < (int)rf.reg[rn], s); // borrow
         //will occur if subtraend > minuend
 
@@ -327,7 +325,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 4: // add
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
-      printf("S: %d - 338\n", s);
       alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s);
        // overflow will occur based on this condition
 
@@ -344,7 +341,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 10: // cmp
       testRes = rf.reg[rn] - operand;
 
-        printf("S: %d - 357\n", s);
         alterC((int)operand > (int)rf.reg[rn], s); // borrow
         //will occur if subtraend > minuend
 
@@ -392,7 +388,6 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
     break;
     case 1: // logical right
       res = value >> shift;
-      printf("S: %d - 407\n", s);
       alterC(getBit(value,shift - 1), s);
     break;
     case 2: // arithmetic right
@@ -401,12 +396,10 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
       } else {
         res = value >> shift;
       }
-      printf("S: %d - 416\n", s);
       alterC(getBit(value,shift - 1), s);
     break;
     case 3: // rotate right
       res = rotr32(value,shift);
-      printf("S: %d - 421\n", s);
       alterC(getBit(value,shift - 1), s);
     break;
   }
