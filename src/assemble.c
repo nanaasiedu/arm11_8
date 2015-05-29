@@ -229,7 +229,7 @@ void parseMla(Token *token) {
 
 void parseSingleDataTransfer(Token *token) {
   uint32_t cond, i, p, u, l, rd, rn;
-  int offset;
+  int32_t offset;
   cond = 14;
   l = !strcmp(token->value, "ldr");
   Token *rdToken = token + 1;
@@ -267,20 +267,30 @@ void parseSingleDataTransfer(Token *token) {
       u = SET;
     } else if (isPreIndex(addrValue)) {
       //Pre-Index, base and offset
-      i = SET;
-      p = SET;
-      rn = map_get(&registerTable, addrValue+1);
-      char *ptr;
-      offset = (int) strtol((token + 3)->value, &ptr, 0);
-      u = SET;
-    } else {
-      //Post-Index
+      printf("Pre-Index\n");
       i = NOT_SET;
       p = SET;
       rn = map_get(&registerTable, addrValue+1);
       char *ptr;
-      stripLastBracket((token+3)->value);
-      offset = (int) strtol((token+3)->value, &ptr, 0);
+      offset = strtol((token + 3)->value, &ptr, 0);
+      if (offset < 0) {
+        offset *= -1; // COULD BE WRONG
+        u = 0;
+      } else {
+        u = 1;
+      }
+    } else {
+      //Post-Index
+      printf("Post-Index\n");
+      i = SET;
+      p = NOT_SET;
+      rn = map_get(&registerTable, stripLastBracket(addrValue+1));
+      char *ptr;
+      // stripLastBracket((token+3)->value);
+      offset = map_get(&registerTable, (token+3)->value);
+      if (offset == -1) {
+        offset = (int) strtol((token+3)->value, &ptr, 0);
+      }
       u = 1;
     }
     free(addrValue);
@@ -361,8 +371,7 @@ void generateMultiplyOpcode(int32_t opcode,
 }
 
 void generateBranchOpcode(int32_t cond, int32_t offset) {
-  //Cond set to 1110
-  instruction instr = 0xe << 28;
+  instruction instr = cond << 28;
 
   //Append all fields
   //bits 27 to 24 = 1010;
@@ -468,12 +477,13 @@ char* stripBrackets(char *str) {
   return ++str;
 }
 
-void stripLastBracket(char *str) {
+char* stripLastBracket(char *str) {
   str[strlen(str)-1] = '\0';
+  return str;
 }
 
 bool isPreIndex(char *str) {
-  return (strchr(str, "[") == 0) && (strchr(str, "]") == strlen(str));
+  return !(strchr(str, ']') == &str[strlen(str)-1]);
 }
 
 void dealloc() {

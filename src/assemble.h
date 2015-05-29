@@ -55,7 +55,7 @@ void generateHaltOpcode();
 void dealloc();
 int index_of(char *value, char **arr);
 char* stripBrackets(char *str);
-void stripLastBracket(char *str);
+char* stripLastBracket(char *str);
 bool isPreIndex(char *str);
 
 //Tokens
