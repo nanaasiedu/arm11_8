@@ -542,6 +542,7 @@ void alterC(bool set, bool shouldSet) {
       *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Cbit));
     }
   }
+  printf("Setting? %d, %d\n", set, shouldSet);
 }
 
 void alterZ(bool set, bool shouldSet) {
