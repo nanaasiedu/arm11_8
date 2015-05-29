@@ -5,10 +5,28 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 .PHONY: all clean
 
-all: emulate
+all: emulate assemble
 
-emulate: emulate.c
-	$(CC) $(CFLAGS) $< -o $@
+assemble: assemble.o symbolmap.o tokenise.o
+	$(CC) $^ -o $@
+
+tokenise.o: tokenise.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+assemble.o: assemble.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+symbolmap.o: symbolmap.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+emulate: emulate.o 
+	$(CC) $^ -o $@
+
+emulate.o: emulate.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+tests.o: tests.c
+	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:
 	rm -f $(wildcard *.o)

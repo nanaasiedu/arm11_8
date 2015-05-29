@@ -30,7 +30,7 @@ void map_double_capacity(SymbolTable *map) {
   }
 }
 
-#pragma mark - Helper Functions
+
 
 int find_index(char **a, int size, char *key) {
    for (int i = 0; i < size; i++) {

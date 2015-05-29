@@ -2,10 +2,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "emulate.h"
+#include "tests.h"
 
 struct regFile rf;
-
-//int main(int argc, char const *argv[]) {
 
 void runAllTests(void){
   printf("running tests...\n\n");
@@ -24,9 +23,7 @@ void runAllTests(void){
   printf("All test passed\n");
 
   printf("\n...tests complete\n");
-  return EXIT_SUCCESS;
 }
-
 /*  Test functions */
 //  Remember to remove
 
@@ -408,7 +405,7 @@ void testingDataProc(void) { //PASSED
   rf.reg[7] = 29;
   rf.reg[8] = (85 + 512) << 9;
   rf.reg[9] = 1;
-  rf.reg[10] = INT_MAX; // 0111....1
+  rf.reg[10] = 0x7fffffff; // 0111....1
 
   alterC(1);
 
@@ -578,6 +575,83 @@ void testingDataTrans(void) { // TESTING
                                  offset);
 
 
+  printf("====\n\n");
+
+  printf("end testing\n");
+}
+
+void testingHelpers(void) { //PASSED
+  printf("start testing\n\n");
+
+  printf("Test getBit ====\n");
+
+  printf("getBit(5,7) = %d\n",getBit(5,7));
+  printf("expected 0\n");
+  printf("getBit(69,2) = %d\n",getBit(69,2));
+  printf("expected 1\n");
+  printf("getBit(78,6) = %d\n",getBit(78,6));
+  printf("expected 1\n");
+  printf("getBit((1 << 31),31) = %d\n",getBit((1 << 31),31));
+  printf("expected 1\n");
+  printf("getBit(78,45) = %d\n",getBit(78,45));
+  printf("expected 0\n");
+
+  printf("====\n\n");
+
+  printf("Test getBinarySeg ====\n");
+
+  printf("getBinarySeg(15,3,3) = %d\n", getBinarySeg(15,3,3));
+  printf("expected 7\n");
+  printf("getBinarySeg(179,7,6) = %d\n", getBinarySeg(179,7,6));
+  printf("expected 44\n");
+  printf("getBinarySeg((1 << 31)+(1 << 29),3,3) = %d\n", getBinarySeg((1 << 31)+(1 << 29),31,3));
+  printf("expected 5\n");
+
+  printf("====\n\n");
+
+  printf("Test rotr8 ====\n");
+
+  printf("rotr8(12,2) = %u\n", rotr8(12,2));
+  printf("expected 3\n");
+  printf("rotr8(69,3) = %u\n", rotr8(69,3));
+  printf("expected 168\n");
+  printf("rotr8(203,4) = %u\n", rotr8(203,4));
+  printf("expected 188\n");
+
+  printf("====\n\n");
+
+  printf("Test rotr32 ====\n");
+
+  printf("rotr32(12,2) = %u\n", rotr32(12,2));
+  printf("expected 3\n");
+  printf("rotr32((1 << 31),3) = %u\n", (uint32_t)rotr32((1 << 31),3));
+  printf("expected %u\n", (uint32_t)(1 << 28));
+  printf("rotr32(13,3) = %u\n", rotr32(13,3));
+  printf("expected %u\n", (uint32_t)((1 << 31) + (1 << 29) + 1));
+
+  printf("====\n\n");
+
+  printf("Test wMem ====\n");
+  mem[12] = 85;
+  mem[15] = 64;
+  printf("wMem[12] = %u\n", wMem(12));
+  printf("expected %u\n", (1 << 30) + 85);
+
+  mem[80] = 3;
+  mem[81] = 1;
+  mem[83] = 96;
+  printf("wMem[80] = %u\n", wMem(80));
+  printf("expected %u\n", (1 << 30) + (1 << 29) + 256 + 3);
+  printf("====\n\n");
+
+  printf("Test writewMem ====\n");
+  writewMem((1 << 30) + 85,12);
+  printf("wMem[12] = %u\n", wMem(12));
+  printf("expected %u\n", (1 << 30) + 85);
+
+  writewMem((1 << 30) + (1 << 29) + 256 + 3,80);
+  printf("wMem[80] = %u\n", wMem(80));
+  printf("expected %u\n", (1 << 30) + (1 << 29) + 256 + 3);
   printf("====\n\n");
 
   printf("end testing\n");

@@ -2,11 +2,12 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "emulate.h"
 #include <limits.h>
+#include "emulate.h"
+// #include "tests.h"
 
 // TODO: CPSR bit const / opcode const / shift type const
-// TODO: TELL ELYAS TO CHECK OUTPUT FORMAT AND REG OUTPUT
+// TODO: CPSR Fix
 
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
@@ -39,11 +40,8 @@ int main (int argc, char const *argv[]) {
   } while(executeResult != EXE_HALT); //fetch again if EXE_BRANCH
 
   outputMemReg();
-  printf("The program is closing\n");
 
-  ////////////////////////////////
-  runAllTests();
-  ////////////////////////////////
+  //runAllTests();
 
   dealloc(); //frees up allocated memory
   return EXIT_SUCCESS;
@@ -246,7 +244,6 @@ int execute(DecodedInst di) { //confirmed
       break;
     default:
       perror("Invalid instruction entered with unknown condition");
-      dealloc();
       exit(EXIT_FAILURE);
   }
 
@@ -292,11 +289,9 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
   if (i) { // if operand is immediate
     operand = getBinarySeg(operand,7,8); // operand = Immediate segment
 
-    if (s) {
-      alterC(getBit(operand,rotate*2 - 1));
-    }
+    alterC(getBit(operand, rotate*2 - 1), s);
 
-    operand = rotr32(operand,rotate*2);
+    operand = rotr32(operand, rotate*2);
 
   } else { // operand is a register
     operand = barrelShift(rf.reg[rm], shiftSeg, s);
@@ -314,30 +309,24 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 2:// sub
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
-      if (s) {
-        alterC((int)operand > (int)rf.reg[rn]); // borrow
-        //will occur if subtraend > minuend
-      }
+      alterC((int)operand > (int)rf.reg[rn], s); // borrow
+      //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
     break;
     case 3: // rsb
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
-      if (s) {
-        alterC((int)operand < (int)rf.reg[rn]); // borrow
+      alterC((int)operand < (int)rf.reg[rn], s); // borrow
         //will occur if subtraend > minuend
-      }
 
       setCPSRZN(rf.reg[rd],s);
     break;
     case 4: // add
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
-      if (s) {
-        alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]));
-         // overflow will occur based on this condition
-      }
+      alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s);
+       // overflow will occur based on this condition
 
       setCPSRZN(rf.reg[rd],s);
     break;
@@ -352,10 +341,8 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 10: // cmp
       testRes = rf.reg[rn] - operand;
 
-      if (s) {
-        alterC((int)operand > (int)rf.reg[rn]); // borrow
+        alterC((int)operand > (int)rf.reg[rn], s); // borrow
         //will occur if subtraend > minuend
-      }
 
       setCPSRZN(testRes,s);
     break;
@@ -374,17 +361,17 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   //POST: return shifted value of rm to operand
   bool shiftop = getBit(shiftSeg,0); // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
-  int shiftType = getBinarySeg(shiftSeg,2,2); //2 bit
-  int rs = getBinarySeg(shiftSeg,7,4); // 4 bit
-  int conint = getBinarySeg(shiftSeg,7,5); // 5 bit
+  int shiftType = getBinarySeg(shiftSeg,2,2); //2 bits
+  int rs = getBinarySeg(shiftSeg,7,4); // 4 bits
+  int conint = getBinarySeg(shiftSeg,7,5); // 5 bits
   uint32_t res = 0; // result
   int shift; // value to shift by
 
-  /* printf("shifSeg = %d\n",shiftSeg);
-  printf("shiftop = %d\n",shiftop);
-  printf("rs = %d\n",rs);
-  printf("shift type = %d\n", shiftType);
-  printf("conint = %d\n", conint); */
+  // printf("shifSeg = %d\n",shiftSeg);
+  // printf("shiftop = %d\n",shiftop);
+  // printf("rs = %d\n",rs);
+  // printf("shift type = %d\n", shiftType);
+  // printf("conint = %d\n", conint);
 
   if (shiftop) { // if shiftseg is in reg rs mode
     shift = rf.reg[rs] & 0xff;
@@ -397,11 +384,11 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterC(getBit(value,sizeof(value)*8 - shift));
+      alterC(getBit(value,sizeof(value)*8 - shift), s);
     break;
     case 1: // logical right
       res = value >> shift;
-      alterC(getBit(value,shift - 1));
+      alterC(getBit(value,shift - 1), s);
     break;
     case 2: // arithmetic right
       if (getBit(value,31)) { // if value is negative
@@ -409,11 +396,11 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
       } else {
         res = value >> shift;
       }
-      alterC(getBit(value,shift - 1));
+      alterC(getBit(value,shift - 1), s);
     break;
     case 3: // rotate right
       res = rotr32(value,shift);
-      alterC(getBit(value,shift - 1));
+      alterC(getBit(value,shift - 1), s);
     break;
   }
 
@@ -423,12 +410,8 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
 
 void setCPSRZN(int value, bool trigger) { //Confirmed
   //will set the CPSR Z and N bits depending on value
-  if (!trigger) {
-    return;
-  }
-
-  alterZ(value == 0);
-  alterN(value & (1 << 31));//ALTERED
+  alterZ(value == 0, trigger);
+  alterN(value & (1 << 31), trigger);//ALTERED
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -453,9 +436,6 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   bool p = getBit(instType,1); // Pre/Post, set = Pre
   bool u = getBit(instType,0); // Up bit
 
-  printf("i = %d l = %d p = %d u = %d\n",i,l,p,u); //TEST
-  printf("rn = %d rd = %d offset = %u\n",rn,rd,offset);
-
   int shiftSeg = (offset >> 4); // 8 bit shift segment if i = 0
   int rm = getBinarySeg(offset,3,4); // 4 bit
 
@@ -470,8 +450,6 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   if (!u) { // if we are subtracting soffset will be negative
     soffset = -soffset;
   }
-
-
 
   if (p) { //pre-indexing
     if (l) { //load
@@ -508,8 +486,6 @@ void loadFileToMem(char const *file) {
   }
 
   fread(mem,1,MEM16BIT,binFile);
-
-
 }
 
 uint32_t wMem(uint16_t startAddr) { //confirmed
@@ -540,37 +516,45 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
-void alterV(bool set) {
-  if (set) {
-    *rf.CPSR = *rf.CPSR | (1 << Vbit);
-  } else {
-    *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Vbit));
+void alterV(bool set, bool shouldSet) {
+  if (shouldSet) {
+    if (set) {
+      *rf.CPSR = *rf.CPSR | (1 << Vbit);
+    } else {
+      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Vbit));
+    }
   }
 }
 
-void alterC(bool set) {
+void alterC(bool set, bool shouldSet) {
   // Sets/clears CPSR bit C depending on set
-  if (set) {
-    *rf.CPSR = *rf.CPSR | (1 << Cbit);
-  } else {
-    *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Cbit));
+  if (shouldSet) {
+    if (set) {
+      *rf.CPSR = *rf.CPSR | (1 << Cbit);
+    } else {
+      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Cbit));
+    }
   }
 }
 
-void alterZ(bool set) {
+void alterZ(bool set, bool shouldSet) {
   // Sets/clears CPSR bit Z depending on set
-  if (set) {
-    *rf.CPSR = *rf.CPSR | (1 << Zbit);
-  } else {
-    *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Zbit));
+  if (shouldSet) {
+    if (set) {
+      *rf.CPSR = *rf.CPSR | (1 << Zbit);
+    } else {
+      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Zbit));
+    }
   }
 }
 
-void alterN(bool set) {
-  if (set) {
-    *rf.CPSR = *rf.CPSR | ((1 << Nbit));
-  } else {
-    *rf.CPSR = *rf.CPSR & 0x7fffffff; // 0111....
+void alterN(bool set, bool shouldSet) {
+  if (shouldSet) {
+    if (set) {
+      *rf.CPSR = *rf.CPSR | ((1 << Nbit));
+    } else {
+      *rf.CPSR = *rf.CPSR & 0x7fffffff; // 0111....
+    }
   }
 }
 
@@ -583,13 +567,8 @@ int getBit(uint32_t x, int pos) { //Confirmed
 uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) { //Confirmed
   //PRE: sizeof(x) > start > 0 / length > 0
   //POST: res = int value of binary segment between start and end
-  uint32_t acc = 1 << start; // an accumulator which will set the positions of the bits with the segment we want to return
-
-  for (int i = 1; i < length; i++) {
-    acc += 1 << (start-i);
-  }
-
-  return (x & acc) >> (start - (length - 1));
+  long mask = (1 << length) - 1;
+  return (x >> (start-length+1)) & mask;
 }
 
 int rotr8(uint8_t x, int n) { //Confirmed
@@ -667,17 +646,17 @@ void testingHelpers(void) { //PASSED
   mem[81] = 1;
   mem[83] = 96;
   printf("wMem[80] = %u\n", wMem(80));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3);
+  printf("expected %u\n", (uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3);
   printf("====\n\n");
 
   printf("Test writewMem ====\n");
-  writewMem((uint32_t)ipow(2,30) + 85,12);
+  writewMem((uint32_t)(1 << 30) + 85,12);
   printf("wMem[12] = %u\n", wMem(12));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + 85);
+  printf("expected %u\n", (uint32_t)(1 << 30) + 85);
 
-  writewMem((uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3,80);
+  writewMem((uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3,80);
   printf("wMem[80] = %u\n", wMem(80));
-  printf("expected %u\n", (uint32_t)ipow(2,30) + (uint32_t)ipow(2,29) + 256 + 3);
+  printf("expected %u\n", (uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3);
   printf("====\n\n");
 
   printf("end testing\n");
@@ -685,57 +664,57 @@ void testingHelpers(void) { //PASSED
 
 void outputMemReg(void) {
   //outputs the state of the main memory and register file
+  bool isRegister = TRUE;
+  // Output registers ------------
+  printf("Registers:\n");
+  for (int i = 0; i < NUM_GREG; i++) {
+    printf("$%-3d:%11d ", i, rf.reg[i]);
+    outputData(rf.reg[i], isRegister);
+  }
+  printf("PC  :%11d ", *rf.PC);
+  outputData(*rf.PC, isRegister);
+  printf("CPSR:%11d ", *rf.CPSR);
+  outputData(*rf.CPSR, isRegister);
+
   // output mem -----------------------
-  printf("\nOutput in Little Endian format\n");
-  printf("Main memory --- \n");
+  printf("Non-zero memory:\n");
   uint32_t pcValue = *rf.PC;
   *rf.PC = 0;
   uint32_t instruction;
   while(*rf.PC < MEM16BIT) {
     instruction = fetch(mem);
     if (instruction != 0){
-      printf("%X: ", *rf.PC - 4); // since fetch automatically inc. PC
-      outputData(instruction);
+      printf("0x%.8x: ", *rf.PC - 4); // since fetch automatically inc^ PC
+      outputData(instruction, !isRegister);
     }
   }
-  printf("---\n\n");
 
   // reset PC
   *rf.PC = pcValue;
 
-  // Output registers ------------
-  printf("Register file --- \n");
-  for (int i = 0; i < NUM_GREG; i++) {
-    printf("register %d: ", i);
-    outputData(rf.reg[i]);
-  }
-  printf("SP: ");
-  outputData(*rf.SP);
-  printf("LR: ");
-  outputData(*rf.LR);
-  printf("PC: ");
-  outputData(*rf.PC);
-  printf("CPSR: ");
-  outputData(*rf.CPSR);
-  printf("---\n\n");
-
 }
 
-void outputData(uint32_t i) {
+void outputData(uint32_t i, bool isRegister) {
   uint8_t b0,b1,b2,b3;
-  uint32_t littleEndian_format = 0;
-  printf("i = %d\t",i); //REMOVE
+  uint32_t hexFormat = 0;
   b0 = i;// & 0xff);
   b1 = i >> 8;// & 0xff);
   b2 = i >> 16;// & 0xff);
   b3 = i >> 24;// & 0xff);
 
-  littleEndian_format = (littleEndian_format | b0) << 8;
-  littleEndian_format = (littleEndian_format | b1) << 8;
-  littleEndian_format = (littleEndian_format | b2) << 8;
-  littleEndian_format = (littleEndian_format | b3);
-
-  printf("0x%.8x\n", littleEndian_format);
+  if (isRegister) {
+    hexFormat = (hexFormat | b3) << 8;
+    hexFormat = (hexFormat | b2) << 8;
+    hexFormat = (hexFormat | b1) << 8;
+    hexFormat = (hexFormat | b0);
+    printf("(0x%.8x)\n", hexFormat);
+  } else  {
+    hexFormat = (hexFormat | b0) << 8;
+    hexFormat = (hexFormat | b1) << 8;
+    hexFormat = (hexFormat | b2) << 8;
+    hexFormat = (hexFormat | b3);
+    printf("0x%.8x\n", hexFormat);
+  }
 
 }
 
@@ -743,9 +722,4 @@ void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
   free(rf.reg);
   free(mem);
-}
-
-void enterC(void) {
-  printf("Press enter");
-  while (getchar() != '\n');
 }
