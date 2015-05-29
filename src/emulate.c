@@ -372,16 +372,16 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
     shift = conint;
   }
 
-  //printf("shift = %d\n", shift);
+  // printf("shift = %d\n", shift);
 
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterCPSR(getBit(value,sizeof(value)*8 - shift), s, Cbit);
+      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
     break;
     case 1: // logical right
       res = value >> shift;
-      alterCPSR(getBit(value,shift - 1), s, Cbit);
+      alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
     case 2: // arithmetic right
       if (getBit(value,31)) { // if value is negative
@@ -389,14 +389,14 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
       } else {
         res = value >> shift;
       }
-      alterCPSR(getBit(value,shift - 1), s, Cbit);
+      alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
     case 3: // rotate right
       res = rotr32(value,shift);
       alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
   }
-
+  //alterCPSR(res, s, Cbit);
   return res;
 
 }
