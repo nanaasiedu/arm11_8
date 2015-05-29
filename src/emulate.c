@@ -389,7 +389,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   printf("conint = %d\n", conint); */
 
   if (shiftop) { // if shiftseg is in reg rs mode
-    shift = rf.reg[rs] & (ipow(2,8) - 1);
+    shift = rf.reg[rs] & 0xff;
   } else { // if shiftseg is in constant int mode
     shift = conint;
   }
@@ -407,7 +407,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
     break;
     case 2: // arithmetic right
       if (getBit(value,31)) { // if value is negative
-        res = (value >> shift) | ((ipow(2,shift+1)-1) << (31-shift));
+        res = (value >> shift) | (((1 << (shift+1))-1) << (31-shift));
       } else {
         res = value >> shift;
       }
@@ -430,7 +430,7 @@ void setCPSRZN(int value, bool trigger) { //Confirmed
   }
 
   alterZ(value == 0);
-  alterN(value & ipow(2,31));
+  alterN(value & (1 << 31));//ALTERED
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -468,7 +468,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   }
 
   int soffset = offset; // signed offset
-  
+
   if (!u) { // if we are subtracting soffset will be negative
     soffset = -soffset;
   }
@@ -644,9 +644,9 @@ void testingDataProc(void) { //PASSED
   int res;
   rf.reg[2] = 85; // ...01010101
   rf.reg[3] = 252; // ...1111100
-  rf.reg[4] = ipow(2,30) + 85 + 512; // 01...1001010101
-  rf.reg[5] = ipow(2,31) + ipow(2,28) + ipow(2,27); //10011..
-  rf.reg[6] = -ipow(2,31); // 1...
+  rf.reg[4] = (1 << 30) + 85 + 512; // 01...1001010101
+  rf.reg[5] = (1 << 31) + (1 << 28) + (1 << 27); //10011..
+  rf.reg[6] = 1 << 31; // 1...
   rf.reg[7] = 29;
 
   uint32_t shiftSeg = 26; //  0001 1 (3)| 01 (lsr) | 0 (conint)
@@ -657,7 +657,7 @@ void testingDataProc(void) { //PASSED
   shiftSeg = 36; //  0010 0 (4)| 10 (asr) | 0 (conint)
   res = barrelShift(rf.reg[6], shiftSeg, 1);
   printf("barrelShift(rf.reg[6], 36, 1) = %u C = %d\n",res,getBit(*rf.CPSR,Cbit));
-  printf("expected %u and 0\n", (uint32_t)(ipow(2,31) + ipow(2,30) + ipow(2,29) + ipow(2,28) + ipow(2,27)));
+  printf("expected %u and 0\n", (1 << 31) + (1 << 30) + (1 << 29) + (1 << 28) + (1 << 27));
 
   shiftSeg = 97; //  0110 0 (6)| 00 (lsl) | 1 (reg)
   res = barrelShift(rf.reg[3], shiftSeg, 1);
@@ -667,12 +667,12 @@ void testingDataProc(void) { //PASSED
   shiftSeg = 113; //  0111 0 (7)| 00 (lsl) | 1 (reg)
   res = barrelShift(rf.reg[3], shiftSeg, 1);
   printf("barrelShift(rf.reg[3], 113, 1) = %u C = %d\n",res,getBit(*rf.CPSR,Cbit));
-  printf("expected %u and 1\n", (uint32_t)ipow(2,31));
+  printf("expected %u and 1\n", (1 << 31));
 
   shiftSeg = 119; //  0111 0 (7)| 11 (ror) | 1 (reg)
   res = barrelShift(rf.reg[5], shiftSeg, 1);
   printf("barrelShift(rf.reg[5], 119, 1) = %u C = %d\n",res,getBit(*rf.CPSR,Cbit));
-  printf("expected %u and ?\n", (uint32_t)(ipow(2,31) + ipow(2,30) + (uint64_t)4));
+  printf("expected %u and ?\n", (1 << 31) + (1 << 30) + 4);
 
   printf("====\n\n");
 
@@ -680,9 +680,9 @@ void testingDataProc(void) { //PASSED
   rf.reg[1] = 1; // ...1
   rf.reg[2] = 85; // ...01010101
   rf.reg[3] = 252; // ...1111100
-  rf.reg[4] = ipow(2,30) + 85 + 512; // 01...1001010101
-  rf.reg[5] = ipow(2,31) + ipow(2,28) + ipow(2,27); //10011..
-  rf.reg[6] = -ipow(2,31); // 1...
+  rf.reg[4] = (1 << 30) + 85 + 512; // 01...1001010101
+  rf.reg[5] = (1 << 31) + (1 << 28) + (1 << 27); //10011..
+  rf.reg[6] = (1 << 31); // 1...
   rf.reg[7] = 29;
   rf.reg[8] = (85 + 512) << 9;
   rf.reg[9] = 1;
@@ -741,7 +741,7 @@ void testingDataProc(void) { //PASSED
                              rd, operand);
 
   printf("rf.reg[1] = %d C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
-  printf("expected %d and C = 0 (unchanged)\n", -(int)ipow(2,30));
+  printf("expected %d and C = 0 (unchanged)\n", -(1 << 30));
 
 
   instType = 23; // 0001 | 0 (I) | 1 (S) | 11
@@ -755,7 +755,7 @@ void testingDataProc(void) { //PASSED
                              rd, operand);
 
   printf("rf.reg[1] = %d C = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit));
-  printf("expected %d and C = 1 (OV)\n", -(int)ipow(2,31));
+  printf("expected %d and C = 1 (OV)\n", (1 << 31));
 
 
   rf.reg[1] = 1; // ...1
@@ -832,7 +832,7 @@ void testingDataProc(void) { //PASSED
                              rd, operand);
 
   printf("rf.reg[1] = %d C = %d N = %d\n", rf.reg[1],getBit(*rf.CPSR,Cbit),getBit(*rf.CPSR,Nbit));
-  printf("expected %d and C = 1 (unchanged) N = 0 (unchanged)\n", (int)ipow(2,31) + (int)ipow(2,30) + 3);
+  printf("expected %d and C = 1 (unchanged) N = 0 (unchanged)\n", (1 << 31) + (1 << 30) + 3);
 
   printf("====\n\n");
 
@@ -922,56 +922,51 @@ void clearRegfile (void) {
 
 void alterV(bool set) {
   if (set) {
-    *rf.CPSR = *rf.CPSR | ipow(2,28);
+    *rf.CPSR = *rf.CPSR | (1 << Vbit);
   } else {
-    *rf.CPSR = *rf.CPSR & ((ipow(2,32) - 1) - ipow(2,28));
+    *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Vbit));
   }
 }
 
 void alterC(bool set) {
   // Sets/clears CPSR bit C depending on set
   if (set) {
-    *rf.CPSR = *rf.CPSR | ipow(2,29);
+    *rf.CPSR = *rf.CPSR | (1 << Cbit);
   } else {
-    *rf.CPSR = *rf.CPSR & ((ipow(2,32) - 1) - ipow(2,29));
+    *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Cbit));
   }
 }
 
 void alterZ(bool set) {
   // Sets/clears CPSR bit Z depending on set
   if (set) {
-    *rf.CPSR = *rf.CPSR | ipow(2,30);
+    *rf.CPSR = *rf.CPSR | (1 << Zbit);
   } else {
-    *rf.CPSR = *rf.CPSR & ((ipow(2,32) - 1) - ipow(2,30));
+    *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Zbit));
   }
 }
 
 void alterN(bool set) {
   if (set) {
-    *rf.CPSR = *rf.CPSR | (-ipow(2,31));
+    *rf.CPSR = *rf.CPSR | ((1 << Nbit));
   } else {
-    *rf.CPSR = *rf.CPSR & (ipow(2,31)-1);
+    *rf.CPSR = *rf.CPSR & 0x7fffffff; // 0111....
   }
-}
-
-int64_t ipow(int x, int y) { //Confirmed
-  // POST: returns x^y cast as an int
-  return (int64_t)pow(x,y);
 }
 
 int getBit(uint32_t x, int pos) { //Confirmed
   //returns 1 bit value of the bit at position pos of x
   // e.g getBit(10010011, 0) = 1
-  return (x & ipow(2,pos)) >> pos;
+  return (x >> pos) & 1;
 }
 
 uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) { //Confirmed
   //PRE: sizeof(x) > start > 0 / length > 0
   //POST: res = int value of binary segment between start and end
-  uint32_t acc = ipow(2,start); // an accumulator which will set the positions of the bits with the segment we want to return
+  uint32_t acc = 1 << start; // an accumulator which will set the positions of the bits with the segment we want to return
 
   for (int i = 1; i < length; i++) {
-    acc += ipow(2,start-i);
+    acc += 1 << (start-i);
   }
 
   return (x & acc) >> (start - (length - 1));
@@ -980,38 +975,21 @@ uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) { //Confirmed
 int rotr8(uint8_t x, int n) { //Confirmed
   // PRE: x is an unsigned 8 bit number (note x may be any type with 8 or more bits). n is the number x will be rotated by.
   // POST: rotr8 will return the 8 bit value of x rotated n spaces to the right
-  uint8_t a = (x & (ipow(2,n)-1)) << (sizeof(x)*8 - n);
+  uint8_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
 }
 
 int rotr32(uint32_t x, int n) { //Confirmed
   // PRE: x is an unsigned 32 bit number (note x may be any type with 32 or more bits). n is the number x will be rotated by.
   // POST: rotr32 will return the 32 bit value of x rotated n spaces to the right
-  uint32_t a = (x & (ipow(2,n)-1)) << (sizeof(x)*8 - n);
+  uint32_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
 }
 
 void testingHelpers(void) { //PASSED
-  int x;
-  uint32_t ux;
   printf("start testing\n\n");
 
-  printf("Test ipow ====\n");
-
-  x = ipow(2,30);
-  printf("ipow(2,30) = %d\n",x);
-  printf("expected 1073741824\n");
-  x = ipow(2,31);
-  ux = ipow(2,31);
-  printf("(uint32_t)ipow(2,31) = %u\n",ux);
-  printf("expected 2147483648\n");
-  x = ipow(2,32);
-  printf("(int)ipow(2,32) = %d\n",x);
-  printf("expected 0\n");
-
-  printf("====\n\n");
-
-  printf("Test ipow ====\n");
+  printf("Test getBit ====\n");
 
   printf("getBit(5,7) = %d\n",getBit(5,7));
   printf("expected 0\n");
@@ -1019,10 +997,8 @@ void testingHelpers(void) { //PASSED
   printf("expected 1\n");
   printf("getBit(78,6) = %d\n",getBit(78,6));
   printf("expected 1\n");
-  printf("getBit(ipow(2,31),31) = %d\n",getBit(ipow(2,31),31));
+  printf("getBit((1 << 31),31) = %d\n",getBit((1 << 31),31));
   printf("expected 1\n");
-  printf("getBit(ipow(2,35),31) = %d\n",getBit(ipow(2,35),31));
-  printf("expected 0\n");
   printf("getBit(78,45) = %d\n",getBit(78,45));
   printf("expected 0\n");
 
@@ -1034,7 +1010,7 @@ void testingHelpers(void) { //PASSED
   printf("expected 7\n");
   printf("getBinarySeg(179,7,6) = %d\n", getBinarySeg(179,7,6));
   printf("expected 44\n");
-  printf("getBinarySeg(ipow(2,31)+ipow(2,29),3,3) = %d\n", getBinarySeg(ipow(2,31)+ipow(2,29),31,3));
+  printf("getBinarySeg((1 << 31)+(1 << 29),3,3) = %d\n", getBinarySeg((1 << 31)+(1 << 29),31,3));
   printf("expected 5\n");
 
   printf("====\n\n");
@@ -1054,10 +1030,10 @@ void testingHelpers(void) { //PASSED
 
   printf("rotr32(12,2) = %u\n", rotr32(12,2));
   printf("expected 3\n");
-  printf("rotr32(ipow(2,31),3) = %u\n", (uint32_t)rotr32(ipow(2,31),3));
-  printf("expected %u\n", (uint32_t)ipow(2,28));
+  printf("rotr32((1 << 31),3) = %u\n", (uint32_t)rotr32((1 << 31),3));
+  printf("expected %u\n", (uint32_t)(1 << 28));
   printf("rotr32(13,3) = %u\n", rotr32(13,3));
-  printf("expected %u\n", (uint32_t)(ipow(2,31) + ipow(2,29) + 1));
+  printf("expected %u\n", (uint32_t)((1 << 31) + (1 << 29) + 1));
 
   printf("====\n\n");
 

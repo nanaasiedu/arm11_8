@@ -71,7 +71,6 @@ void outputMemReg(void);
 void clearRegfile (void);
 // helper functions --
 void printSpecialReg(uint32_t value, char message[]);
-int64_t ipow(int x, int y);
 int rotr8(uint8_t x, int n);
 int rotr32(uint32_t x, int n);
 uint32_t wMem(uint16_t startAddr);
