@@ -6,9 +6,9 @@
 #include "emulate.h"
 // #include "tests.h"
 
-FILE *binFile = NULL; //Binary file containing instructions
+FILE *binFile = NULL; // binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
-struct regFile rf;    //sets register file
+RegFile rf;    // sets register file
 
 int main (int argc, char const *argv[]) {
   if (argc != 2) {
@@ -16,31 +16,28 @@ int main (int argc, char const *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  mem = calloc(MEM16BIT, 1); //allocates 2^16 bit memory addresses to mem
+  mem = calloc(MEM16BIT, 1);  // allocates 2^16 bit memory addresses to mem
+  clearRegfile();             // sets all registers to 0
+  loadFileToMem(argv[1]);     // binary loader: loads file passed through argv
+                              // into mem
+  int executeResult;          // controls pipeline flow
 
-  clearRegfile(); // Sets all registers to 0
+  int32_t instruction;        // stores the current fetched instruction
+  DecodedInst di;             // stores the current decoded instruction
 
-  loadFileToMem(argv[1]); //Binary loader: loads file passed through argv into
-                          //mem
-
-  int executeResult;
-  int32_t instruction;
-  DecodedInst di;
-  // PC = 0 before entering loop
+      // PC = 0 before entering loop, an effect of clearRegfile()
   do {
     instruction = fetch(mem);
     do {
       di = decode(instruction);
       instruction = fetch(mem);
       executeResult = execute(di);
-    } while(executeResult == EXE_CONTINUE);
-  } while(executeResult != EXE_HALT); //fetch again if EXE_BRANCH
+    } while(executeResult == EXE_CONTINUE); // continue regular cycle
+  } while(executeResult != EXE_HALT);       // fetch again if EXE_BRANCH
 
-  outputMemReg();
-
-  //runAllTests();
-
-  dealloc(); //frees up allocated memory
+  outputMemReg();             // print memory and register contents to screen
+  // runAllTests();
+  dealloc();                  // frees up allocated memory
   return EXIT_SUCCESS;
 }
 
@@ -60,18 +57,18 @@ DecodedInst decode(int32_t instruction) {
   di.cond = getBinarySeg(instruction, 31, 4);
   di.instType = getInstType(instruction); // only has correct 4 MSBs
   switch(di.instType){
-    case 16 : //DATA_PROC
+    case DATA_PROC :// 16 : //DATA_PROC
         decodeForDataProc(instruction, &di);
         break;
-    case 32 : //MULT
+    case MULT ://32 : //MULT
         decodeForMult(instruction, &di);
         break;
-    case 64 : //DATA_TRANS
+    case DATA_TRANS ://64 : //DATA_TRANS
         decodeForDataTrans(instruction, &di);
         break;
-    case 128 : //BRANCH
+    case BRANCH ://128 : //BRANCH
         decodeForBranch(instruction, &di);
-    case 0 : //HALT
+    case HALT ://0 : //HALT
     default :
         break;
   }

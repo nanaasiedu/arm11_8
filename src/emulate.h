@@ -18,11 +18,16 @@ const int EXE_CONTINUE = -1;
 const int EXE_BRANCH = 1;
 
 // Instruction types
-const int BRANCH = 128;
-const int DATA_TRANS = 64;
-const int MULT = 32;
-const int DATA_PROC = 16;
-const int HALT = 0;
+#define BRANCH 128
+#define DATA_TRANS 64
+#define MULT 32
+#define DATA_PROC 16
+#define HALT 0
+// const int BRANCH = 128;
+// const int DATA_TRANS = 64;
+// const int MULT = 32;
+// const int DATA_PROC = 16;
+// const int HALT = 0;
 
 typedef struct {
   uint8_t cond;
@@ -35,15 +40,15 @@ typedef struct {
   int32_t operandOffset;
 } DecodedInst;
 
-struct regFile {
+typedef struct {
   uint32_t *reg; // registers 0-12 are general purpose.
   uint32_t *SP;
   uint32_t *LR;
   uint32_t *PC;
   uint32_t *CPSR;
-};
+} RegFile;
 
-const uint32_t MEM16BIT = 65536;
+const uint32_t MEM16BIT = 65536; // 2^16
 const uint32_t MAX_UINT32 = 0xFFFFFFFF; //32 1s
 const int NUM_REG = 17; // number of registers
 const int NUM_GREG = 13; // number of general purpose registers

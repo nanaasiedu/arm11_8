@@ -4,7 +4,7 @@
 #include "emulate.h"
 #include "tests.h"
 
-struct regFile rf;
+RegFile rf;
 
 void runAllTests(void){
   printf("running tests...\n\n");
