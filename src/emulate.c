@@ -6,8 +6,6 @@
 #include "emulate.h"
 // #include "tests.h"
 
-// TODO: CPSR bit const / opcode const / shift type const
-
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
 struct regFile rf;    //sets register file
@@ -254,14 +252,14 @@ int execute(DecodedInst di) {
     if ((di.instType & DATA_PROC) != 0) {// Data processing
       executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
                             di.operandOffset);
-      //printf("Entered Data processing\n"); // FOR TESTING
+
     } else if ((di.instType & MULT) != 0) { // Mult
       executeMult(di.instType, di.rd, di.rn, di.rs, di.rm);
-      //printf("Entered Mult\n"); // FOR TESTING
+
 
     } else if ((di.instType & DATA_TRANS) != 0) { // Data transfer
       executeSingleDataTransfer(di.instType, di.rn, di.rd, di.operandOffset);
-      //printf("Entered Data transfer\n"); // FOR TESTING
+
 
     } else if ((di.instType & BRANCH) != 0) { // Branch
       executeBranch(di.operandOffset);
@@ -269,6 +267,7 @@ int execute(DecodedInst di) {
     }
 
   }
+
   return res;
 
 }
@@ -316,7 +315,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
       alterCPSR((int)operand >= (int)rf.reg[rn], s, Cbit); // borrow
-        //will occur if subtraend > minuend
+      //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
     break;
@@ -390,15 +389,15 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
       alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
   }
-  //alterCPSR(res, s, Cbit);
+
   return res;
 
 }
 
 void setCPSRZN(int value, bool trigger) {
-  //will set the CPSR Z and N bits depending on value
+  //will set the CPSR Z and N bits depending on value iff trigger = TRUE
   alterCPSR(value == 0, trigger, Zbit);
-  alterCPSR(getBit(value,31), trigger, Nbit);//ALTERED
+  alterCPSR(getBit(value,31), trigger, Nbit);
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -408,7 +407,7 @@ void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
 
   if (!a) { // Normal multiply
     rf.reg[rd] = rf.reg[rm]*rf.reg[rs];
-  } else { // multiply-accumulate
+  } else { // multiply with accumulate
     rf.reg[rd] = rf.reg[rm]*rf.reg[rs] + rf.reg[rn];
   }
 
@@ -434,7 +433,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 
   int soffset = offset; // signed offset
 
-  if (!u) { // if we are subtracting soffset will be negative
+  if (!u) { // if we are subtracting, soffset will be negative
     soffset = -soffset;
   }
 
@@ -468,7 +467,7 @@ void executeBranch(int offset) {
 
 // Helper functions -----------------------------
 void loadFileToMem(char const *file) {
-  // Reads bytes from file and inserts them into the mem array
+  // Reads bytes from file and inserts them into mem in LITTLE ENDIAN format
   if ((binFile = fopen(file,"r")) == NULL){
     perror("Unable to open file!");
     exit(EXIT_FAILURE);
@@ -478,7 +477,7 @@ void loadFileToMem(char const *file) {
 }
 
 uint32_t wMem(uint32_t startAddr) {
-  // Returns 32 bit word starting from addr startAddr
+  // Returns 32 bit word starting from address startAddr
   if (startAddr > MEM16BIT) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
     return 0;
@@ -493,7 +492,7 @@ uint32_t wMem(uint32_t startAddr) {
 }
 
 void writewMem(uint32_t value, uint32_t startAddr) {
-  // Stores 32 bit word starting from addr startAddr
+  //Stores 32 bit word value to address starting from startAddr
 
   if (startAddr > MEM16BIT - 3) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
@@ -516,6 +515,7 @@ void clearRegfile (void) {
 }
 
 void alterCPSR(bool set, bool shouldSet, int nthBit) {
+  //Sets/Clears CPSR bits
   if (shouldSet) {
     *rf.CPSR ^= (-set ^ *rf.CPSR) & (1 << nthBit);
   }
@@ -528,8 +528,10 @@ int getBit(uint32_t x, int pos) {
 }
 
 uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) {
-  //PRE: sizeof(x) > start > 0 / length > 0
-  //POST: res = int value of binary segment between start and end
+  //PRE: sizeof(x) > start >= 0 / start >= length > 0
+  //POST: returns uint value of the binary segment starting from start
+  //with length as specified from the parameter
+  //e.g. getBinarySeg(0xAF, 15, 4) = 0xA
   long mask = (1 << length) - 1;
   return (x >> (start-length+1)) & mask;
 }
