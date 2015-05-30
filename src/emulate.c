@@ -474,6 +474,7 @@ void loadFileToMem(char const *file) {
   }
 
   fread(mem,1,MEM16BIT,binFile);
+  fclose(binFile);
 }
 
 uint32_t wMem(uint32_t startAddr) {
