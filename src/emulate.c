@@ -416,10 +416,10 @@ void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
 
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
                                uint32_t offset) {
-  bool i = getBit(instType,3); // immediate offset
-  bool l = getBit(instType,2); // Load/Store
-  bool p = getBit(instType,1); // Pre/Post, set = Pre
-  bool u = getBit(instType,0); // Up bit
+  bool i = getBit(instType, 3); // immediate offset
+  bool l = getBit(instType, 2); // Load/Store
+  bool p = getBit(instType, 1); // Pre/Post, set = Pre
+  bool u = getBit(instType, 0); // Up bit
 
   int shiftSeg = (offset >> 4); // 8 bit shift segment if i = 0
   int rm = getBinarySeg(offset,3,4); // 4 bit

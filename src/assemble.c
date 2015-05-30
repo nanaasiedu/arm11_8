@@ -8,6 +8,10 @@ address addr = 0;
 FILE *input = NULL, *output = NULL;
 Tokens *tokens = NULL;
 
+// TODO: table.h
+// TODO: parse.c
+// TODO: generate.c
+
 //Set arrays for symbol tables
 char *mnemonicStrings[23] = {
   "add", "sub", "rsb", "and", "eor", "orr", "mov", "tst", "teq", "cmp",
@@ -58,10 +62,10 @@ int main(int argc, char **argv) {
   //Setup
   tokens = malloc(sizeof(Tokens));
   tokens_init(tokens);
-  setUpIO(argv[1], argv[2]);
-
   lblToAddr = malloc(sizeof(SymbolTable));
   map_init(lblToAddr);
+  setUpIO(argv[1], argv[2]);
+
   tokenise();
   resolveLabelAddresses();
   parseProgram(lblToAddr);
@@ -92,7 +96,7 @@ void resolveLabelAddresses() {
         map_set(lblToAddr, token.value, currAddr);
       break;
       case NEWLINE:
-        currAddr += WORD_SIZE;
+        currAddr += WORD_SIZE; // TODO: Incorrect
       break;
       default: break;
     }
@@ -108,7 +112,7 @@ void parseProgram(SymbolTable *map) {
     } while(tokenArray->type != NEWLINE);
     do {
       tokenArray++;
-    } while(tokenArray->type == NEWLINE);
+    } while(tokenArray->type == NEWLINE); // TODO: Could be done another way
     if (tokenArray->type == OTHER) {
       addr += WORD_SIZE;
     }
@@ -333,13 +337,13 @@ void generateDataProcessingOpcode(int32_t opcode,
   instr |= rd     << 12;
 
   //If immediate must calculate rotation
-  if (i == 1 && operand > 0xff) {
+  if (i == SET && operand > 0xff) {
     int rotation = 32;
     int32_t imm = operand;
     while (imm % 4 == 0) {
       rotation--;
       imm = imm >> 2;
-    }
+    } // TODO: Take another look at this
     instr |= (rotation & 0xf) << 8;
     instr |= imm & 0xff;
   } else {
@@ -356,7 +360,7 @@ void generateMultiplyOpcode(int32_t opcode,
                             int32_t rn,
                             int32_t a) {
   //Cond set to 1110
-  instruction instr = 0xe << 28;
+  instruction instr = 0xe << 28; // COND define
 
   //Append all fields
   instr |= a     << 21;
@@ -364,7 +368,7 @@ void generateMultiplyOpcode(int32_t opcode,
   instr |= rn    << 12;
   instr |= rs    << 8;
   //bits 7 to 4 = 1001;
-  instr |= 9     << 4;
+  instr |= 9     << 4; // TODO: define
   instr |= rm;
 
   outputData(instr);
@@ -375,7 +379,7 @@ void generateBranchOpcode(int32_t cond, int32_t offset) {
 
   //Append all fields
   //bits 27 to 24 = 1010;
-  instr |= 0xa << 24;
+  instr |= 0xa << 24; // TODO: define
   instr |= offset & 0xffffff;
 
   outputData(instr);
@@ -394,7 +398,7 @@ void generateSingleDataTransferOpcode(uint32_t cond,
 
   //Append all fields
   //bits 27,26 = 01
-  instr |= 1     << 26;
+  instr |= SET   << 26; // TODO: maybe look at making instructions
   instr |= i     << 25;
   instr |= p     << 24;
   instr |= u     << 23;

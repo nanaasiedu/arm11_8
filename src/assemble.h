@@ -10,9 +10,9 @@
 #define ARM_OFFSET 8
 #define PC "r15"
 #define NOT_FOUND -1
-#define NOT_NEEDED 0
-#define NOT_SET 0
 #define SET 1
+#define NOT_SET 0
+#define NOT_NEEDED NOT_SET
 #define N_MNEMONICS 23
 
 typedef int16_t address;
