@@ -12,22 +12,26 @@ typedef int bool;
 #define FALSE 0
 #endif
 
-//execute return values
+// execute return values
 const int EXE_HALT = 0;
 const int EXE_CONTINUE = -1;
 const int EXE_BRANCH = 1;
 
-// Instruction types
+// instruction types
 #define BRANCH 128
 #define DATA_TRANS 64
 #define MULT 32
 #define DATA_PROC 16
 #define HALT 0
-// const int BRANCH = 128;
-// const int DATA_TRANS = 64;
-// const int MULT = 32;
-// const int DATA_PROC = 16;
-// const int HALT = 0;
+
+// condition types
+#define EQ 0
+#define NE 1
+#define GE 10
+#define LT 11
+#define GT 12
+#define LE 13
+#define AL 14
 
 typedef struct {
   uint8_t cond;
@@ -58,13 +62,13 @@ const int Cbit = 29;
 const int Vbit = 28;
 
 // fetch-decode functions --
-int32_t fetch(uint8_t *mem);
-DecodedInst decode(int32_t instruction);
-uint8_t getInstType(int32_t instruction);
-void decodeForDataProc(int32_t instruction, DecodedInst *di);
-void decodeForMult(int32_t instruction, DecodedInst *di);
-void decodeForDataTrans(int32_t instruction, DecodedInst *di);
-void decodeForBranch(int32_t instruction, DecodedInst *di);
+uint32_t fetch(uint8_t *mem);
+DecodedInst decode(uint32_t instruction);
+uint8_t getInstType(uint32_t instruction);
+void decodeForDataProc(uint32_t instruction, DecodedInst *di);
+void decodeForMult(uint32_t instruction, DecodedInst *di);
+void decodeForDataTrans(uint32_t instruction, DecodedInst *di);
+void decodeForBranch(uint32_t instruction, DecodedInst *di);
 // --
 
 // execute functions --

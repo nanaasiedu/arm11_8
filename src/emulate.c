@@ -8,7 +8,7 @@
 
 FILE *binFile = NULL; // binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
-RegFile rf;    // sets register file
+RegFile rf;           // sets register file
 
 int main (int argc, char const *argv[]) {
   if (argc != 2) {
@@ -42,163 +42,134 @@ int main (int argc, char const *argv[]) {
 }
 
 // Fetch-Decode functions -------------------------
-int32_t fetch(uint8_t *mem){
-  int32_t instruction = 0;
+
+uint32_t fetch(uint8_t *mem){
+  // reads and returns 4 byte LITTLE ENDIAN instruction from mem @ PC
+  uint32_t instruction = 0;
   for (int i = 3; i >= 0; i--) {
-    instruction <<= 8;
-    instruction += mem[*rf.PC + i];
+    instruction <<= 8;              // more significant Bs shifted a byte left
+    instruction += mem[*rf.PC + i]; // next byte added to instruction
   }
-  *rf.PC = *rf.PC + 4;
+  *rf.PC = *rf.PC + 4;              // inc^ PC
   return instruction;
 }
 
-DecodedInst decode(int32_t instruction) {
+DecodedInst decode(uint32_t instruction) {
+  // returns instruction broken into parts useful for execute()
   DecodedInst di;
-  di.cond = getBinarySeg(instruction, 31, 4);
+  di.cond = getBinarySeg(instruction, 31, 4); // cond = inst[28..31]
   di.instType = getInstType(instruction); // only has correct 4 MSBs
   switch(di.instType){
-    case DATA_PROC :// 16 : //DATA_PROC
+    case DATA_PROC :
         decodeForDataProc(instruction, &di);
         break;
-    case MULT ://32 : //MULT
+    case MULT :
         decodeForMult(instruction, &di);
         break;
-    case DATA_TRANS ://64 : //DATA_TRANS
+    case DATA_TRANS :
         decodeForDataTrans(instruction, &di);
         break;
-    case BRANCH ://128 : //BRANCH
+    case BRANCH :
         decodeForBranch(instruction, &di);
-    case HALT ://0 : //HALT
+    case HALT :                           // nothing to decode for HALT
     default :
         break;
   }
   return di;
 }
 
-uint8_t getInstType(int32_t instruction) {
+uint8_t getInstType(uint32_t instruction) {
   // returns correct 4 MSB of code for current instruction
   if (instruction == HALT){
     return HALT;
   }
-  long mask = 1 << 27;
-  if ((instruction & mask) != FALSE){ // bit 27 == 1
+  if(getBit(instruction, 27)){
     return BRANCH;
   }
-  mask = mask >> 1;
-  if ((instruction & mask) != FALSE) { // bit 26 == 1
+  if (getBit(instruction, 26)) {
     return DATA_TRANS;
   }
-  mask = mask >> 1;
-  if ((instruction & mask) != FALSE) { // bit 25 == 1
-    return DATA_PROC;
-  }
-  mask = 15 << 4;
-  int multCode = 9 << 4;
-  if ((instruction & mask) != multCode){ // bit 25 == 0; bits [4..7] != 9
+  int multCode = 9;
+  if (getBit(instruction, 25) | (getBinarySeg(instruction, 7, 4) != multCode)) {
+    // bit 25 == 1 or bits [4..7] != 9
     return DATA_PROC;
   }
   return MULT; //bit 25 == 0; bits [4..7] == 9
 }
 
-void decodeForDataProc(int32_t instruction, DecodedInst *di) {
+void decodeForDataProc(uint32_t instruction, DecodedInst *di) {
 
   // set flag bits: I S x x
-  long mask = 1 << 25;
-  if ((instruction & mask) != FALSE){
+  if (getBit(instruction, 25)){
     di->instType += 8;
   }
-  mask >>= 5;
-  if ((instruction & mask) != FALSE){
+  if (getBit(instruction, 20)){
     di->instType += 4;
   }
 
   // set opcode
-  mask = 15;
-  di->opcode = instruction >> 21;
-  di->opcode = di->opcode & mask;
+  di->opcode = getBinarySeg(instruction, 24, 4);
 
   // set registers
-  di->rn = instruction >> 16;
-  di->rn &= mask;
-  di->rd = instruction >> 12;
-  di->rd = di->rd & mask;
+  di->rn = getBinarySeg(instruction, 19, 4);
+  di->rd = getBinarySeg(instruction, 15, 4);
 
   // get operandOffset (operand)
-  mask = 4095; // 2^12 - 1 for bits [0..11]
-  di->operandOffset = instruction & mask;
+  di->operandOffset = getBinarySeg(instruction, 11, 12);
 
 }
 
-void decodeForMult(int32_t instruction, DecodedInst *di) {
+void decodeForMult(uint32_t instruction, DecodedInst *di) {
 
   // set flag bits: x S A x
-  long mask = 1;
-  mask = mask << 20;
-  if ((instruction & mask) != FALSE){
-    di->instType = di->instType + 4;
+  if (getBit(instruction, 20)){
+    di->instType += 4;
   }
-  mask = mask << 1;
-  if ((instruction & mask) != FALSE){
-    di->instType = di->instType + 2;
+  if (getBit(instruction, 21)){
+    di->instType += 2;
   }
 
   // set registers
-  mask = 15;
-  di->rd = instruction >> 16;
-  di->rd &= mask;
-  di->rn = instruction >> 12;
-  di->rn &= mask;
-  di->rs = instruction >> 8;
-  di->rs &= mask;
-  di->rm = instruction & mask;
+  di->rd = getBinarySeg(instruction, 19, 4);
+  di->rn = getBinarySeg(instruction, 15, 4);
+  di->rs = getBinarySeg(instruction, 11, 4);
+  di->rm = getBinarySeg(instruction, 3, 4);
 
 }
 
-void decodeForDataTrans(int32_t instruction, DecodedInst *di) {
+void decodeForDataTrans(uint32_t instruction, DecodedInst *di) {
 
   // set flag bits: I L P U
-  long mask = 1 << 25;
-  if ((instruction & mask) != FALSE){
-    di->instType = di->instType + 8;
+  if (getBit(instruction, 25)){
+    di->instType += 8;
   }
-  mask = mask >> 5;
-  if ((instruction & mask) != FALSE){
-    di->instType = di->instType + 4;
+  if (getBit(instruction, 20)){
+    di->instType += 4;
   }
-  mask = mask << 4;
-  if ((instruction & mask) != FALSE){
-    di->instType = di->instType + 2;
+  if (getBit(instruction, 24)){
+    di->instType += 2;
   }
-  mask = mask >> 1;
-  if ((instruction & mask) != FALSE){
+  if (getBit(instruction, 23)){
     di->instType = di->instType + 1;
   }
 
   // set registers
-  mask = 15;
-  di->rn = instruction >> 16;
-  di->rn = di->rn & mask;
-  di->rd = instruction >> 12;
-  di->rd = di->rd & mask;
+  di->rn = getBinarySeg(instruction, 19, 4);
+  di->rd = getBinarySeg(instruction, 15, 4);
 
   // get operandOffset (offset)
-  mask = 1 << 12;
-  mask--; // 2^12 - 1 for bits [0..11]
-  di->operandOffset = instruction & mask;
+  di->operandOffset = getBinarySeg(instruction, 11, 12);
 
 }
 
-void decodeForBranch(int32_t instruction, DecodedInst *di) {
+void decodeForBranch(uint32_t instruction, DecodedInst *di) {
 
   // flag bits: x x x x
 
   // get operandOffset (signed offset)
-  long mask = 1 << 24;
-  mask--; // 2^24 - 1 for bits [0..23]
-  di->operandOffset = instruction & mask; //  = unaltered offset bits
+  di->operandOffset = getBinarySeg(instruction, 23, 24);// unaltered offset bits
 
-  mask = 1 << 23;
-  if ((instruction & mask) != FALSE) { // offset is negative
+  if (getBit(instruction, 23)) { // offset is negative
     di->operandOffset |= 0xFFF00000;
     // 1s extended to MSB
   }
@@ -207,58 +178,60 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
 // -----------------------------------------------
 
 // Execute functions -----------------------------
+
 int execute(DecodedInst di) {
   if (di.instType == HALT) {
     return EXE_HALT;
   }
 
-  bool condPass = FALSE; //condPass will be TRUE iff cond is satisfied
-  int res = EXE_CONTINUE; // res will contain the state of the next executed instruction depending on whether halt or branch is executed
-
+  bool condPass = FALSE;  // condPass will be TRUE iff cond is satisfied
+  int res = EXE_CONTINUE; // res will contain the state of the next executed
+                          // instruction depending on whether halt or
+                          // branch is executed
   switch(di.cond) {
-    case 0: // 0000: Z set / is equal
-      condPass = getBit(*rf.CPSR,Zbit);
+    case EQ : // 0000: Z set / is equal
+      condPass = getBit(*rf.CPSR, Zbit);
       break;
-    case 1: // 0001: Z clear / not equal
-      condPass = !getBit(*rf.CPSR,Zbit);
+    case NE : // 0001: Z clear / not equal
+      condPass = !getBit(*rf.CPSR, Zbit);
       break;
-    case 10: // 1010: N equals V / greater equal
-      condPass = getBit(*rf.CPSR,Nbit) == getBit(*rf.CPSR,Vbit);
+    case GE : // 1010: N equals V / greater equal
+      condPass = getBit(*rf.CPSR, Nbit) == getBit(*rf.CPSR, Vbit);
       break;
-    case 11: // 1011: N not equal V / less
-      condPass = getBit(*rf.CPSR,Nbit) != getBit(*rf.CPSR,Vbit);
+    case LT : // 1011: N not equal V / less
+      condPass = getBit(*rf.CPSR, Nbit) != getBit(*rf.CPSR, Vbit);
       break;
-    case 12: // 1100: Z clear AND (N = V) / greater than
-      condPass = (!getBit(*rf.CPSR,Zbit)) && (getBit(*rf.CPSR,Nbit) ==
-                 getBit(*rf.CPSR,Vbit));
+    case GT : // 1100: Z clear AND (N = V) / greater than
+      condPass = (!getBit(*rf.CPSR, Zbit)) && (getBit(*rf.CPSR, Nbit) ==
+                 getBit(*rf.CPSR, Vbit));
       break;
-    case 13: // 1101: Z set OR (N != V) / less than
-      condPass = getBit(*rf.CPSR,Zbit) ||  (getBit(*rf.CPSR,Nbit) !=
-                 getBit(*rf.CPSR,Vbit));
+    case LE : // 1101: Z set OR (N != V) / less than
+      condPass = getBit(*rf.CPSR, Zbit) ||  (getBit(*rf.CPSR, Nbit) !=
+                 getBit(*rf.CPSR, Vbit));
       break;
-    case 14: // 1110 ignore
+    case AL : // 1110 always
       condPass = TRUE;
       break;
-    default:
+    default :
       perror("Invalid instruction entered with unknown condition");
       exit(EXIT_FAILURE);
   }
 
   if (condPass) {
 
-    if ((di.instType & DATA_PROC) != 0) {// Data processing
+    if ((di.instType & DATA_PROC) != FALSE) {// Data processing
       executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
                             di.operandOffset);
 
-    } else if ((di.instType & MULT) != 0) { // Mult
+    } else if ((di.instType & MULT) != FALSE) { // Multiply
       executeMult(di.instType, di.rd, di.rn, di.rs, di.rm);
 
 
-    } else if ((di.instType & DATA_TRANS) != 0) { // Data transfer
+    } else if ((di.instType & DATA_TRANS) != FALSE) { // Data transfer
       executeSingleDataTransfer(di.instType, di.rn, di.rd, di.operandOffset);
 
 
-    } else if ((di.instType & BRANCH) != 0) { // Branch
+    } else if ((di.instType & BRANCH) != FALSE) { // Branch
       executeBranch(di.operandOffset);
       res = EXE_BRANCH;
     }
@@ -290,6 +263,8 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
   } else { // operand is a register
     operand = barrelShift(rf.reg[rm], shiftSeg, s);
   }
+
+  // TODO: create #define for opcodes
 
   switch(opcode) {
     case 0: // and
