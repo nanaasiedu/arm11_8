@@ -7,7 +7,6 @@
 // #include "tests.h"
 
 // TODO: CPSR bit const / opcode const / shift type const
-// TODO: CPSR Fix
 
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
@@ -47,6 +46,7 @@ int main (int argc, char const *argv[]) {
   return EXIT_SUCCESS;
 }
 
+// Fetch-Decode functions -------------------------
 int32_t fetch(uint8_t *mem){
   int32_t instruction = 0;
   for (int i = 3; i >= 0; i--) {
@@ -80,8 +80,8 @@ DecodedInst decode(int32_t instruction) {
   return di;
 }
 
-// returns correct 4 MSB of code for current instruction
 uint8_t getInstType(int32_t instruction) {
+  // returns correct 4 MSB of code for current instruction
   if (instruction == HALT){
     return HALT;
   }
@@ -209,8 +209,10 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
   }
 
 }
+// -----------------------------------------------
 
-int execute(DecodedInst di) { //confirmed
+// Execute functions -----------------------------
+int execute(DecodedInst di) {
   if (di.instType == HALT) {
     return EXE_HALT;
   }
@@ -272,7 +274,7 @@ int execute(DecodedInst di) { //confirmed
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
-                           rd, uint32_t operand) {//confirmed
+                           rd, uint32_t operand) {
   bool i = getBit(instType,3); // Immediate Operand
   int rotate = getBinarySeg(operand,11,4); // 4 bit rotate segment if i = 1
 
@@ -351,7 +353,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
 }
 
-uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
+uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
   //POST: return shifted value of rm to operand
   bool shiftop = getBit(shiftSeg,0); // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
   int shiftType = getBinarySeg(shiftSeg,2,2); //2 bits
@@ -393,7 +395,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
 
 }
 
-void setCPSRZN(int value, bool trigger) { //Confirmed
+void setCPSRZN(int value, bool trigger) {
   //will set the CPSR Z and N bits depending on value
   alterCPSR(value == 0, trigger, Zbit);
   alterCPSR(getBit(value,31), trigger, Nbit);//ALTERED
@@ -462,7 +464,9 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 void executeBranch(int offset) {
   *rf.PC += offset << 2;
 }
+// -----------------------------------------------
 
+// Helper functions -----------------------------
 void loadFileToMem(char const *file) {
   // Reads bytes from file and inserts them into the mem array
   if ((binFile = fopen(file,"r")) == NULL){
@@ -473,7 +477,7 @@ void loadFileToMem(char const *file) {
   fread(mem,1,MEM16BIT,binFile);
 }
 
-uint32_t wMem(uint32_t startAddr) { //confirmed
+uint32_t wMem(uint32_t startAddr) {
   // Returns 32 bit word starting from addr startAddr
   if (startAddr > MEM16BIT) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
@@ -488,7 +492,7 @@ uint32_t wMem(uint32_t startAddr) { //confirmed
   return word;
 }
 
-void writewMem(uint32_t value, uint32_t startAddr) { //confirmed
+void writewMem(uint32_t value, uint32_t startAddr) {
   // Stores 32 bit word starting from addr startAddr
 
   if (startAddr > MEM16BIT - 3) {
@@ -511,33 +515,33 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
-void alterCPSR(bool set, bool shouldSet, int nthBit) { //confirmed
+void alterCPSR(bool set, bool shouldSet, int nthBit) {
   if (shouldSet) {
     *rf.CPSR ^= (-set ^ *rf.CPSR) & (1 << nthBit);
   }
 }
 
-int getBit(uint32_t x, int pos) { //Confirmed
+int getBit(uint32_t x, int pos) {
   //returns 1 bit value of the bit at position pos of x
   // e.g getBit(10010011, 0) = 1
   return (x >> pos) & 1;
 }
 
-uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) { //Confirmed
+uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) {
   //PRE: sizeof(x) > start > 0 / length > 0
   //POST: res = int value of binary segment between start and end
   long mask = (1 << length) - 1;
   return (x >> (start-length+1)) & mask;
 }
 
-int rotr8(uint8_t x, int n) { //Confirmed
+int rotr8(uint8_t x, int n) {
   // PRE: x is an unsigned 8 bit number (note x may be any type with 8 or more bits). n is the number x will be rotated by.
   // POST: rotr8 will return the 8 bit value of x rotated n spaces to the right
   uint8_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
 }
 
-int rotr32(uint32_t x, int n) { //Confirmed
+int rotr32(uint32_t x, int n) {
   // PRE: x is an unsigned 32 bit number (note x may be any type with 32 or more bits). n is the number x will be rotated by.
   // POST: rotr32 will return the 32 bit value of x rotated n spaces to the right
   uint32_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
