@@ -1,13 +1,7 @@
 #ifndef TOKENISE_H
 #define TOKENISE_H
 
-typedef int bool;
-#ifndef TRUE
-#define TRUE 1
-#endif
-#ifndef FALSE
-#define FALSE 0
-#endif
+#include "definitions.h"
 
 typedef enum {LABEL,LITERAL,EXPRESSION,OTHER,NEWLINE,ENDFILE} TokenType;
 
