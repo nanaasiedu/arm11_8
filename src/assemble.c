@@ -8,10 +8,6 @@ address addr = 0;
 FILE *input = NULL, *output = NULL;
 Tokens *tokens = NULL;
 
-// TODO: table.h
-// TODO: parse.c
-// TODO: generate.c
-
 //Set arrays for symbol tables
 char *mnemonicStrings[23] = {
   "add", "sub", "rsb", "and", "eor", "orr", "mov", "tst", "teq", "cmp",
@@ -62,10 +58,10 @@ int main(int argc, char **argv) {
   //Setup
   tokens = malloc(sizeof(Tokens));
   tokens_init(tokens);
-  lblToAddr = malloc(sizeof(SymbolTable));
-  map_init(lblToAddr);
   setUpIO(argv[1], argv[2]);
 
+  lblToAddr = malloc(sizeof(SymbolTable));
+  map_init(lblToAddr);
   tokenise();
   resolveLabelAddresses();
   parseProgram(lblToAddr);
@@ -74,6 +70,8 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
+
+#pragma mark - IO
 
 void setUpIO(char *in, char *out) {
   if ((input = fopen(in, "r")) == NULL) {
@@ -87,6 +85,8 @@ void setUpIO(char *in, char *out) {
   }
 }
 
+#pragma mark - Compile
+
 void resolveLabelAddresses() {
   address currAddr = 0;
   for (size_t i = 0; i < tokens->size; i++) {
@@ -96,11 +96,12 @@ void resolveLabelAddresses() {
         map_set(lblToAddr, token.value, currAddr);
       break;
       case NEWLINE:
-        currAddr += WORD_SIZE; // TODO: Incorrect
+        currAddr += WORD_SIZE;
       break;
       default: break;
     }
   }
+  // map_print(lblToAddr);
 }
 
 void parseProgram(SymbolTable *map) {
@@ -112,7 +113,7 @@ void parseProgram(SymbolTable *map) {
     } while(tokenArray->type != NEWLINE);
     do {
       tokenArray++;
-    } while(tokenArray->type == NEWLINE); // TODO: Could be done another way
+    } while(tokenArray->type == NEWLINE);
     if (tokenArray->type == OTHER) {
       addr += WORD_SIZE;
     }
@@ -160,7 +161,6 @@ void parseTurnaryDataProcessing(Token *token) {
   int rd,rn,operand,i;
   rd = map_get(&registerTable, rd_token->value);
   rn = map_get(&registerTable, rn_token->value);
-
   //Find if operand is an immediate value (i = 1)
   if(operand_token->type == LITERAL) {
     i = SET;
@@ -233,9 +233,9 @@ void parseMla(Token *token) {
 
 void parseSingleDataTransfer(Token *token) {
   uint32_t cond, i, p, u, l, rd, rn;
-  int32_t offset;
+  int offset;
   cond = 14;
-  l = !strcmp(token->value, "ldr");
+  l = 1;
   Token *rdToken = token + 1;
   Token *addrToken = token + 2;
   rd = map_get(&registerTable, rdToken->value);
@@ -248,7 +248,7 @@ void parseSingleDataTransfer(Token *token) {
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
     offset = ex - addr;
     if (offset < 0) {
-      offset *= -1; // COULD BE WRONG
+      offset *= -1;
       u = 0;
     } else {
       u = 1;
@@ -271,30 +271,20 @@ void parseSingleDataTransfer(Token *token) {
       u = SET;
     } else if (isPreIndex(addrValue)) {
       //Pre-Index, base and offset
-      printf("Pre-Index\n");
+      i = SET;
+      p = SET;
+      rn = map_get(&registerTable, addrValue+1);
+      char *ptr;
+      offset = (int) strtol((token + 3)->value, &ptr, 0);
+      u = SET;
+    } else {
+      //Post-Index
       i = NOT_SET;
       p = SET;
       rn = map_get(&registerTable, addrValue+1);
       char *ptr;
-      offset = strtol((token + 3)->value, &ptr, 0);
-      if (offset < 0) {
-        offset *= -1; // COULD BE WRONG
-        u = 0;
-      } else {
-        u = 1;
-      }
-    } else {
-      //Post-Index
-      printf("Post-Index\n");
-      i = SET;
-      p = NOT_SET;
-      rn = map_get(&registerTable, stripLastBracket(addrValue+1));
-      char *ptr;
-      // stripLastBracket((token+3)->value);
-      offset = map_get(&registerTable, (token+3)->value);
-      if (offset == -1) {
-        offset = (int) strtol((token+3)->value, &ptr, 0);
-      }
+      stripLastBracket((token+3)->value);
+      offset = (int) strtol((token+3)->value, &ptr, 0);
       u = 1;
     }
     free(addrValue);
@@ -303,7 +293,6 @@ void parseSingleDataTransfer(Token *token) {
 }
 
 void parseB(Token *token) {
-  // TODO: Fix backwards referencing
   //Get args in Token form
   Token *lblToken = token + 1;
 
@@ -311,6 +300,7 @@ void parseB(Token *token) {
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
+  printf("%d - %d - %d = %d\n",  map_get(lblToAddr, lblToken->value), addr, ARM_OFFSET, offset);
 
   generateBranchOpcode(cond, offset);
 }
@@ -337,13 +327,13 @@ void generateDataProcessingOpcode(int32_t opcode,
   instr |= rd     << 12;
 
   //If immediate must calculate rotation
-  if (i == SET && operand > 0xff) {
+  if (i == 1 && operand > 0xff) {
     int rotation = 32;
     int32_t imm = operand;
     while (imm % 4 == 0) {
       rotation--;
       imm = imm >> 2;
-    } // TODO: Take another look at this
+    }
     instr |= (rotation & 0xf) << 8;
     instr |= imm & 0xff;
   } else {
@@ -360,7 +350,7 @@ void generateMultiplyOpcode(int32_t opcode,
                             int32_t rn,
                             int32_t a) {
   //Cond set to 1110
-  instruction instr = 0xe << 28; // COND define
+  instruction instr = 0xe << 28;
 
   //Append all fields
   instr |= a     << 21;
@@ -368,18 +358,19 @@ void generateMultiplyOpcode(int32_t opcode,
   instr |= rn    << 12;
   instr |= rs    << 8;
   //bits 7 to 4 = 1001;
-  instr |= 9     << 4; // TODO: define
+  instr |= 9     << 4;
   instr |= rm;
 
   outputData(instr);
 }
 
 void generateBranchOpcode(int32_t cond, int32_t offset) {
-  instruction instr = cond << 28;
+  //Cond set to 1110
+  instruction instr = 0xe << 28;
 
   //Append all fields
   //bits 27 to 24 = 1010;
-  instr |= 0xa << 24; // TODO: define
+  instr |= 0xa << 24;
   instr |= offset & 0xffffff;
 
   outputData(instr);
@@ -398,7 +389,7 @@ void generateSingleDataTransferOpcode(uint32_t cond,
 
   //Append all fields
   //bits 27,26 = 01
-  instr |= SET   << 26; // TODO: maybe look at making instructions
+  instr |= 1     << 26;
   instr |= i     << 25;
   instr |= p     << 24;
   instr |= u     << 23;
@@ -438,6 +429,7 @@ void outputData(uint32_t i) {
   }
 }
 
+#pragma mark - Helper Functions
 
 void tokenise() {
   char line[512];
@@ -465,6 +457,7 @@ void tokenise() {
     tokens_add(tokens, "nl", NEWLINE);
   }
   tokens_add(tokens, "end", ENDFILE);
+  // print_tokens(tokens);
 }
 
 int index_of(char *value, char **arr) {
@@ -481,13 +474,12 @@ char* stripBrackets(char *str) {
   return ++str;
 }
 
-char* stripLastBracket(char *str) {
+void stripLastBracket(char *str) {
   str[strlen(str)-1] = '\0';
-  return str;
 }
 
 bool isPreIndex(char *str) {
-  return !(strchr(str, ']') == &str[strlen(str)-1]);
+  return FALSE;
 }
 
 void dealloc() {
