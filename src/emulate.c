@@ -6,9 +6,6 @@
 #include "emulate.h"
 // #include "tests.h"
 
-// TODO: CPSR bit const / opcode const / shift type const
-// TODO: CPSR Fix
-
 FILE *binFile = NULL; //Binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
 struct regFile rf;    //sets register file
@@ -47,6 +44,7 @@ int main (int argc, char const *argv[]) {
   return EXIT_SUCCESS;
 }
 
+// Fetch-Decode functions -------------------------
 int32_t fetch(uint8_t *mem){
   int32_t instruction = 0;
   for (int i = 3; i >= 0; i--) {
@@ -80,8 +78,8 @@ DecodedInst decode(int32_t instruction) {
   return di;
 }
 
-// returns correct 4 MSB of code for current instruction
 uint8_t getInstType(int32_t instruction) {
+  // returns correct 4 MSB of code for current instruction
   if (instruction == HALT){
     return HALT;
   }
@@ -209,8 +207,10 @@ void decodeForBranch(int32_t instruction, DecodedInst *di) {
   }
 
 }
+// -----------------------------------------------
 
-int execute(DecodedInst di) { //confirmed
+// Execute functions -----------------------------
+int execute(DecodedInst di) {
   if (di.instType == HALT) {
     return EXE_HALT;
   }
@@ -252,30 +252,28 @@ int execute(DecodedInst di) { //confirmed
     if ((di.instType & DATA_PROC) != 0) {// Data processing
       executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
                             di.operandOffset);
-      //printf("Entered Data processing\n"); // FOR TESTING
+
     } else if ((di.instType & MULT) != 0) { // Mult
       executeMult(di.instType, di.rd, di.rn, di.rs, di.rm);
-      //printf("Entered Mult\n"); // FOR TESTING
+
 
     } else if ((di.instType & DATA_TRANS) != 0) { // Data transfer
       executeSingleDataTransfer(di.instType, di.rn, di.rd, di.operandOffset);
-      //printf("Entered Data transfer\n"); // FOR TESTING
+
 
     } else if ((di.instType & BRANCH) != 0) { // Branch
       executeBranch(di.operandOffset);
-      //printf("Entered Branch\n"); // FOR TESTING
       res = EXE_BRANCH;
     }
 
-  }/* else {
-    printf("Cond failed\n"); // FOR TESTING
-  }*/
+  }
+
   return res;
 
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
-                           rd, uint32_t operand) {//confirmed
+                           rd, uint32_t operand) {
   bool i = getBit(instType,3); // Immediate Operand
   int rotate = getBinarySeg(operand,11,4); // 4 bit rotate segment if i = 1
 
@@ -288,8 +286,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
   if (i) { // if operand is immediate
     operand = getBinarySeg(operand,7,8); // operand = Immediate segment
-
-    alterC(getBit(operand, rotate*2 - 1), s);
+    alterCPSR(getBit(operand, rotate*2 - 1), s, Cbit);
 
     operand = rotr32(operand, rotate*2);
 
@@ -309,7 +306,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 2:// sub
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
-      alterC((int)operand > (int)rf.reg[rn], s); // borrow
+      alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
       //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
@@ -317,17 +314,16 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     case 3: // rsb
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
-      alterC((int)operand < (int)rf.reg[rn], s); // borrow
-        //will occur if subtraend > minuend
+      alterCPSR((int)operand >= (int)rf.reg[rn], s, Cbit); // borrow
+      //will occur if subtraend > minuend
 
       setCPSRZN(rf.reg[rd],s);
     break;
     case 4: // add
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
-      alterC((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s);
+      alterCPSR((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s, Cbit);
        // overflow will occur based on this condition
-
       setCPSRZN(rf.reg[rd],s);
     break;
     case 8: // tst
@@ -340,10 +336,8 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 10: // cmp
       testRes = rf.reg[rn] - operand;
-
-        alterC((int)operand > (int)rf.reg[rn], s); // borrow
-        //will occur if subtraend > minuend
-
+      alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
+      //will occur if subtraend > minuend
       setCPSRZN(testRes,s);
     break;
     case 12: // orr
@@ -352,13 +346,13 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
     break;
     case 13: // mov
       rf.reg[rd] = operand;
-      setCPSRZN(rf.reg[rd],s);
+      setCPSRZN(rf.reg[rd], s);
     break;
   }
 
 }
 
-uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
+uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
   //POST: return shifted value of rm to operand
   bool shiftop = getBit(shiftSeg,0); // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
   int shiftType = getBinarySeg(shiftSeg,2,2); //2 bits
@@ -367,28 +361,20 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   uint32_t res = 0; // result
   int shift; // value to shift by
 
-  // printf("shifSeg = %d\n",shiftSeg);
-  // printf("shiftop = %d\n",shiftop);
-  // printf("rs = %d\n",rs);
-  // printf("shift type = %d\n", shiftType);
-  // printf("conint = %d\n", conint);
-
   if (shiftop) { // if shiftseg is in reg rs mode
     shift = rf.reg[rs] & 0xff;
   } else { // if shiftseg is in constant int mode
     shift = conint;
   }
 
-  //printf("shift = %d\n", shift);
-
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterC(getBit(value,sizeof(value)*8 - shift), s);
+      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
     break;
     case 1: // logical right
       res = value >> shift;
-      alterC(getBit(value,shift - 1), s);
+      alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
     case 2: // arithmetic right
       if (getBit(value,31)) { // if value is negative
@@ -396,11 +382,11 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
       } else {
         res = value >> shift;
       }
-      alterC(getBit(value,shift - 1), s);
+      alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
     case 3: // rotate right
       res = rotr32(value,shift);
-      alterC(getBit(value,shift - 1), s);
+      alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
   }
 
@@ -408,10 +394,10 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
 
 }
 
-void setCPSRZN(int value, bool trigger) { //Confirmed
-  //will set the CPSR Z and N bits depending on value
-  alterZ(value == 0, trigger);
-  alterN(value & (1 << 31), trigger);//ALTERED
+void setCPSRZN(int value, bool trigger) {
+  //will set the CPSR Z and N bits depending on value iff trigger = TRUE
+  alterCPSR(value == 0, trigger, Zbit);
+  alterCPSR(getBit(value,31), trigger, Nbit);
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -421,11 +407,11 @@ void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
 
   if (!a) { // Normal multiply
     rf.reg[rd] = rf.reg[rm]*rf.reg[rs];
-  } else { // multiply-accumulate
+  } else { // multiply with accumulate
     rf.reg[rd] = rf.reg[rm]*rf.reg[rs] + rf.reg[rn];
   }
 
-  setCPSRZN(rf.reg[rd],s);
+  setCPSRZN(rf.reg[rd], s);
 
 }
 
@@ -442,12 +428,12 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
   if (!i) { // if offset is immediate
     offset = getBinarySeg(offset,11,12); // offset = Immediate
   } else {// offset is a register
-    offset = barrelShift(rf.reg[rm], shiftSeg, 1);
+    offset = barrelShift(rf.reg[rm], shiftSeg, 0);
   }
 
   int soffset = offset; // signed offset
 
-  if (!u) { // if we are subtracting soffset will be negative
+  if (!u) { // if we are subtracting, soffset will be negative
     soffset = -soffset;
   }
 
@@ -456,10 +442,10 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
       if(rn == 15) {
         rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       } else {
-        rf.reg[rd] = rf.reg[rn+soffset];
+        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
       }
     } else { //store
-      writewMem(rf.reg[rd], rf.reg[rn+soffset]);
+      writewMem(rf.reg[rd], rf.reg[rn]+soffset);
     }
 
   } else { //post-indexing
@@ -477,19 +463,27 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 void executeBranch(int offset) {
   *rf.PC += offset << 2;
 }
+// -----------------------------------------------
 
+// Helper functions -----------------------------
 void loadFileToMem(char const *file) {
-  // Reads bytes from file and inserts them into the mem array
+  // Reads bytes from file and inserts them into mem in LITTLE ENDIAN format
   if ((binFile = fopen(file,"r")) == NULL){
     perror("Unable to open file!");
     exit(EXIT_FAILURE);
   }
 
   fread(mem,1,MEM16BIT,binFile);
+  fclose(binFile);
 }
 
-uint32_t wMem(uint16_t startAddr) { //confirmed
-  // Returns 32 bit word starting from addr startAddr
+uint32_t wMem(uint32_t startAddr) {
+  // Returns 32 bit word starting from address startAddr
+  if (startAddr > MEM16BIT) {
+    printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
+    return 0;
+  }
+
   uint32_t word = 0;
   for (int i = 0; i < 4; i++) {
     word = word | ((uint32_t)mem[startAddr + i] << (8*i));
@@ -498,8 +492,13 @@ uint32_t wMem(uint16_t startAddr) { //confirmed
   return word;
 }
 
-void writewMem(uint32_t value, uint16_t startAddr) { //confirmed
-  // Stores 32 bit word starting from addr startAddr
+void writewMem(uint32_t value, uint32_t startAddr) {
+  //Stores 32 bit word value to address starting from startAddr
+
+  if (startAddr > MEM16BIT - 3) {
+    printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
+    return;
+  }
 
   for (int i = 0; i < 4; i++) {
     mem[startAddr+i] = getBinarySeg(value,8*(i+1) - 1 ,8);
@@ -516,150 +515,40 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
-void alterV(bool set, bool shouldSet) {
+void alterCPSR(bool set, bool shouldSet, int nthBit) {
+  //Sets/Clears CPSR bits
   if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | (1 << Vbit);
-    } else {
-      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Vbit));
-    }
+    *rf.CPSR ^= (-set ^ *rf.CPSR) & (1 << nthBit);
   }
 }
 
-void alterC(bool set, bool shouldSet) {
-  // Sets/clears CPSR bit C depending on set
-  if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | (1 << Cbit);
-    } else {
-      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Cbit));
-    }
-  }
-}
-
-void alterZ(bool set, bool shouldSet) {
-  // Sets/clears CPSR bit Z depending on set
-  if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | (1 << Zbit);
-    } else {
-      *rf.CPSR = *rf.CPSR & (0xffffffff - (1 << Zbit));
-    }
-  }
-}
-
-void alterN(bool set, bool shouldSet) {
-  if (shouldSet) {
-    if (set) {
-      *rf.CPSR = *rf.CPSR | ((1 << Nbit));
-    } else {
-      *rf.CPSR = *rf.CPSR & 0x7fffffff; // 0111....
-    }
-  }
-}
-
-int getBit(uint32_t x, int pos) { //Confirmed
+int getBit(uint32_t x, int pos) {
   //returns 1 bit value of the bit at position pos of x
   // e.g getBit(10010011, 0) = 1
   return (x >> pos) & 1;
 }
 
-uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) { //Confirmed
-  //PRE: sizeof(x) > start > 0 / length > 0
-  //POST: res = int value of binary segment between start and end
+uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) {
+  //PRE: sizeof(x) > start >= 0 / start >= length > 0
+  //POST: returns uint value of the binary segment starting from start
+  //with length as specified from the parameter
+  //e.g. getBinarySeg(0xAF, 15, 4) = 0xA
   long mask = (1 << length) - 1;
   return (x >> (start-length+1)) & mask;
 }
 
-int rotr8(uint8_t x, int n) { //Confirmed
+int rotr8(uint8_t x, int n) {
   // PRE: x is an unsigned 8 bit number (note x may be any type with 8 or more bits). n is the number x will be rotated by.
   // POST: rotr8 will return the 8 bit value of x rotated n spaces to the right
   uint8_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
 }
 
-int rotr32(uint32_t x, int n) { //Confirmed
+int rotr32(uint32_t x, int n) {
   // PRE: x is an unsigned 32 bit number (note x may be any type with 32 or more bits). n is the number x will be rotated by.
   // POST: rotr32 will return the 32 bit value of x rotated n spaces to the right
   uint32_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
-}
-
-void testingHelpers(void) { //PASSED
-  printf("start testing\n\n");
-
-  printf("Test getBit ====\n");
-
-  printf("getBit(5,7) = %d\n",getBit(5,7));
-  printf("expected 0\n");
-  printf("getBit(69,2) = %d\n",getBit(69,2));
-  printf("expected 1\n");
-  printf("getBit(78,6) = %d\n",getBit(78,6));
-  printf("expected 1\n");
-  printf("getBit((1 << 31),31) = %d\n",getBit((1 << 31),31));
-  printf("expected 1\n");
-  printf("getBit(78,45) = %d\n",getBit(78,45));
-  printf("expected 0\n");
-
-  printf("====\n\n");
-
-  printf("Test getBinarySeg ====\n");
-
-  printf("getBinarySeg(15,3,3) = %d\n", getBinarySeg(15,3,3));
-  printf("expected 7\n");
-  printf("getBinarySeg(179,7,6) = %d\n", getBinarySeg(179,7,6));
-  printf("expected 44\n");
-  printf("getBinarySeg((1 << 31)+(1 << 29),3,3) = %d\n", getBinarySeg((1 << 31)+(1 << 29),31,3));
-  printf("expected 5\n");
-
-  printf("====\n\n");
-
-  printf("Test rotr8 ====\n");
-
-  printf("rotr8(12,2) = %u\n", rotr8(12,2));
-  printf("expected 3\n");
-  printf("rotr8(69,3) = %u\n", rotr8(69,3));
-  printf("expected 168\n");
-  printf("rotr8(203,4) = %u\n", rotr8(203,4));
-  printf("expected 188\n");
-
-  printf("====\n\n");
-
-  printf("Test rotr32 ====\n");
-
-  printf("rotr32(12,2) = %u\n", rotr32(12,2));
-  printf("expected 3\n");
-  printf("rotr32((1 << 31),3) = %u\n", (uint32_t)rotr32((1 << 31),3));
-  printf("expected %u\n", (uint32_t)(1 << 28));
-  printf("rotr32(13,3) = %u\n", rotr32(13,3));
-  printf("expected %u\n", (uint32_t)((1 << 31) + (1 << 29) + 1));
-
-  printf("====\n\n");
-
-  printf("Test wMem ====\n");
-  mem[12] = 85;
-  mem[15] = 64;
-  printf("wMem[12] = %u\n", wMem(12));
-  printf("expected %u\n", (1 << 30) + 85);
-
-  mem[80] = 3;
-  mem[81] = 1;
-  mem[83] = 96;
-  printf("wMem[80] = %u\n", wMem(80));
-  printf("expected %u\n", (uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3);
-  printf("====\n\n");
-
-  printf("Test writewMem ====\n");
-  writewMem((uint32_t)(1 << 30) + 85,12);
-  printf("wMem[12] = %u\n", wMem(12));
-  printf("expected %u\n", (uint32_t)(1 << 30) + 85);
-
-  writewMem((uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3,80);
-  printf("wMem[80] = %u\n", wMem(80));
-  printf("expected %u\n", (uint32_t)(1 << 30) + (uint32_t)(1 << 29) + 256 + 3);
-  printf("====\n\n");
-
-  printf("end testing\n");
 }
 
 void outputMemReg(void) {
@@ -668,12 +557,12 @@ void outputMemReg(void) {
   // Output registers ------------
   printf("Registers:\n");
   for (int i = 0; i < NUM_GREG; i++) {
-    printf("$%-3d:%11d ", i, rf.reg[i]);
+    printf("$%-3d: %10d ", i, rf.reg[i]);
     outputData(rf.reg[i], isRegister);
   }
-  printf("PC  :%11d ", *rf.PC);
+  printf("PC  : %10d ", *rf.PC);
   outputData(*rf.PC, isRegister);
-  printf("CPSR:%11d ", *rf.CPSR);
+  printf("CPSR: %10d ", *rf.CPSR);
   outputData(*rf.CPSR, isRegister);
 
   // output mem -----------------------
