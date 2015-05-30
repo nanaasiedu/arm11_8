@@ -369,7 +369,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) { //confirmed
   switch(shiftType) {
     case 0: // logical left
       res = value << shift;
-      alterCPSR(getBit(value,sizeof(value)*8 - shift), s, Cbit);
+      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
     break;
     case 1: // logical right
       res = value >> shift;
