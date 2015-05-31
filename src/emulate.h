@@ -5,6 +5,11 @@
 #include <stdint.h>
 #include "helpers/definitions.h"
 
+// execute return values
+const int EXE_HALT = 0;
+const int EXE_CONTINUE = -1;
+const int EXE_BRANCH = 1;
+
 typedef struct { // stores decoded instrustion in useful format
   uint8_t cond;
   uint8_t instType;
