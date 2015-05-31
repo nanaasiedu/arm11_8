@@ -28,6 +28,10 @@ test
 #ignore junk files from compiling Java code
 *.class
 
+#ignore latex files for reports
+*.tex
+*.synctex.gz
+
 #ignore other junk files
 *.backup
 *.kate-swp
