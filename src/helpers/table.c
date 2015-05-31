@@ -35,6 +35,6 @@ int registerInts[16] = {
 
 //Set symbol tables
 SymbolTable *lblToAddr = NULL;
-SymbolTable mnemonicTable = (SymbolTable) {23, 23, mnemonicStrings, mnemonicInts};
-SymbolTable argumentTable = (SymbolTable) {23, 23, mnemonicStrings, numberOfArguments};
-SymbolTable registerTable = (SymbolTable) {16, 16, registerStrings, registerInts};
+SymbolTable mnemonicTable =  {23, 23, mnemonicStrings, mnemonicInts};
+SymbolTable argumentTable =  {23, 23, mnemonicStrings, numberOfArguments};
+SymbolTable registerTable =  {16, 16, registerStrings, registerInts};
