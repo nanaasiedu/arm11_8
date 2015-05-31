@@ -79,8 +79,25 @@ void parseTurnaryDataProcessing(Token *token) {
     char *ptr;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
+    //Register
     i = NOT_SET;
-    operand = map_get(&registerTable, operand_token->value);
+    int rm = map_get(&registerTable, operand_token->value);
+    operand = rm & 0xF;
+    if ((operand_token + 1)->type != NEWLINE) {
+      int shift;
+      if ((operand_token + 2)->type == EXPRESSION) {
+        char *ptr;
+        shift = (int) strtol((operand_token + 2)->value, &ptr, 0);
+        operand |= (shift & 0x1F) << 7;
+      } else {
+        shift = map_get(&registerTable, (operand_token + 2)->value);
+        operand |= 1 << 4;
+        //printf("shift: 0x%.4x\n", shift);
+        operand |= (shift & 0xF) << 8;
+      }
+      int shift_type = map_get(&shiftTable, (operand_token + 1)->value);
+      operand |= (shift_type & 3) << 5;
+    }
   }
 
   generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i);
@@ -101,7 +118,25 @@ void parseBinaryDataProcessing(Token *token) {
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
     i = NOT_SET;
-    operand = map_get(&registerTable, operand_token->value);
+    //Register
+    i = NOT_SET;
+    int rm = map_get(&registerTable, operand_token->value);
+    operand = rm & 0xF;
+    if ((operand_token + 1)->type != NEWLINE) {
+      int shift;
+      if ((operand_token + 2)->type == EXPRESSION) {
+        char *ptr;
+        shift = (int) strtol((operand_token + 2)->value, &ptr, 0);
+        operand |= (shift & 0x1F) << 7;
+      } else {
+        shift = map_get(&registerTable, (operand_token + 2)->value);
+        operand |= 1 << 4;
+        //printf("shift: 0x%.4x\n", shift);
+        operand |= (shift & 0xF) << 8;
+      }
+      int shift_type = map_get(&shiftTable, (operand_token + 1)->value);
+      operand |= (shift_type & 3) << 5;
+    }
   }
 
   if (strcmp(token->value,"mov") == 0) {
@@ -144,23 +179,29 @@ void parseMla(Token *token) {
 }
 
 void parseSingleDataTransfer(Token *token) {
+  // Define fields
   uint32_t cond, i, p, u, l, rd, rn;
   int32_t offset;
-  cond = 14;
+
+  cond = 0xe;
   l = !strcmp(token->value, "ldr");
+
   Token *rdToken = token + 1;
   Token *addrToken = token + 2;
+
   rd = map_get(&registerTable, rdToken->value);
+
   //p, i, rn, offset, u
   if (addrToken->type == EXPRESSION) {
     p = 1;
     rn = map_get(&registerTable, k_PC);
+    //Get Expression
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
+
     bool isMov = (ex <= 0xFF);
     programLength += isMov ? 0 : WORD_SIZE;
-    offset = -addr;
-    offset += isMov ? ex : programLength - ARM_OFFSET;
+    offset = isMov ? ex : programLength - addr - ARM_OFFSET;
 
     if (offset < 0) {
       offset *= -1;
@@ -177,44 +218,71 @@ void parseSingleDataTransfer(Token *token) {
       enqueue(loadExprs, ex);
       generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
-  }
-  else {
-    char *addrValue = malloc(100);
-    strcpy(addrValue, addrToken->value);
-    if ((token+3)->type == NEWLINE) {
+  } else {
+    // char *addrValue = malloc(100);
+    // strcpy(addrValue, addrToken->value);
+    Token *offsetToken = (addrToken + 1);
+    if (offsetToken->type == NEWLINE) { //offset = 0
       //Pre-Index, just base register
       p = SET;
       i = NOT_SET;
-      rn = map_get(&registerTable, stripBrackets(addrValue));
+      rn = map_get(&registerTable, stripBrackets(addrToken->value));
       offset = NOT_SET;
       u = SET;
-    } else if (isPreIndex(addrValue)) {
+    }
+    else if (isPreIndex(addrToken->value)) {
       //Pre-Index, base and offset
-      i = NOT_SET;
       p = SET;
-      rn = map_get(&registerTable, addrValue+1);
-      char *ptr;
-      offset = strtol((token + 3)->value, &ptr, 0);
-      if (offset < 0) {
-        offset *= -1; // COULD BE WRONG
-        u = 0;
-      } else {
-        u = 1;
+      rn = map_get(&registerTable, addrToken->value + 1);
+      if (offsetToken->type == LITERAL) {
+        char *ptr;
+        offset = strtol(offsetToken->value, &ptr, 0);
+        if (offset < 0) {
+          offset *= -1;
+          u = 0;
+        } else {
+          u = 1;
+        }
+        i = NOT_SET;
       }
-    } else {
+      else { //offset is a register, may need to shift
+        int rm = map_get(&registerTable, offsetToken->value);
+        offset = rm & 0xF;
+        Token *shiftTypeToken = (offsetToken + 1);
+        if (shiftTypeToken->type != NEWLINE) { // Shift Needed
+          int shift;
+          Token *shiftToken = (shiftTypeToken + 1);
+          if (shiftToken->type == LITERAL) {
+            char *ptr;
+            shift = (int) strtol(shiftToken->value, &ptr, 0);
+            offset |= (shift & 0x1F) << 7;
+          } else { // Shift is a register
+            shift = map_get(&registerTable, shiftToken->value);
+            offset |= SET << 4;
+            //printf("shift: 0x%.4x\n", shift);
+            offset |= (shift & 0xF) << 8;
+          }
+          int shift_type = map_get(&shiftTable, shiftTypeToken->value);
+          offset |= (shift_type & 3) << 5;
+        }
+        i = SET;
+        u = SET; // TODO: change
+      }
+    }
+    else {
       //Post-Index
       i = SET;
       p = NOT_SET;
-      rn = map_get(&registerTable, stripLastBracket(addrValue+1));
+      rn = map_get(&registerTable, stripLastBracket(addrToken->value+1));
       char *ptr;
       // stripLastBracket((token+3)->value);
       offset = map_get(&registerTable, (token+3)->value);
-      if (offset == -1) {
-        offset = (int) strtol((token+3)->value, &ptr, 0);
+      if (offset == NOT_FOUND) {
+        i = NOT_SET;
+        offset = strtol((token+3)->value, &ptr, 0);
       }
-      u = 1;
+      u = SET; // TODO: change
     }
-    free(addrValue);
     generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
   }
 }

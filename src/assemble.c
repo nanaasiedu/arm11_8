@@ -96,16 +96,13 @@ void tokenise() {
         char *pch = strstr(token, ":");
         strncpy(pch, "", 1);
         tokens_add(tokens, token, LABEL);
-      }
-      else if (isLiteral(token)) {
+      } else if (isLiteral(token)) {
         token++; // Remove #
         tokens_add(tokens, token, LITERAL);
-      }
-      else if (isExpression(token)) {
+      } else if (isExpression(token)) {
         token++; // Remove =
         tokens_add(tokens, token, EXPRESSION);
-      }
-      else {
+      } else {
         tokens_add(tokens, token, OTHER);
       }
       token = strtok(NULL, sep);
