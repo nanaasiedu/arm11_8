@@ -78,15 +78,14 @@ void generateSingleDataTransferOpcode(uint32_t cond,
 
   //Append all fields
   //bits 27,26 = 01
-  // instr |= SET   << 26; // TODO: maybe look at making instructions
-  // printf("instruction: %.8x\n", instr);
+  // TODO: maybe look at making instructions
   instr |= i     << 25;
   instr |= p     << 24;
   instr |= u     << 23;
   instr |= l     << 20;
   instr |= rn    << 16;
   instr |= rd    << 12;
-  instr |= offset;
+  instr |= offset & 0xFFF;
   outputData(instr);
 }
 

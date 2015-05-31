@@ -46,19 +46,28 @@ void setUpIO(char *in, char *out) {
 
 void resolveLabelAddresses() {
   address currAddr = 0;
-  for (size_t i = 0; i < tokens->size; i++) {
-    Token token = tokens->tokens[i];
-    switch (token.type) {
-      case LABEL:
-        map_set(lblToAddr, token.value, currAddr);
-        currAddr -= WORD_SIZE; // Correction for label line
-      break;
-      case NEWLINE:
-        currAddr += WORD_SIZE; // TODO: Incorrect
-      break;
-      default: break;
+  Token *tokenPtr = tokens->tokens;
+  while (tokenPtr->type == NEWLINE) {
+    tokenPtr++;
+  }
+  while (tokenPtr->type != ENDFILE) {
+    // Token token = tokens->tokens[i];
+    if (tokenPtr->type == LABEL) {
+      // currAddr -= WORD_SIZE;
+      map_set(lblToAddr, tokenPtr->value, currAddr);
+    }
+    do {
+      tokenPtr++;
+    } while(tokenPtr->type != NEWLINE); // Goes to end of line
+    while(tokenPtr->type == NEWLINE) {
+      tokenPtr++;
+    } // Skips multiple newlines
+    if (tokenPtr->type == OTHER) {
+      currAddr += WORD_SIZE;
     }
   }
+  map_print(lblToAddr);
+  print_tokens(tokens);
   programLength = (int) currAddr;
 }
 

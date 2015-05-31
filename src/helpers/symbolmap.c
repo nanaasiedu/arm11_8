@@ -52,7 +52,7 @@ void map_print(SymbolTable *map) {
   char **keyIndex = map->keys;
   int *valueIndex = map->values;
   for (int i = 0; i < map->size; i++) {
-    printf("(Key:%s, Value: %d)\n", *keyIndex++, *valueIndex++);
+    printf("(Key:%s, Value: %.8x)\n", *keyIndex++, *valueIndex++);
   }
 }
 

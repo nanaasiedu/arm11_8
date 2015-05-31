@@ -10,24 +10,28 @@ IntArray *loadExprs = NULL;
 
 void parseProgram(SymbolTable *map, Tokens *tokens) {
   loadExprs = malloc(sizeof(IntArray));
-  Token *tokenArray = tokens->tokens;
+  Token *tokenPtr = tokens->tokens;
   init(loadExprs, programLength);
-  while (tokenArray->type != ENDFILE) {
-    parseLine(tokenArray);
+  while (tokenPtr->type == NEWLINE) {
+    tokenPtr++;
+  }
+  while (tokenPtr->type != ENDFILE) {
+    parseLine(tokenPtr);
     do {
-      tokenArray++;
-    } while(tokenArray->type != NEWLINE);
+      tokenPtr++;
+    } while(tokenPtr->type != NEWLINE);
     do {
-      tokenArray++;
-    } while(tokenArray->type == NEWLINE); // TODO: Could be done another way
-    if (tokenArray->type == OTHER) {
+      tokenPtr++;
+    } while(tokenPtr->type == NEWLINE);
+    if (tokenPtr->type == OTHER) {
       addr += WORD_SIZE;
     }
   }
   //loaded variables
-  instruction nextAddr;
-  while ((nextAddr = (instruction) dequeue(loadExprs)) != NOT_FOUND) {
+  instruction nextAddr = (instruction) dequeue(loadExprs);
+  while (nextAddr != NOT_FOUND) {
     outputData(nextAddr);
+    nextAddr = (instruction) dequeue(loadExprs);
   }
   free(loadExprs);
 }
@@ -159,7 +163,7 @@ void parseSingleDataTransfer(Token *token) {
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
     bool isMov = (ex <= 0xFF);
-    offset = - addr;
+    offset = -addr;
     offset += isMov ? ex : programLength - ARM_OFFSET;
 
     if (offset < 0) {
@@ -168,6 +172,8 @@ void parseSingleDataTransfer(Token *token) {
     } else {
       u = 1;
     }
+
+    // u = 1;
 
     if (isMov) {
       i = 1;
@@ -221,7 +227,6 @@ void parseSingleDataTransfer(Token *token) {
 }
 
 void parseB(Token *token) {
-  // TODO: Fix backwards referencing
   //Get args in Token form
   Token *lblToken = token + 1;
 
@@ -229,7 +234,7 @@ void parseB(Token *token) {
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
-
+  printf("offset: %.8x\n", map_get(lblToAddr, lblToken->value));
   generateBranchOpcode(cond, offset >> 2);
 }
 
