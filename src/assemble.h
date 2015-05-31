@@ -5,8 +5,8 @@
 #include <stdint.h>
 
 #include "tokenise.h"
-#include "table.c"
 #include "generate.h"
+#include "table.h"
 #include "parse.h"
 #include "symbolmap.h"
 

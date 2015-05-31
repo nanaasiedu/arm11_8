@@ -221,3 +221,26 @@ void parseB(Token *token) {
 void parseLsl(Token *token) {
 
 }
+
+int index_of(char *value, char **arr) {
+  for (int i = 0; i < 23; i++) {
+    if (strcmp(arr[i], value) == 0) {
+       return i;
+    }
+  }
+  return NOT_FOUND;
+}
+
+char* stripBrackets(char *str) {
+  stripLastBracket(str);
+  return ++str;
+}
+
+char* stripLastBracket(char *str) {
+  str[strlen(str)-1] = '\0';
+  return str;
+}
+
+bool isPreIndex(char *str) {
+  return !(strchr(str, ']') == &str[strlen(str)-1]);
+}

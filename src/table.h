@@ -5,20 +5,20 @@
 #include <stdlib.h>
 
 //Set arrays for symbol tables
-extern const char **mnemonicStrings;
+extern char *mnemonicStrings[23];
 
-extern const char **registerStrings;
+extern char *registerStrings[16];
 
-extern const char *mnemonicInts;
+extern int mnemonicInts[23];
 
-extern const char *numberOfArguments;
+extern int numberOfArguments[23];
 
-extern const char *registerInts;
+extern int registerInts[16];
 
 //Set symbol tables
-SymbolTable *lblToAddr = NULL;
-const SymbolTable mnemonicTable = {23, 23, mnemonicStrings, mnemonicInts};
-const SymbolTable argumentTable = {23, 23, mnemonicStrings, numberOfArguments};
-const SymbolTable registerTable = {16, 16, registerStrings, registerInts};
+SymbolTable *lblToAddr;
+SymbolTable mnemonicTable;
+SymbolTable argumentTable;
+SymbolTable registerTable;
 
 #endif /* end of include guard: TABLE_H */

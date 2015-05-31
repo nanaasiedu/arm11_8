@@ -3,10 +3,10 @@
 
 #include "generate.h"
 #include "tokenise.h"
-#include "table.c"
 #include "symbolmap.h"
-#include <stdint.h>
 #include "definitions.h"
+#include "table.h"
+#include <stdint.h>
 
 extern Tokens *tokens;
 
