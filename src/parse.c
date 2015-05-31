@@ -155,7 +155,7 @@ void parseSingleDataTransfer(Token *token) {
   //p, i, rn, offset, u
   if (addrToken->type == EXPRESSION) {
     p = 1;
-    rn = map_get(&registerTable, PC);
+    rn = map_get(&registerTable, k_PC);
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
     bool isMov = (ex <= 0xFF);

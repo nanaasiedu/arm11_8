@@ -31,7 +31,7 @@ generate.o: generate.c
 intArray.o: helpers/intArray.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-emulate: emulate.o utils.o
+emulate: emulate.o bitUtils.o
 	$(CC) $^ -o $@
 
 emulate.o: emulate.c
@@ -40,7 +40,7 @@ emulate.o: emulate.c
 tests.o: tests.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-utils.o: utils.c
+bitUtils.o: helpers/bitUtils.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:
