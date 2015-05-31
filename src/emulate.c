@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "emulate.h"
-#include "utils.h"
+#include "helpers/bitUtils.h"
+#include "helpers/definitions.h"
 // #include "tests.h"
 
 FILE *binFile = NULL; // binary file containing instructions
@@ -47,9 +48,8 @@ int main (int argc, char const *argv[]) {
 uint32_t fetch(uint8_t *mem){
   // reads and returns 4 byte LITTLE ENDIAN
   // Returns Big Endian
-  uint32_t instruction = 0;
-  instruction = wMem(*rf.PC);
-  *rf.PC = *rf.PC + 4;              // inc^ PC
+  uint32_t instruction = wMem(*rf.PC);
+  *rf.PC += WORD_SIZE;              // inc^ PC
   return instruction;
 }
 
@@ -264,15 +264,15 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
   }
 
   switch(opcode) {
-    case AND :
+    case OP_AND :
       rf.reg[rd] = rf.reg[rn] & operand;
       setCPSRZN(rf.reg[rd],s);
     break;
-    case EOR :
+    case OP_EOR :
       rf.reg[rd] = rf.reg[rn] ^ operand;
       setCPSRZN(rf.reg[rd],s);
     break;
-    case SUB :
+    case OP_SUB :
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
       alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
@@ -280,7 +280,7 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
       setCPSRZN(rf.reg[rd],s);
     break;
-    case RSB :
+    case OP_RSB :
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
       alterCPSR((int)operand >= (int)rf.reg[rn], s, Cbit); // borrow
@@ -288,32 +288,32 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
       setCPSRZN(rf.reg[rd],s);
     break;
-    case ADD :
+    case OP_ADD :
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
       alterCPSR((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s, Cbit);
        // overflow will occur based on this condition
       setCPSRZN(rf.reg[rd],s);
     break;
-    case TST :
+    case OP_TST :
       testRes = rf.reg[rn] & operand;
       setCPSRZN(testRes,s);
     break;
-    case TEQ :
+    case OP_TEQ :
       testRes = rf.reg[rn] ^ operand;
       setCPSRZN(testRes,s);
     break;
-    case CMP :
+    case OP_CMP :
       testRes = rf.reg[rn] - operand;
       alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
       //will occur if subtrahend > minuend
       setCPSRZN(testRes,s);
     break;
-    case ORR :
+    case OP_ORR :
       rf.reg[rd] = rf.reg[rn] | operand;
       setCPSRZN(testRes,s);
     break;
-    case MOV :
+    case OP_MOV :
       rf.reg[rd] = operand;
       setCPSRZN(rf.reg[rd], s);
     break;
@@ -407,7 +407,7 @@ uint32_t wMem(uint32_t startAddr) {
   }
 
   uint32_t word = 0;
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < WORD_SIZE; i++) {
     word |= mem[startAddr + i] << (8*i);
   }
 
@@ -422,7 +422,7 @@ void writewMem(uint32_t value, uint32_t startAddr) {
     return;
   }
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < WORD_SIZE; i++) {
     mem[startAddr+i] = getBinarySeg(value,8*(i+1) - 1 ,8);
   }
 
@@ -430,7 +430,7 @@ void writewMem(uint32_t value, uint32_t startAddr) {
 
 void clearRegfile (void) {
   // allocates 4 bytes for each register
-  rf.reg = calloc(NUM_REG,4);
+  rf.reg = calloc(NUM_REG, WORD_SIZE);
   rf.SP = &rf.reg[13];
   rf.LR = &rf.reg[14];
   rf.PC = &rf.reg[15];
@@ -466,15 +466,15 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
   }
 
   switch(shiftType) {
-    case LSL : // logical left
+    case SFT_LSL : // logical left
       res = value << shift;
       alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
     break;
-    case LSR : // logical right
+    case SFT_LSR : // logical right
       res = value >> shift;
       alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
-    case ASR : // arithmetic right
+    case SFT_ASR : // arithmetic right
       if (getBit(value,31)) { // if value is negative
         res = (value >> shift) | (((1 << (shift+1))-1) << (31-shift));
       } else {
@@ -482,7 +482,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
       }
       alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
-    case ROR : // rotate right
+    case SFT_ROR : // rotate right
       res = rotr32(value,shift);
       alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
@@ -513,7 +513,7 @@ void outputMemReg(void) {
   while(*rf.PC < MEM16BIT) {
     instruction = fetch(mem);
     if (instruction != 0){
-      printf("0x%.8x: ", *rf.PC - 4); // since fetch automatically incr. PC
+      printf("0x%.8x: ", *rf.PC - WORD_SIZE); // fetch automatically incr. PC
       outputData(instruction, !isRegister);
     }
   }

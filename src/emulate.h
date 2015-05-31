@@ -3,53 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-
-typedef int bool;
-#ifndef TRUE
-#define TRUE 1
-#endif
-#ifndef FALSE
-#define FALSE 0
-#endif
-
-// execute return values
-const int EXE_HALT = 0;
-const int EXE_CONTINUE = -1;
-const int EXE_BRANCH = 1;
-
-// instruction types
-#define BRANCH 128
-#define DATA_TRANS 64
-#define MULT 32
-#define DATA_PROC 16
-#define HALT 0
-
-// condition types
-#define EQ 0
-#define NE 1
-#define GE 10
-#define LT 11
-#define GT 12
-#define LE 13
-#define AL 14
-
-// opcodes
-#define AND 0
-#define EOR 1
-#define SUB 2
-#define RSB 3
-#define ADD 4
-#define TST 8
-#define TEQ 9
-#define CMP 10
-#define ORR 12
-#define MOV 13
-
-// shift types
-#define LSL 0
-#define LSR 1
-#define ASR 2
-#define ROR 3
+#include "helpers/definitions.h"
 
 typedef struct { // stores decoded instrustion in useful format
   uint8_t cond;
@@ -78,6 +32,10 @@ const int Nbit = 31;                    // position of status bits in CPSR
 const int Zbit = 30;
 const int Cbit = 29;
 const int Vbit = 28;
+
+const int EXE_HALT = 0;
+const int EXE_CONTINUE = -1;
+const int EXE_BRANCH = 1;
 
 // fetch-decode functions --
 uint32_t fetch(uint8_t *mem);

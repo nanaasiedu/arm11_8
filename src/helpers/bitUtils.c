@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
-#include "utils.h"
+#include "bitUtils.h"
 
 int getBit(uint32_t x, int pos) {
   //returns 1 bit value of the bit at position pos of x
