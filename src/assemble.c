@@ -7,6 +7,8 @@
 FILE *input = NULL, *output = NULL;
 Tokens *tokens = NULL;
 
+int programLength = 0;
+
 int main(int argc, char **argv) {
 
   if (argc != 3) {
@@ -49,6 +51,7 @@ void resolveLabelAddresses() {
     switch (token.type) {
       case LABEL:
         map_set(lblToAddr, token.value, currAddr);
+        currAddr -= WORD_SIZE; // Correction for label line
       break;
       case NEWLINE:
         currAddr += WORD_SIZE; // TODO: Incorrect
@@ -56,6 +59,7 @@ void resolveLabelAddresses() {
       default: break;
     }
   }
+  programLength = (int) currAddr;
 }
 
 void outputData(uint32_t i) {
@@ -80,7 +84,6 @@ void outputData(uint32_t i) {
     fprintf(output, "%c%c%c%c", b0, b1, b2, b3);
   }
 }
-
 
 void tokenise() {
   char line[512];

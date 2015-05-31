@@ -2,8 +2,9 @@
 #define GENERATE_H
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include "definitions.h"
+#include "helpers/definitions.h"
 
 void generateDataProcessingOpcode(int32_t opcode, int32_t rd, int32_t rn, int32_t operand, int32_t S, int32_t i);
 void generateMultiplyOpcode(int32_t opcode, int32_t rd, int32_t rm, int32_t rs, int32_t rn, int32_t A);

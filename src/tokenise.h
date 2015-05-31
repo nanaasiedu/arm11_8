@@ -1,7 +1,8 @@
 #ifndef TOKENISE_H
 #define TOKENISE_H
 
-#include "definitions.h"
+#include "helpers/definitions.h"
+#include "helpers/symbolmap.h"
 
 typedef enum {LABEL,LITERAL,EXPRESSION,OTHER,NEWLINE,ENDFILE} TokenType;
 
@@ -18,12 +19,12 @@ typedef struct {
 
 void tokens_init(Tokens *tokens);
 void tokens_add(Tokens *tokens, char *value, TokenType type);
-void print_tokens(Tokens *tokens);
 //Helpers
 bool isLabel(char *string);
 bool isLiteral(char *string);
 bool isExpression(char *string);
-char* print_tokentype(TokenType type);
 void tokens_free(Tokens *tokens);
+
+int mnemonic_name(Token *token);
 
 #endif /* end of include guard: TOKENISE_H */

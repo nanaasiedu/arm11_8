@@ -7,7 +7,7 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 all: emulate assemble
 
-assemble: assemble.o symbolmap.o tokenise.o parse.o generate.o table.o
+assemble: assemble.o symbolmap.o tokenise.o parse.o generate.o table.o intArray.o
 	$(CC) $^ -o $@
 
 tokenise.o: tokenise.c
@@ -16,16 +16,19 @@ tokenise.o: tokenise.c
 assemble.o: assemble.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-symbolmap.o: symbolmap.c
+symbolmap.o: helpers/symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 parse.o: parse.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-table.o: table.c
+table.o: helpers/table.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 generate.o: generate.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+intArray.o: helpers/intArray.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 emulate: emulate.o

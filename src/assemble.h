@@ -6,9 +6,9 @@
 
 #include "tokenise.h"
 #include "generate.h"
-#include "table.h"
+#include "helpers/table.h"
 #include "parse.h"
-#include "symbolmap.h"
+#include "helpers/symbolmap.h"
 
 //IO
 void setUpIO(char *in, char *out);
@@ -18,10 +18,7 @@ void outputData(uint32_t i);
 void resolveLabelAddresses();
 
 //Helper
-void dealloc();
-
-//Tokens
 void tokenise();
-int mnemonic_name(Token *token);
+void dealloc();
 
 #endif /* end of include guard: ASSEMBLE */

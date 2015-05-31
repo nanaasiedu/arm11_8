@@ -3,9 +3,10 @@
 
 #include "generate.h"
 #include "tokenise.h"
-#include "symbolmap.h"
-#include "definitions.h"
-#include "table.h"
+#include "helpers/symbolmap.h"
+#include "helpers/definitions.h"
+#include "helpers/table.h"
+#include "helpers/intArray.h"
 #include <stdint.h>
 
 extern Tokens *tokens;
@@ -19,6 +20,7 @@ typedef enum {
 } Mnemonics;
 
 extern address addr;
+extern int programLength;
 
 void parseProgram(SymbolTable *map, Tokens *tokens);
 void parseLine(Token *token);

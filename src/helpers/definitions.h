@@ -1,6 +1,8 @@
 #ifndef DEFINITION_H
 #define DEFINITION_H
 
+#include "stdint.h"
+
 #define WORD_SIZE 4
 #define ARM_OFFSET 8
 #define PC "r15"
@@ -15,10 +17,11 @@ typedef int bool;
 #define TRUE 1
 #endif
 #ifndef FALSE
-#define FALSE 0
+#define FALSE !TRUE
 #endif
 
 typedef int16_t address;
 typedef int32_t instruction;
 typedef unsigned char byte;
+
 #endif /* end of include guard: DEFINITION_H */
