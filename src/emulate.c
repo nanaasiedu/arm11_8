@@ -244,46 +244,44 @@ int execute(DecodedInst di) {
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
                            rd, uint32_t operand) {
-  bool i = getBit(instType,3); // Immediate Operand
-  int rotate = getBinarySeg(operand,11,4); // 4 bit rotate segment if i = 1
+  bool i = getBit(instType,3);                // Immediate Operand
+  int rotate = getBinarySeg(operand,11,4);    // 4 bit rotate segment if i = 1
 
-  int shiftSeg = getBinarySeg(operand,11,8); // 8 bit shift segment if i = 0
-  int rm = getBinarySeg(operand,3,4); // 4 bit
+  int shiftSeg = getBinarySeg(operand,11,8);  // 8 bit shift segment if i = 0
+  int rm = getBinarySeg(operand,3,4);         // 4 bit
 
-  bool s = getBit(instType,2); // Set condition
+  bool s = getBit(instType,2);                // Set condition
 
-  int testRes = 0; // result from test operations
+  int testRes = 0;                            // result from test operations
 
-  if (i) { // if operand is immediate
-    operand = getBinarySeg(operand,7,8); // operand = Immediate segment
+  if (i) {                                    // if operand is immediate
+    operand = getBinarySeg(operand,7,8);      // operand = Immediate segment
     alterCPSR(getBit(operand, rotate*2 - 1), s, Cbit);
 
     operand = rotr32(operand, rotate*2);
 
-  } else { // operand is a register
+  } else {                                    // operand is a register
     operand = barrelShift(rf.reg[rm], shiftSeg, s);
   }
 
-  // TODO: create #define for opcodes
-
   switch(opcode) {
-    case 0: // and
+    case AND :
       rf.reg[rd] = rf.reg[rn] & operand;
       setCPSRZN(rf.reg[rd],s);
     break;
-    case 1: // eor
+    case EOR :
       rf.reg[rd] = rf.reg[rn] ^ operand;
       setCPSRZN(rf.reg[rd],s);
     break;
-    case 2:// sub
+    case SUB :
       rf.reg[rd] = (int)rf.reg[rn] - (int)operand;
 
       alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
-      //will occur if subtraend > minuend
+      //will occur if subtrahend > minuend
 
       setCPSRZN(rf.reg[rd],s);
     break;
-    case 3: // rsb
+    case RSB :
       rf.reg[rd] = (int)operand - (int)rf.reg[rn];
 
       alterCPSR((int)operand >= (int)rf.reg[rn], s, Cbit); // borrow
@@ -291,78 +289,36 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
       setCPSRZN(rf.reg[rd],s);
     break;
-    case 4: // add
+    case ADD :
       rf.reg[rd] = (int)rf.reg[rn] + (int)operand;
 
       alterCPSR((rf.reg[rn] > 0) && (operand > INT_MAX - rf.reg[rn]), s, Cbit);
        // overflow will occur based on this condition
       setCPSRZN(rf.reg[rd],s);
     break;
-    case 8: // tst
+    case TST :
       testRes = rf.reg[rn] & operand;
       setCPSRZN(testRes,s);
     break;
-    case 9: // teq
+    case TEQ :
       testRes = rf.reg[rn] ^ operand;
       setCPSRZN(testRes,s);
     break;
-    case 10: // cmp
+    case CMP :
       testRes = rf.reg[rn] - operand;
       alterCPSR((int)operand <= (int)rf.reg[rn], s, Cbit); // borrow
-      //will occur if subtraend > minuend
+      //will occur if subtrahend > minuend
       setCPSRZN(testRes,s);
     break;
-    case 12: // orr
+    case ORR :
       rf.reg[rd] = rf.reg[rn] | operand;
       setCPSRZN(testRes,s);
     break;
-    case 13: // mov
+    case MOV :
       rf.reg[rd] = operand;
       setCPSRZN(rf.reg[rd], s);
     break;
   }
-
-}
-
-uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
-  //POST: return shifted value of rm to operand
-  bool shiftop = getBit(shiftSeg,0); // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
-  int shiftType = getBinarySeg(shiftSeg,2,2); //2 bits
-  int rs = getBinarySeg(shiftSeg,7,4); // 4 bits
-  int conint = getBinarySeg(shiftSeg,7,5); // 5 bits
-  uint32_t res = 0; // result
-  int shift; // value to shift by
-
-  if (shiftop) { // if shiftseg is in reg rs mode
-    shift = rf.reg[rs] & 0xff;
-  } else { // if shiftseg is in constant int mode
-    shift = conint;
-  }
-
-  switch(shiftType) {
-    case 0: // logical left
-      res = value << shift;
-      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
-    break;
-    case 1: // logical right
-      res = value >> shift;
-      alterCPSR(getBit(value, shift - 1), s, Cbit);
-    break;
-    case 2: // arithmetic right
-      if (getBit(value,31)) { // if value is negative
-        res = (value >> shift) | (((1 << (shift+1))-1) << (31-shift));
-      } else {
-        res = value >> shift;
-      }
-      alterCPSR(getBit(value, shift - 1), s, Cbit);
-    break;
-    case 3: // rotate right
-      res = rotr32(value,shift);
-      alterCPSR(getBit(value,shift - 1), s, Cbit);
-    break;
-  }
-
-  return res;
 
 }
 
@@ -494,6 +450,48 @@ void alterCPSR(bool set, bool shouldSet, int nthBit) {
   }
 }
 
+uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
+  //POST: return shifted value of rm to operand
+  bool shiftop = getBit(shiftSeg,0); // 1 bit shiftop = shift option. selects whether shift amount is by integer or Rs
+  int shiftType = getBinarySeg(shiftSeg,2,2); //2 bits
+  int rs = getBinarySeg(shiftSeg,7,4); // 4 bits
+  int conint = getBinarySeg(shiftSeg,7,5); // 5 bits
+  uint32_t res = 0; // result
+  int shift; // value to shift by
+
+  if (shiftop) { // if shiftseg is in reg rs mode
+    shift = rf.reg[rs] & 0xff;
+  } else { // if shiftseg is in constant int mode
+    shift = conint;
+  }
+
+  switch(shiftType) {
+    case 0: // logical left
+      res = value << shift;
+      alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
+    break;
+    case 1: // logical right
+      res = value >> shift;
+      alterCPSR(getBit(value, shift - 1), s, Cbit);
+    break;
+    case 2: // arithmetic right
+      if (getBit(value,31)) { // if value is negative
+        res = (value >> shift) | (((1 << (shift+1))-1) << (31-shift));
+      } else {
+        res = value >> shift;
+      }
+      alterCPSR(getBit(value, shift - 1), s, Cbit);
+    break;
+    case 3: // rotate right
+      res = rotr32(value,shift);
+      alterCPSR(getBit(value,shift - 1), s, Cbit);
+    break;
+  }
+
+  return res;
+
+}
+
 int getBit(uint32_t x, int pos) {
   //returns 1 bit value of the bit at position pos of x
   // e.g getBit(10010011, 0) = 1
@@ -539,42 +537,40 @@ void outputMemReg(void) {
 
   // output mem -----------------------
   printf("Non-zero memory:\n");
-  uint32_t pcValue = *rf.PC;
   *rf.PC = 0;
   uint32_t instruction;
   while(*rf.PC < MEM16BIT) {
     instruction = fetch(mem);
     if (instruction != 0){
-      printf("0x%.8x: ", *rf.PC - 4); // since fetch automatically inc^ PC
+      printf("0x%.8x: ", *rf.PC - 4); // since fetch automatically incr. PC
       outputData(instruction, !isRegister);
     }
   }
-
-  // reset PC
-  *rf.PC = pcValue;
-
 }
 
 void outputData(uint32_t i, bool isRegister) {
   uint8_t b0,b1,b2,b3;
-  uint32_t hexFormat = 0;
-  b0 = i;// & 0xff);
-  b1 = i >> 8;// & 0xff);
-  b2 = i >> 16;// & 0xff);
-  b3 = i >> 24;// & 0xff);
+  uint32_t little_endian = 0;
+  b0 = getBinarySeg(i, 7, 8);           // bits [0..7]
+  b1 = getBinarySeg(i, 15, 8);          // bits [8..15]
+  b2 = getBinarySeg(i, 23, 8);          // bits [16..23]
+  b3 = getBinarySeg(i, 31, 8);          // bits [24..31]
 
-  if (isRegister) {
-    hexFormat = (hexFormat | b3) << 8;
-    hexFormat = (hexFormat | b2) << 8;
-    hexFormat = (hexFormat | b1) << 8;
-    hexFormat = (hexFormat | b0);
-    printf("(0x%.8x)\n", hexFormat);
-  } else  {
-    hexFormat = (hexFormat | b0) << 8;
-    hexFormat = (hexFormat | b1) << 8;
-    hexFormat = (hexFormat | b2) << 8;
-    hexFormat = (hexFormat | b3);
-    printf("0x%.8x\n", hexFormat);
+  if (isRegister) {                     // BIG ENDIAN
+    // hexFormat = (hexFormat | b3) << 8;
+    // hexFormat = (hexFormat | b2) << 8;
+    // hexFormat = (hexFormat | b1) << 8;
+    // hexFormat = (hexFormat | b0);
+    printf("(0x%.8x)\n", i/*hexFormat*/);
+  } else  {                             // LITTLE ENDIAN
+    little_endian = (little_endian | b0) << 8;
+    little_endian = (little_endian | b1) << 8;
+    little_endian = (little_endian | b2) << 8;
+    little_endian = (little_endian | b3);
+    // hexFormat = (hexFormat | b1) << 8;
+    // hexFormat = (hexFormat | b2) << 8;
+    // hexFormat = (hexFormat | b3);
+    printf("0x%.8x\n", little_endian);
   }
 
 }

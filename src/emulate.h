@@ -33,6 +33,18 @@ const int EXE_BRANCH = 1;
 #define LE 13
 #define AL 14
 
+// opcodes
+#define AND 0
+#define EOR 1
+#define SUB 2
+#define RSB 3
+#define ADD 4
+#define TST 8
+#define TEQ 9
+#define CMP 10
+#define ORR 12
+#define MOV 13
+
 typedef struct {
   uint8_t cond;
   uint8_t instType;
