@@ -5,6 +5,11 @@
 #include <stdint.h>
 #include "helpers/definitions.h"
 
+// execute return values
+const int EXE_HALT = 0;
+const int EXE_CONTINUE = -1;
+const int EXE_BRANCH = 1;
+
 typedef struct { // stores decoded instrustion in useful format
   uint8_t cond;
   uint8_t instType;
@@ -32,6 +37,10 @@ const int Nbit = 31;                    // position of status bits in CPSR
 const int Zbit = 30;
 const int Cbit = 29;
 const int Vbit = 28;
+
+const int EXE_HALT = 0;
+const int EXE_CONTINUE = -1;
+const int EXE_BRANCH = 1;
 
 // fetch-decode functions --
 uint32_t fetch(uint8_t *mem);
