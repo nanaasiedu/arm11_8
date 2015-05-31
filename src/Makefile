@@ -19,13 +19,16 @@ assemble.o: assemble.c
 symbolmap.o: symbolmap.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-emulate: emulate.o 
+emulate: emulate.o utils.o
 	$(CC) $^ -o $@
 
 emulate.o: emulate.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 tests.o: tests.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+utils.o: utils.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 clean:

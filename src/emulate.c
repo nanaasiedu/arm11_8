@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include "emulate.h"
+#include "utils.h"
 // #include "tests.h"
 
 FILE *binFile = NULL; // binary file containing instructions
@@ -322,12 +323,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
 
 }
 
-void setCPSRZN(int value, bool trigger) {
-  //will set the CPSR Z and N bits depending on value iff trigger = TRUE
-  alterCPSR(value == 0, trigger, Zbit);
-  alterCPSR(getBit(value,31), trigger, Nbit);
-}
-
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
                  rm) {
   bool a = getBit(instType,1); //Accumulate
@@ -407,6 +402,7 @@ void loadFileToMem(char const *file) {
 
 uint32_t wMem(uint32_t startAddr) {
   // Returns 32 bit word starting from address startAddr
+  // value in BIG ENDIAN
   if (startAddr > MEM16BIT) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
     return 0;
@@ -443,6 +439,12 @@ void clearRegfile (void) {
   rf.CPSR = &rf.reg[16];
 }
 
+void setCPSRZN(int value, bool trigger) {
+  //will set the CPSR Z and N bits depending on value iff trigger = TRUE
+  alterCPSR(value == 0, trigger, Zbit);
+  alterCPSR(getBit(value,31), trigger, Nbit);
+}
+
 void alterCPSR(bool set, bool shouldSet, int nthBit) {
   //Sets/Clears CPSR bits
   if (shouldSet) {
@@ -466,15 +468,15 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
   }
 
   switch(shiftType) {
-    case 0: // logical left
+    case LSL : // logical left
       res = value << shift;
       alterCPSR(getBit(value,sizeof(value)*8 - shift - 1), s, Cbit);
     break;
-    case 1: // logical right
+    case LSR : // logical right
       res = value >> shift;
       alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
-    case 2: // arithmetic right
+    case ASR : // arithmetic right
       if (getBit(value,31)) { // if value is negative
         res = (value >> shift) | (((1 << (shift+1))-1) << (31-shift));
       } else {
@@ -482,7 +484,7 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
       }
       alterCPSR(getBit(value, shift - 1), s, Cbit);
     break;
-    case 3: // rotate right
+    case ROR : // rotate right
       res = rotr32(value,shift);
       alterCPSR(getBit(value,shift - 1), s, Cbit);
     break;
@@ -490,35 +492,6 @@ uint32_t barrelShift(uint32_t value, int shiftSeg, int s) {
 
   return res;
 
-}
-
-int getBit(uint32_t x, int pos) {
-  //returns 1 bit value of the bit at position pos of x
-  // e.g getBit(10010011, 0) = 1
-  return (x >> pos) & 1;
-}
-
-uint32_t getBinarySeg(uint32_t x, uint32_t start, uint32_t length) {
-  //PRE: sizeof(x) > start >= 0 / start >= length > 0
-  //POST: returns uint value of the binary segment starting from start
-  //with length as specified from the parameter
-  //e.g. getBinarySeg(0xAF, 15, 4) = 0xA
-  long mask = (1 << length) - 1;
-  return (x >> (start-length+1)) & mask;
-}
-
-int rotr8(uint8_t x, int n) {
-  // PRE: x is an unsigned 8 bit number (note x may be any type with 8 or more bits). n is the number x will be rotated by.
-  // POST: rotr8 will return the 8 bit value of x rotated n spaces to the right
-  uint8_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
-  return (x >> n) | a;
-}
-
-int rotr32(uint32_t x, int n) {
-  // PRE: x is an unsigned 32 bit number (note x may be any type with 32 or more bits). n is the number x will be rotated by.
-  // POST: rotr32 will return the 32 bit value of x rotated n spaces to the right
-  uint32_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
-  return (x >> n) | a;
 }
 
 void outputMemReg(void) {
@@ -549,27 +522,21 @@ void outputMemReg(void) {
 }
 
 void outputData(uint32_t i, bool isRegister) {
-  uint8_t b0,b1,b2,b3;
-  uint32_t little_endian = 0;
-  b0 = getBinarySeg(i, 7, 8);           // bits [0..7]
-  b1 = getBinarySeg(i, 15, 8);          // bits [8..15]
-  b2 = getBinarySeg(i, 23, 8);          // bits [16..23]
-  b3 = getBinarySeg(i, 31, 8);          // bits [24..31]
 
-  if (isRegister) {                     // BIG ENDIAN
-    // hexFormat = (hexFormat | b3) << 8;
-    // hexFormat = (hexFormat | b2) << 8;
-    // hexFormat = (hexFormat | b1) << 8;
-    // hexFormat = (hexFormat | b0);
-    printf("(0x%.8x)\n", i/*hexFormat*/);
-  } else  {                             // LITTLE ENDIAN
+  if (isRegister) {                       // BIG ENDIAN
+    printf("(0x%.8x)\n", i);
+
+  } else  {                               // LITTLE ENDIAN
+    uint8_t b0,b1,b2,b3;
+    uint32_t little_endian = 0;
+    b0 = getBinarySeg(i, 7, 8);           // bits [0..7]
+    b1 = getBinarySeg(i, 15, 8);          // bits [8..15]
+    b2 = getBinarySeg(i, 23, 8);          // bits [16..23]
+    b3 = getBinarySeg(i, 31, 8);          // bits [24..31]
     little_endian = (little_endian | b0) << 8;
     little_endian = (little_endian | b1) << 8;
     little_endian = (little_endian | b2) << 8;
     little_endian = (little_endian | b3);
-    // hexFormat = (hexFormat | b1) << 8;
-    // hexFormat = (hexFormat | b2) << 8;
-    // hexFormat = (hexFormat | b3);
     printf("0x%.8x\n", little_endian);
   }
 
