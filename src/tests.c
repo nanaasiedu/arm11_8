@@ -52,7 +52,7 @@ void testFetch(void) {
 
 void testGetInstType(void) {
   printf("testing getInstType\n");
-  int32_t instruction = 183562240; // Branch : xxxx1010xx...
+  uint32_t instruction = 183562240; // Branch : xxxx1010xx...
   printf("Should be a branch statement, code: %d\n actual code: %d\n", BRANCH, getInstType(instruction));
   instruction = 250671104; // Branch : xxxx11xx...
   printf("Should be a branch statement, code: %d\n actual code: %d\n", BRANCH, getInstType(instruction));
@@ -75,7 +75,7 @@ void testDecodeForDataProc(void) {
   printf("testing decodeForDataProc\n");
   DecodedInst di;
   di.instType = DATA_PROC;
-  int32_t instruction = 0x00034000;
+  uint32_t instruction = 0x00034000;
   // I = 0, S = 0, rn = 3, rd = 4
   // opcode = 0, operand = 0
   decodeForDataProc(instruction, &di);
@@ -117,7 +117,7 @@ void testDecodeForMult(void) {
   printf("testing decodeForMult\n");
   DecodedInst di;
   di.instType = MULT;
-  int32_t instruction = 0x0001F390; // S = 0, A = 0, rd = 1, rn = 15, rs = 3, rm = 0
+  uint32_t instruction = 0x0001F390; // S = 0, A = 0, rd = 1, rn = 15, rs = 3, rm = 0
   decodeForMult(instruction, &di);
   printf("\nfield\t\texpected\tactual\n");
   printf("instType\t%d\t\t%d\n", MULT, di.instType);
@@ -153,7 +153,7 @@ void testDecodeForDataTrans(void) {
   printf("testing decodeForDataTrans\n");
   DecodedInst di;
   di.instType = DATA_TRANS;
-  int32_t instruction = 0x0405D390;
+  uint32_t instruction = 0x0405D390;
   // I = 0, L = 0, P = 0, U = 0
   // rn = 5, rd = 13, offset = 912
   decodeForDataTrans(instruction, &di);
@@ -203,7 +203,7 @@ void testDecodeForBranch(void) {
   printf("testing decodeForBranch\n");
   DecodedInst di;
   di.instType = BRANCH;
-  int32_t instruction = 0x0A000009;
+  uint32_t instruction = 0x0A000009;
   // offset = 9
   decodeForBranch(instruction, &di);
   printf("\nfield\t\texpected\tactual\n");
