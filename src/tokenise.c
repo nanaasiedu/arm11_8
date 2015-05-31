@@ -32,6 +32,10 @@ bool isExpression(char *string) {
   return string[0] == '=';
 }
 
+bool isNewLine(char *string) {
+  return string[0] == '\n';
+}
+
 void tokens_free(Tokens *tokens) {
   free(tokens);
   free(tokens->tokens);

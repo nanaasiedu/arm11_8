@@ -47,27 +47,18 @@ void setUpIO(char *in, char *out) {
 void resolveLabelAddresses() {
   address currAddr = 0;
   Token *tokenPtr = tokens->tokens;
-  while (tokenPtr->type == NEWLINE) {
-    tokenPtr++;
-  }
   while (tokenPtr->type != ENDFILE) {
-    // Token token = tokens->tokens[i];
     if (tokenPtr->type == LABEL) {
-      // currAddr -= WORD_SIZE;
-      map_set(lblToAddr, tokenPtr->value, currAddr);
+      map_set(lblToAddr, tokenPtr->value, currAddr+WORD_SIZE);
     }
     do {
       tokenPtr++;
     } while(tokenPtr->type != NEWLINE); // Goes to end of line
-    while(tokenPtr->type == NEWLINE) {
-      tokenPtr++;
-    } // Skips multiple newlines
+    tokenPtr++; // Goes to next line
     if (tokenPtr->type == OTHER) {
       currAddr += WORD_SIZE;
     }
   }
-  map_print(lblToAddr);
-  print_tokens(tokens);
   programLength = (int) currAddr;
 }
 
@@ -86,8 +77,8 @@ void outputData(uint32_t i) {
   littleEndian_format = (littleEndian_format | b2) << 8;
   littleEndian_format = (littleEndian_format | b3);
 
-  //Print to file
-  printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
+  // Print to file
+  // printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
 
   if (output != NULL) {
     fprintf(output, "%c%c%c%c", b0, b1, b2, b3);
@@ -98,26 +89,30 @@ void tokenise() {
   char line[512];
   while (fgets(line, sizeof(line), input) != NULL) {
     char *sep = " ,\n";
-    char *token;
-    for (token = strtok(line, sep); token; token = strtok(NULL, sep)) {
+    char *token = strtok(line, sep);
+    bool isBlankLine = token == NULL;
+    while (token != NULL) {
       if (isLabel(token)) {
         char *pch = strstr(token, ":");
         strncpy(pch, "", 1);
         tokens_add(tokens, token, LABEL);
       }
       else if (isLiteral(token)) {
-        token++;
+        token++; // Remove #
         tokens_add(tokens, token, LITERAL);
       }
       else if (isExpression(token)) {
-        token++;
+        token++; // Remove =
         tokens_add(tokens, token, EXPRESSION);
       }
       else {
         tokens_add(tokens, token, OTHER);
       }
+      token = strtok(NULL, sep);
     }
-    tokens_add(tokens, "nl", NEWLINE);
+    if (!isBlankLine) {
+      tokens_add(tokens, "nl", NEWLINE);
+    }
   }
   tokens_add(tokens, "end", ENDFILE);
 }

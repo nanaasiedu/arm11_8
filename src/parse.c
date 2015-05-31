@@ -12,17 +12,12 @@ void parseProgram(SymbolTable *map, Tokens *tokens) {
   loadExprs = malloc(sizeof(IntArray));
   Token *tokenPtr = tokens->tokens;
   init(loadExprs, programLength);
-  while (tokenPtr->type == NEWLINE) {
-    tokenPtr++;
-  }
   while (tokenPtr->type != ENDFILE) {
     parseLine(tokenPtr);
     do {
       tokenPtr++;
     } while(tokenPtr->type != NEWLINE);
-    do {
-      tokenPtr++;
-    } while(tokenPtr->type == NEWLINE);
+    tokenPtr++;
     if (tokenPtr->type == OTHER) {
       addr += WORD_SIZE;
     }
@@ -163,17 +158,16 @@ void parseSingleDataTransfer(Token *token) {
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
     bool isMov = (ex <= 0xFF);
+    programLength += isMov ? 0 : WORD_SIZE;
     offset = -addr;
     offset += isMov ? ex : programLength - ARM_OFFSET;
 
     if (offset < 0) {
-      offset *= -1; // COULD BE WRONG
+      offset *= -1;
       u = 0;
     } else {
       u = 1;
     }
-
-    // u = 1;
 
     if (isMov) {
       i = 1;
@@ -181,7 +175,6 @@ void parseSingleDataTransfer(Token *token) {
     } else {
       i = 0;
       enqueue(loadExprs, ex);
-      programLength += WORD_SIZE;
       generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
     }
   }
@@ -234,7 +227,6 @@ void parseB(Token *token) {
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
-  printf("offset: %.8x\n", map_get(lblToAddr, lblToken->value));
   generateBranchOpcode(cond, offset >> 2);
 }
 

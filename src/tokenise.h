@@ -23,6 +23,7 @@ void tokens_add(Tokens *tokens, char *value, TokenType type);
 bool isLabel(char *string);
 bool isLiteral(char *string);
 bool isExpression(char *string);
+bool isNewLine(char *string);
 void tokens_free(Tokens *tokens);
 
 int mnemonic_name(Token *token);
