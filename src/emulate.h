@@ -71,7 +71,7 @@ typedef struct {
 } RegFile;
 
 const uint32_t MEM16BIT = 65536;        // 2^16
-const uint32_t MAX_UINT32 = 0xFFFFFFFF; //32 1s
+const uint32_t MAX_UINT32 = 0xFFFFFFFF; // 32 1s
 const int NUM_REG = 17;                 // number of registers
 const int NUM_GREG = 13;                // number of general purpose registers
 const int Nbit = 31;                    // position of status bits in CPSR

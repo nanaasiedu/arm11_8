@@ -45,12 +45,10 @@ int main (int argc, char const *argv[]) {
 // Fetch-Decode functions -------------------------
 
 uint32_t fetch(uint8_t *mem){
-  // reads and returns 4 byte LITTLE ENDIAN instruction from mem @ PC
+  // reads and returns 4 byte LITTLE ENDIAN
+  // Returns Big Endian
   uint32_t instruction = 0;
-  for (int i = 3; i >= 0; i--) {
-    instruction <<= 8;              // more significant Bs shifted a byte left
-    instruction += mem[*rf.PC + i]; // next byte added to instruction
-  }
+  instruction = wMem(*rf.PC);
   *rf.PC = *rf.PC + 4;              // inc^ PC
   return instruction;
 }
@@ -410,7 +408,7 @@ uint32_t wMem(uint32_t startAddr) {
 
   uint32_t word = 0;
   for (int i = 0; i < 4; i++) {
-    word = word | ((uint32_t)mem[startAddr + i] << (8*i));
+    word |= mem[startAddr + i] << (8*i);
   }
 
   return word;
