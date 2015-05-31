@@ -4,9 +4,9 @@
 #include "generate.h"
 #include "tokenise.h"
 #include "helpers/symbolmap.h"
-#include "helpers/definitions.h"
 #include "helpers/table.h"
 #include "helpers/intArray.h"
+#include "helpers/definitions.h"
 #include <stdint.h>
 
 extern Tokens *tokens;

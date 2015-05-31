@@ -24,11 +24,6 @@ typedef int16_t address;
 typedef int32_t instruction;
 typedef unsigned char byte;
 
-// execute return values
-const int EXE_HALT = 0;
-const int EXE_CONTINUE = -1;
-const int EXE_BRANCH = 1;
-
 // instruction types
 #define BRANCH 128
 #define DATA_TRANS 64

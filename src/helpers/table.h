@@ -16,9 +16,9 @@ extern int numberOfArguments[23];
 extern int registerInts[16];
 
 //Set symbol tables
-SymbolTable *lblToAddr;
-SymbolTable mnemonicTable;
-SymbolTable argumentTable;
-SymbolTable registerTable;
+extern SymbolTable *lblToAddr;
+extern SymbolTable mnemonicTable;
+extern SymbolTable argumentTable;
+extern SymbolTable registerTable;
 
 #endif /* end of include guard: TABLE_H */
