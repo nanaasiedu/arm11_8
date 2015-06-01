@@ -5,36 +5,36 @@
 #include <stdio.h>
 
 uint32_t generateOffsetField(TransferAddress address) {
-  switch (address.indexType) {
-    case Transfer_None:
-      return generateImmediate(address.rnImm);
-    case Transfer_Pre:
-      return generateImmediate(address.rnImm);
-    case Transfer_Post:
-      return generateImmediate(address.rnImm);
+  if (address.indexType == Transfer_None) { //If immediate address
+    return generateImmediate(address.immediate);
+    //TODO: Set I bit
+  } else if (address.indexType == Transfer_Pre) { //If pre-indexed
+
+  } else if (address.indexType == Transfer_Post) { //If post-indexed
+
   }
 }
 
 TransferAddress initEmptyAddress() {
   TransferAddress output;
   output.indexType = Transfer_None;
-  output.shiftType = Shift_None;
-  output.rnImm = 0;
+  output.shiftType = Transfer_None;
+  output.immediate = 0;
   output.rm = 0;
-  output.shiftOffset = 0;
+  output.shift = 0;
   return output;
 }
 
 TransferAddress initImmediateAddress(int immediateAddress) {
   TransferAddress output = initEmptyAddress();
-  output.rnImm = immediateAddress;
+  output.immediate = immediateAddress;
   return output;
 }
 
 TransferAddress initRegisterAddress(int rn) {
   TransferAddress output = initEmptyAddress();
-  output.indexType = Transfer_Pre;
-  output.rnImm = rn;
+  output.indexType = Pre;
+  output.rn = rn;
   return output;
 }
 
@@ -44,8 +44,8 @@ TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexTyp
   }
 
   TransferAddress output = initEmptyAddress();
-  output.rnImm = rn;
-  output.shiftOffset = offset;
+  output.rn = rn;
+  output.offset = offset;
   output.indexType = indexType;
   return output;
 }
@@ -56,24 +56,20 @@ TransferAddress initShiftedRegisterAddress(int rn,
                                            IndexType indexType,
                                            ShiftType shiftType) {
   TransferAddress output = initEmptyAddress();
+  output.rn = rn;
   output.rm = rm;
-  output.rnImm = rn;
-  output.shiftOffset = shift;
+  output.shift = shift;
   output.indexType = indexType;
   output.shiftType = shiftType;
   return output;
 }
 
-address addr = 0;
-
-IntArray *loadExprs = NULL;
-
-void parseProgram(SymbolTable *map, Tokens *tokens) {
-  loadExprs = malloc(sizeof(IntArray));
-  Token *tokenPtr = tokens->tokens;
-  init(loadExprs, programLength);
+void parseProgram(SymbolTable *map, Program *program) {
+  //loadExprs = malloc(sizeof(IntArray));
+  Token *tokenPtr = program->tokens.tokens;
+  init(program->loadExpr, program->length);
   while (tokenPtr->type != ENDFILE) {
-    parseLine(tokenPtr);
+    parseLine(tokenPtr, program);
     do {
       tokenPtr++;
     } while(tokenPtr->type != NEWLINE);
@@ -83,21 +79,21 @@ void parseProgram(SymbolTable *map, Tokens *tokens) {
     }
   }
   //loaded variables
-  instruction nextAddr = (instruction) dequeue(loadExprs);
+  instruction nextAddr = (instruction) dequeue(program->loadExpr);
   while (nextAddr != NOT_FOUND) {
-    outputData(nextAddr);
-    nextAddr = (instruction) dequeue(loadExprs);
+    outputData(nextAddr, program);
+    nextAddr = (instruction) dequeue(program->loadExpr);
   }
-  free(loadExprs);
+  //free(loadExprs);
 }
 
-void parseLine(Token *token) {
+void parseLine(Token *token, Program *program) {
   if (token->type == OTHER) {
-    parseInstruction(token);
+    parseInstruction(token, program);
   }
 }
 
-void parseInstruction(Token *token) {
+void parseInstruction(Token *token, Program *program) {
   switch(index_of(token->value, mnemonicStrings)) {
     case ADD: case SUB: case RSB: case AND: case EOR:
     case ORR: parseTurnaryDataProcessing(token); break;
@@ -110,7 +106,7 @@ void parseInstruction(Token *token) {
     case MLA: parseMla(token); break;
 
     case LDR:
-    case STR: parseSingleDataTransfer(token); break;
+    case STR: parseSingleDataTransfer(token, program); break;
 
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
     case B: parseB(token); break;
@@ -238,11 +234,12 @@ void parseMla(Token *token) {
   generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, SET);
 }
 
-void parseSingleDataTransfer(Token *token) {
+void parseSingleDataTransfer(Token *token, Program *program) {
   // Define fields
-  uint32_t i, p, u, l, rd, rn;
+  uint32_t cond, i, p, u, l, rd, rn;
   int32_t offset;
 
+  cond = 0xe;
   l = !strcmp(token->value, "ldr");
 
   Token *rdToken = token + 1;
@@ -259,14 +256,14 @@ void parseSingleDataTransfer(Token *token) {
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
 
     bool isMov = (ex <= 0xFF);
-    programLength += isMov ? 0 : WORD_SIZE;
-    offset = isMov ? ex : programLength - addr - ARM_OFFSET;
-
-    u = !isMov;
+    program->length += isMov ? 0 : WORD_SIZE;
+    offset = isMov ? ex : program->length - program->addr - ARM_OFFSET;
 
     if (offset < 0) {
       offset *= -1;
       u = 0;
+    } else {
+      u = 1;
     }
 
     if (isMov) {
@@ -274,7 +271,7 @@ void parseSingleDataTransfer(Token *token) {
       generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, SET);
     } else {
       i = 0;
-      enqueue(loadExprs, ex);
+      enqueue(program->loadExpr, ex);
       generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset);
     }
   } else {
