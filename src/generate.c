@@ -82,7 +82,7 @@ void generateSingleDataTransferOpcode(uint32_t i,
                                       uint32_t rd,
                                       uint32_t rn,
                                       uint32_t offset) {
-  instruction instr = NOT_SET;//0x39 << 26;
+  instruction instr = NOT_SET;
 
   //Append all fields
   setField(&instr, 4, 0xE);

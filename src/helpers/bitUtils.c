@@ -3,7 +3,7 @@
 #include "bitUtils.h"
 
 uint32_t *currInstruction;
-int currPtr;
+int g_InstructionPointer;
 
 int getBit(uint32_t x, int pos) {
   //returns 1 bit value of the bit at position pos of x
@@ -37,9 +37,9 @@ int rotr32(uint32_t x, int n) {
 void setField(uint32_t *instr, int length, uint32_t value) {
   if (instr != NULL) {
     currInstruction = instr;
-    currPtr = 31;
+    g_InstructionPointer = 31;
   }
   uint32_t mask = (1 << length) - 1;
-    *currInstruction |= (value & mask) << (currPtr - (length - 1));
-    currPtr -= length;
+  g_InstructionPointer -= length;
+  *currInstruction |= (value & mask) << (g_InstructionPointer + 1));
 }
