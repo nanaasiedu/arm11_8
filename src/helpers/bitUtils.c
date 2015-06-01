@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include "bitUtils.h"
 
+uint32_t *currInstruction;
+int currPtr;
+
 int getBit(uint32_t x, int pos) {
   //returns 1 bit value of the bit at position pos of x
   // e.g getBit(10010011, 0) = 1
@@ -31,13 +34,12 @@ int rotr32(uint32_t x, int n) {
   return (x >> n) | a;
 }
 
-void setField(uint32_t *instr, int start, int end, uint32_t value) {
-  uint32_t mask = 1 << ((end - start) - 1);
-  if (value <= mask) {
-    *instr |= (value & mask) << end;
+void setField(uint32_t *instr, int length, uint32_t value) {
+  if (instr != NULL) {
+    currInstruction = instr;
+    currPtr = 31;
   }
-  else {
-    perror("Value too large for field.");
-    exit(EXIT_FAILURE);
-  }
+  uint32_t mask = (1 << length) - 1;
+    *currInstruction |= (value & mask) << (currPtr - (length - 1));
+    currPtr -= length;
 }

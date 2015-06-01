@@ -22,7 +22,7 @@ typedef int bool;
 #endif
 
 typedef int16_t address;
-typedef int32_t instruction;
+typedef uint32_t instruction;
 typedef unsigned char byte;
 
 // instruction types

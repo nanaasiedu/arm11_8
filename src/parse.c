@@ -4,65 +4,37 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef enum {
-  Post,
-  Pre,
-  None
-} IndexType;
-
-typedef enum {
-  LSL,
-  LSR,
-  ASR,
-  ROR,
-  None
-} ShiftType;
-
-typedef struct {
-  union {
-    int rn;
-    int immediate;
-  };
-  IndexType indexType;
-  int rm;
-  ShiftType shiftType;
-  union {
-    int shift;
-    int offset;
-  };
-} TransferAddress;
-
 uint32_t generateOffsetField(TransferAddress address) {
-  if (address.indexType == None) { //If immediate address
-    return generateImmediate(address.immediate);
-    //TODO: Set I bit
-  } else if (address.indexType == Pre) { //If pre-indexed
-
-  } else if (address.indexType == Post) { //If post-indexed
-
+  switch (address.indexType) {
+    case Transfer_None:
+      return generateImmediate(address.rnImm);
+    case Transfer_Pre:
+      return generateImmediate(address.rnImm);
+    case Transfer_Post:
+      return generateImmediate(address.rnImm);
   }
 }
 
 TransferAddress initEmptyAddress() {
   TransferAddress output;
-  output.IndexType = None;
-  output.shiftType = None;
-  output.immediate = 0;
+  output.indexType = Transfer_None;
+  output.shiftType = Shift_None;
+  output.rnImm = 0;
   output.rm = 0;
-  output.shift = 0;
+  output.shiftOffset = 0;
   return output;
 }
 
 TransferAddress initImmediateAddress(int immediateAddress) {
   TransferAddress output = initEmptyAddress();
-  output.immediate = immediateAddress;
+  output.rnImm = immediateAddress;
   return output;
 }
 
 TransferAddress initRegisterAddress(int rn) {
   TransferAddress output = initEmptyAddress();
-  output.IndexType = Pre;
-  output.rn = rn;
+  output.indexType = Transfer_Pre;
+  output.rnImm = rn;
   return output;
 }
 
@@ -72,8 +44,8 @@ TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexTyp
   }
 
   TransferAddress output = initEmptyAddress();
-  output.rn = rn;
-  output.offset = offset;
+  output.rnImm = rn;
+  output.shiftOffset = offset;
   output.indexType = indexType;
   return output;
 }
@@ -84,9 +56,9 @@ TransferAddress initShiftedRegisterAddress(int rn,
                                            IndexType indexType,
                                            ShiftType shiftType) {
   TransferAddress output = initEmptyAddress();
-  output.rn = rn;
   output.rm = rm;
-  output.shift = shift;
+  output.rnImm = rn;
+  output.shiftOffset = shift;
   output.indexType = indexType;
   output.shiftType = shiftType;
   return output;
@@ -268,10 +240,9 @@ void parseMla(Token *token) {
 
 void parseSingleDataTransfer(Token *token) {
   // Define fields
-  uint32_t cond, i, p, u, l, rd, rn;
+  uint32_t i, p, u, l, rd, rn;
   int32_t offset;
 
-  cond = 0xe;
   l = !strcmp(token->value, "ldr");
 
   Token *rdToken = token + 1;
@@ -291,11 +262,11 @@ void parseSingleDataTransfer(Token *token) {
     programLength += isMov ? 0 : WORD_SIZE;
     offset = isMov ? ex : programLength - addr - ARM_OFFSET;
 
+    u = !isMov;
+
     if (offset < 0) {
       offset *= -1;
       u = 0;
-    } else {
-      u = 1;
     }
 
     if (isMov) {
@@ -304,7 +275,7 @@ void parseSingleDataTransfer(Token *token) {
     } else {
       i = 0;
       enqueue(loadExprs, ex);
-      generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
+      generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset);
     }
   } else {
     // char *addrValue = malloc(100);
@@ -371,7 +342,7 @@ void parseSingleDataTransfer(Token *token) {
       }
       u = SET; // TODO: change
     }
-    generateSingleDataTransferOpcode(cond, i, p, u, l, rd, rn, offset);
+    generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset);
   }
 }
 
