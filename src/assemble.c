@@ -4,10 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-FILE *input = NULL, *output = NULL;
-Tokens *tokens = NULL;
-
-int programLength = 0;
+Program program = {NULL, NULL, 0, 0, NULL};
 
 int main(int argc, char **argv) {
 
@@ -17,15 +14,15 @@ int main(int argc, char **argv) {
   }
 
   //Setup
-  tokens = malloc(sizeof(Tokens));
-  tokens_init(tokens);
+  program.tokens = malloc(sizeof(Tokens));
+  tokens_init(program.tokens);
   lblToAddr = malloc(sizeof(SymbolTable));
   map_init(lblToAddr);
   setUpIO(argv[1], argv[2]);
 
   tokenise();
   resolveLabelAddresses();
-  parseProgram(lblToAddr, tokens);
+  parseProgram(lblToAddr, program.tokens);
 
   dealloc();
 
@@ -33,12 +30,12 @@ int main(int argc, char **argv) {
 }
 
 void setUpIO(char *in, char *out) {
-  if ((input = fopen(in, "r")) == NULL) {
+  if ((program.input = fopen(in, "r")) == NULL) {
     perror(in);
     exit(EXIT_FAILURE);
   }
 
-  if ((output = fopen(out, "wa")) == NULL) {
+  if ((program.output = fopen(out, "wa")) == NULL) {
     perror(out);
     exit(EXIT_FAILURE);
   }
@@ -46,7 +43,7 @@ void setUpIO(char *in, char *out) {
 
 void resolveLabelAddresses() {
   address currAddr = 0;
-  Token *tokenPtr = tokens->tokens;
+  Token *tokenPtr = (program.tokens)->tokens;
   while (tokenPtr->type != ENDFILE) {
     if (tokenPtr->type == LABEL) {
       map_set(lblToAddr, tokenPtr->value, currAddr+WORD_SIZE);
@@ -59,7 +56,7 @@ void resolveLabelAddresses() {
       currAddr += WORD_SIZE;
     }
   }
-  programLength = (int) currAddr;
+  program.length = (int) currAddr;
 }
 
 void outputData(uint32_t i) {
@@ -95,28 +92,28 @@ void tokenise() {
       if (isLabel(token)) {
         char *pch = strstr(token, ":");
         strncpy(pch, "", 1);
-        tokens_add(tokens, token, LABEL);
+        tokens_add(program.tokens, token, LABEL);
       } else if (isLiteral(token)) {
         token++; // Remove #
-        tokens_add(tokens, token, LITERAL);
+        tokens_add(program.tokens, token, LITERAL);
       } else if (isExpression(token)) {
         token++; // Remove =
-        tokens_add(tokens, token, EXPRESSION);
+        tokens_add(program.tokens, token, EXPRESSION);
       } else {
-        tokens_add(tokens, token, OTHER);
+        tokens_add(program.tokens, token, OTHER);
       }
       token = strtok(NULL, sep);
     }
     if (!isBlankLine) {
-      tokens_add(tokens, "nl", NEWLINE);
+      tokens_add(program.tokens, "nl", NEWLINE);
     }
   }
-  tokens_add(tokens, "end", ENDFILE);
+  tokens_add(program.tokens, "end", ENDFILE);
 }
 
 void dealloc() {
-  fclose(input);
-  fclose(output);
+  fclose(program.input);
+  fclose(program.output);
   map_free(lblToAddr);
-  tokens_free(tokens);
+  tokens_free(program.tokens);
 }

@@ -1,6 +1,7 @@
 #ifndef DEFINITION_H
 #define DEFINITION_H
 
+#include <stdio.h>
 #include "stdint.h"
 
 #define WORD_SIZE 4
@@ -57,5 +58,14 @@ typedef unsigned char byte;
 #define SFT_LSR 1
 #define SFT_ASR 2
 #define SFT_ROR 3
+
+typedef struct {
+  FILE *input;
+  FILE *output;
+  int length;
+  int addr;
+  Tokens tokens;
+  IntArray *loadExpr;
+} Program;
 
 #endif /* end of include guard: DEFINITION_H */
