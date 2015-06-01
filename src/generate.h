@@ -13,7 +13,7 @@ void generateSingleDataTransferOpcode(uint32_t i, uint32_t p, uint32_t u, uint32
 void generateBranchOpcode(int32_t cond, int32_t offset);
 void generateHaltOpcode();
 
-extern void outputData(uint32_t i);
+extern void outputData(uint32_t i, Program *program);
 uint32_t generateImmediate(uint32_t value);
 
 #endif /* end of include guard: GENERATE_H */

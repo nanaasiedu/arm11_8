@@ -11,14 +11,13 @@
 #include "helpers/symbolmap.h"
 
 //IO
-void setUpIO(char *in, char *out);
-void outputData(uint32_t i);
+void setUpIO(char *in, char *out, Program *program);
+void outputData(uint32_t i, Program *program);
 
 //Compile
-void resolveLabelAddresses();
+void resolveLabelAddresses(Program *program);
 
 //Helper
-void tokenise();
-void dealloc();
+void tokenise(Program *program);
 
 #endif /* end of include guard: ASSEMBLE */
