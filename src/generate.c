@@ -20,7 +20,8 @@ void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t rn,
                                   int32_t operand,
                                   int32_t s,
-                                  int32_t i) {
+                                  int32_t i,
+                                  Program *program) {
   instruction instr = NOT_SET;
 
   //Append all fields
@@ -39,7 +40,7 @@ void generateDataProcessingOpcode(int32_t opcode,
     setField(NULL, 12, operand);
   }
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
 void generateMultiplyOpcode(int32_t opcode,
@@ -47,7 +48,8 @@ void generateMultiplyOpcode(int32_t opcode,
                             int32_t rm,
                             int32_t rs,
                             int32_t rn,
-                            int32_t a) {
+                            int32_t a,
+                            Program *program) {
   instruction instr = NOT_SET;
 
   //Append all fields
@@ -61,10 +63,10 @@ void generateMultiplyOpcode(int32_t opcode,
   setField(NULL, 4, rs);
   setField(NULL, 4, rm);
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
-void generateBranchOpcode(int32_t cond, int32_t offset) {
+void generateBranchOpcode(int32_t cond, int32_t offset, Program *program) {
   instruction instr = NOT_SET;
 
   //Append all fields
@@ -72,7 +74,7 @@ void generateBranchOpcode(int32_t cond, int32_t offset) {
   setField(NULL, 4, 0xA);
   setField(NULL, 24, offset);
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
 void generateSingleDataTransferOpcode(uint32_t i,
@@ -81,7 +83,8 @@ void generateSingleDataTransferOpcode(uint32_t i,
                                       uint32_t l,
                                       uint32_t rd,
                                       uint32_t rn,
-                                      uint32_t offset) {
+                                      uint32_t offset,
+                                      Program *program) {
   instruction instr = NOT_SET;
 
   //Append all fields
@@ -96,10 +99,10 @@ void generateSingleDataTransferOpcode(uint32_t i,
   setField(NULL, 4, rd);
   setField(NULL, 12, offset);
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
-void generateHaltOpcode() {
+void generateHaltOpcode(Program *program) {
   int32_t instr = 0;
-  outputData(instr);
+  outputData(instr, program);
 }

@@ -17,12 +17,12 @@ extern int programLength;
 void parseProgram(SymbolTable *map, Program *program);
 void parseLine(Token *token, Program *program);
 void parseInstruction(Token *token, Program *program);
-void parseTurnaryDataProcessing(Token *token);
-void parseBinaryDataProcessing(Token *token);
-void parseMul(Token *token);
-void parseMla(Token *token);
-void parseB(Token *token);
-void parseLsl(Token *token);
+void parseTurnaryDataProcessing(Token *token, Program *program);
+void parseBinaryDataProcessing(Token *token, Program *program);
+void parseMul(Token *token, Program *program);
+void parseMla(Token *token, Program *program);
+void parseB(Token *token, Program *program);
+void parseLsl(Token *token, Program *program);
 void parseSingleDataTransfer(Token *token, Program *program);
 
 int index_of(char *value, char **arr);
