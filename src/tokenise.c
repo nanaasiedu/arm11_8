@@ -32,7 +32,39 @@ bool isExpression(char *string) {
   return string[0] == '=';
 }
 
+bool isNewLine(char *string) {
+  return string[0] == '\n';
+}
+
 void tokens_free(Tokens *tokens) {
   free(tokens);
   free(tokens->tokens);
+}
+
+void print_tokens(Tokens *tokens) {
+  for (size_t i = 0; i < tokens->size; i++) {
+    printf("Token: %s, %s\n",
+      tokens->tokens[i].value,
+      print_tokentype(tokens->tokens[i].type));
+  }
+}
+
+//Helper Functions
+char* print_tokentype(TokenType type) {
+  switch (type) {
+    case LABEL:
+      return "Label";
+    case LITERAL:
+      return "Literal";
+    case EXPRESSION:
+      return "Expression";
+    case OTHER:
+      return "Other";
+    case NEWLINE:
+      return "NewLine";
+    case ENDFILE:
+      return "ENDFILE";
+    default:
+      return "ERROR";
+  }
 }

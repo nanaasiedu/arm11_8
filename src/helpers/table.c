@@ -33,8 +33,17 @@ int registerInts[16] = {
   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
+char *shiftStrings[4] = {
+  "lsl", "lsr", "asr", "ror"
+};
+
+int shiftInts[4] = {
+  0, 1, 2, 3
+};
+
 //Set symbol tables
 SymbolTable *lblToAddr = NULL;
 SymbolTable mnemonicTable =  {23, 23, mnemonicStrings, mnemonicInts};
 SymbolTable argumentTable =  {23, 23, mnemonicStrings, numberOfArguments};
 SymbolTable registerTable =  {16, 16, registerStrings, registerInts};
+SymbolTable shiftTable    =  {4, 4, shiftStrings, shiftInts};

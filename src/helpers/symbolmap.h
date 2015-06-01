@@ -1,6 +1,8 @@
 #ifndef SYMBOLMAP_H
 #define SYMBOLMAP_H
 
+#include "definitions.h"
+
 static const int MAX_LINE_LENGTH = 512;
 static const int INITIAL_MAP_SIZE = 20;
 

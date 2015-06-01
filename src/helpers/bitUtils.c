@@ -30,3 +30,14 @@ int rotr32(uint32_t x, int n) {
   uint32_t a = (x & ((1 << n)-1)) << (sizeof(x)*8 - n);
   return (x >> n) | a;
 }
+
+void setField(uint32_t *instr, int start, int end, uint32_t value) {
+  uint32_t mask = 1 << ((end - start) - 1);
+  if (value <= mask) {
+    *instr |= (value & mask) << end;
+  }
+  else {
+    perror("Value too large for field.");
+    exit(EXIT_FAILURE);
+  }
+}

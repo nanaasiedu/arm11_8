@@ -8,8 +8,9 @@ int find_index(char **a, int size, char *key);
 int map_get(SymbolTable *map, char *key) {
   int index = find_index(map->keys, map->size, key);
   if (index == -1) {
-    printf("Key not found in Symbol Table: %s\n", key);
-    exit(EXIT_FAILURE);
+    // printf("Key not found in Symbol Table: %s\n", key);
+    // exit(EXIT_FAILURE);
+    return NOT_FOUND;
   }
   return map->values[index];
 }
@@ -52,7 +53,7 @@ void map_print(SymbolTable *map) {
   char **keyIndex = map->keys;
   int *valueIndex = map->values;
   for (int i = 0; i < map->size; i++) {
-    printf("(Key:%s, Value: %d)\n", *keyIndex++, *valueIndex++);
+    printf("(Key:%s, Value: %.8x)\n", *keyIndex++, *valueIndex++);
   }
 }
 
