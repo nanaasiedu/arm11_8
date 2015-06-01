@@ -7,6 +7,7 @@
 #include "helpers/table.h"
 #include "helpers/intArray.h"
 #include "helpers/definitions.h"
+#include "helpers/bitUtils.h"
 #include <stdint.h>
 
 extern Tokens *tokens;
@@ -18,6 +19,18 @@ typedef enum {
     BEQ,BNE,BGE,BLT,BGT,BLE,B,
     LSL,ANDEQ
 } Mnemonics;
+
+typedef enum { Transfer_Post, Transfer_Pre, Transfer_None } IndexType;
+
+typedef enum { Shift_LSL,  Shift_LSR,  Shift_ASR, Shift_ROR, Shift_None } ShiftType;
+
+typedef struct {
+  int rnImm;
+  IndexType indexType;
+  int rm;
+  ShiftType shiftType;
+  int shiftOffset;
+} TransferAddress;
 
 extern address addr;
 extern int programLength;
@@ -39,8 +52,11 @@ char* stripLastBracket(char *str);
 bool isPreIndex(char *str);
 
 uint32_t generateOffsetField(TransferAddress address);
+
 TransferAddress initEmptyAddress();
+
 TransferAddress initImmediateAddress(int immediateAddress);
+
 TransferAddress initRegisterAddress(int rn);
 TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexType);
 TransferAddress initShiftedRegisterAddress(int rn,
