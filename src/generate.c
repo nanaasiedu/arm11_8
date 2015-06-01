@@ -1,5 +1,20 @@
 #include "generate.h"
 
+uint32_t generateImmediate(uint32_t value){
+  uint32_t output = 0;
+  if (value != 0) {
+    int rotation = 32;
+    int32_t imm = value;
+    while (imm % 4 == 0) {
+      rotation--;
+      imm = imm >> 2;
+    }
+    output |= (rotation & 0xf) << 8;
+    output |= imm & 0xff;
+  }
+  return output;
+}
+
 void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t rd,
                                   int32_t rn,
@@ -17,18 +32,11 @@ void generateDataProcessingOpcode(int32_t opcode,
   instr |= rd     << 12;
 
   //If immediate must calculate rotation
-  if (i == SET && operand > 0xff) {
-    int rotation = 32;
-    int32_t imm = operand;
-    while (imm % 4 == 0) {
-      rotation--;
-      imm = imm >> 2;
-    } // TODO: Take another look at this
-    instr |= (rotation & 0xf) << 8;
-    instr |= imm & 0xff;
-  } else {
-    instr |= operand & 0xfff;
-  }
+  // if (i == SET && operand > 0xff) {
+  //   instr |= generateImmediate(operand);
+  // } else {
+    setField(&instr, 0, 24, operand);
+  // }
 
   outputData(instr);
 }

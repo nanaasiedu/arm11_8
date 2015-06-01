@@ -4,6 +4,94 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+typedef enum {
+  Post,
+  Pre,
+  None
+} IndexType;
+
+typedef enum {
+  LSL,
+  LSR,
+  ASR,
+  ROR,
+  None
+} ShiftType;
+
+typedef struct {
+  union {
+    int rn;
+    int immediate;
+  };
+  IndexType indexType;
+  int rm;
+  ShiftType shiftType;
+  union {
+    int shift;
+    int offset;
+  };
+} TransferAddress;
+
+uint32_t generateOffsetField(TransferAddress address) {
+  if (address.indexType == None) { //If immediate address
+    return generateImmediate(address.immediate);
+    //TODO: Set I bit
+  } else if (address.indexType == Pre) { //If pre-indexed
+
+  } else if (address.indexType == Post) { //If post-indexed
+
+  }
+}
+
+TransferAddress initEmptyAddress() {
+  TransferAddress output;
+  output.IndexType = None;
+  output.shiftType = None;
+  output.immediate = 0;
+  output.rm = 0;
+  output.shift = 0;
+  return output;
+}
+
+TransferAddress initImmediateAddress(int immediateAddress) {
+  TransferAddress output = initEmptyAddress();
+  output.immediate = immediateAddress;
+  return output;
+}
+
+TransferAddress initRegisterAddress(int rn) {
+  TransferAddress output = initEmptyAddress();
+  output.IndexType = Pre;
+  output.rn = rn;
+  return output;
+}
+
+TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexType) {
+  if (offset == 0) {
+    return initRegisterAddress(rn);
+  }
+
+  TransferAddress output = initEmptyAddress();
+  output.rn = rn;
+  output.offset = offset;
+  output.indexType = indexType;
+  return output;
+}
+
+TransferAddress initShiftedRegisterAddress(int rn,
+                                           int rm,
+                                           int shift,
+                                           IndexType indexType,
+                                           ShiftType shiftType) {
+  TransferAddress output = initEmptyAddress();
+  output.rn = rn;
+  output.rm = rm;
+  output.shift = shift;
+  output.indexType = indexType;
+  output.shiftType = shiftType;
+  return output;
+}
+
 address addr = 0;
 
 IntArray *loadExprs = NULL;
@@ -226,15 +314,16 @@ void parseSingleDataTransfer(Token *token) {
       //Pre-Index, just base register
       p = SET;
       i = NOT_SET;
-      rn = map_get(&registerTable, stripBrackets(addrToken->value));
-      offset = NOT_SET;
       u = SET;
+      offset = NOT_SET;
+      rn = map_get(&registerTable, stripBrackets(addrToken->value));
     }
     else if (isPreIndex(addrToken->value)) {
       //Pre-Index, base and offset
       p = SET;
       rn = map_get(&registerTable, addrToken->value + 1);
       if (offsetToken->type == LITERAL) {
+        i = NOT_SET;
         char *ptr;
         offset = strtol(offsetToken->value, &ptr, 0);
         if (offset < 0) {
@@ -243,7 +332,6 @@ void parseSingleDataTransfer(Token *token) {
         } else {
           u = 1;
         }
-        i = NOT_SET;
       }
       else { //offset is a register, may need to shift
         int rm = map_get(&registerTable, offsetToken->value);
