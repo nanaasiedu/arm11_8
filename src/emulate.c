@@ -12,16 +12,30 @@ FILE *binFile = NULL; // binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
 RegFile rf;           // sets register file
 
+uint32_t *gpio0 = NULL; // Controls I/O state of GPIO pins from 0-9
+uint32_t *gpio1 = NULL; // Controls I/O state of GPIO pins from 10-19
+uint32_t *gpio2 = NULL; // Controls I/O state of GPIO pins from 20-29
+uint32_t *gpioS = NULL; // Controls setting the GPIO pins (ON)
+uint32_t *gpioC = NULL; // Controls clearing the GPIO pins (OFF)
+
 int main (int argc, char const *argv[]) {
   if (argc != 2) {
     printf("Incorrect number of arguments\n");
     exit(EXIT_FAILURE);
   }
 
-  mem = calloc(MEM16BIT, 1);
-  clearRegfile();
-  loadFileToMem(argv[1]);
-  int executeResult;
+  mem = calloc(MEM16BIT, 1);  // allocates 2^16 bit memory addresses to mem
+  clearRegfile();             // sets all registers to 0
+  loadFileToMem(argv[1]);     // binary loader: loads file passed through argv
+                              // into mem
+
+  gpio0 = calloc(4, 1);
+  gpio1 = calloc(4, 1);
+  gpio2 = calloc(4, 1);
+  gpioS = calloc(4, 1);
+  gpioC = calloc(4, 1);
+
+  int executeResult;          // controls pipeline flow
 
   int32_t instruction;
   DecodedInst di;
@@ -171,7 +185,6 @@ void decodeForBranch(uint32_t instruction, DecodedInst *di) {
   }
 
 }
-// -----------------------------------------------
 
 // Execute functions -----------------------------
 
@@ -381,9 +394,9 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 void executeBranch(int offset) {
   *rf.PC += offset << 2;
 }
-// -----------------------------------------------
 
-// Helper functions -----------------------------
+
+// Helper functions
 void loadFileToMem(char const *file) {
   // Reads bytes from file and inserts them into mem in LITTLE ENDIAN format
   if ((binFile = fopen(file,"r")) == NULL){
@@ -398,6 +411,27 @@ void loadFileToMem(char const *file) {
 uint32_t wMem(uint32_t startAddr) {
   // Returns 32 bit word starting from address startAddr
   // value in BIG ENDIAN
+
+  if (startAddr == GPIO_ADDR0) {
+    printf("One GPIO pin from 0 to 9 has been accessed\n");
+    return startAddr;
+
+  } else if (startAddr == GPIO_ADDR1) {
+    printf("One GPIO pin from 10 to 19 has been accessed\n");
+    return startAddr;
+
+  } else if (startAddr == GPIO_ADDR2) {
+    printf("One GPIO pin from 20 to 29 has been accessed\n");
+    return startAddr;
+
+  } else if (startAddr == GPIO_CLEAR_ADDR) {
+    return *gpioC;
+
+  } else if (startAddr == GPIO_SET_ADDR) {
+    return *gpioS;
+
+  }
+
   if (startAddr > MEM16BIT) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
     return 0;
@@ -413,6 +447,44 @@ uint32_t wMem(uint32_t startAddr) {
 
 void writewMem(uint32_t value, uint32_t startAddr) {
   //Stores 32 bit word value to address starting from startAddr
+  if (startAddr == GPIO_ADDR0) {
+    printf("One GPIO pin from 0 to 9 has been accessed\n");
+    *gpio0 = value;
+    return;
+
+  } else if (startAddr == GPIO_ADDR1) {
+    printf("One GPIO pin from 10 to 19 has been accessed\n");
+    *gpio1 = value;
+    return;
+
+  } else if (startAddr == GPIO_ADDR2) {
+    printf("One GPIO pin from 20 to 29 has been accessed\n");
+    *gpio2 = value;
+    return;
+
+  } else if (startAddr == GPIO_SET_ADDR) {
+    *gpioS = value;
+
+    while (value != 0) {
+      if (value & 1) {
+        printf("PIN ON\n");
+      }
+      value >>= 1;
+    }
+
+    return;
+  } else if(startAddr == GPIO_CLEAR_ADDR) {
+    *gpioC = value;
+
+    while (value != 0) {
+      if (value & 1) {
+        printf("PIN OFF\n");
+      }
+      value >>= 1;
+    }
+
+    return;
+  }
 
   if (startAddr > MEM16BIT - 3) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);
@@ -541,4 +613,9 @@ void dealloc(void) {
   // Frees all memory locations alloacted during the execution of the program
   free(rf.reg);
   free(mem);
+  free(gpio0);
+  free(gpio1);
+  free(gpio2);
+  free(gpioC);
+  free(gpioS);
 }
