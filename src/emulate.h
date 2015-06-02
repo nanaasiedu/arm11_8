@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "helpers/definitions.h"
 
-const uint32_t MEM16BIT = 65536;        // 2^16
+const uint32_t MEM16BIT = 1 << 16;
 const uint32_t MAX_UINT32 = 0xFFFFFFFF; // 32 1s
 const int NUM_REG = 17;                 // number of registers
 const int NUM_GREG = 13;                // number of general purpose registers
@@ -18,7 +18,7 @@ const int EXE_HALT = 0;
 const int EXE_CONTINUE = -1;
 const int EXE_BRANCH = 1;
 
-// fetch-decode functions --
+// fetch-decode functions
 uint32_t fetch(uint8_t *mem);
 DecodedInst decode(uint32_t instruction);
 uint8_t getInstType(uint32_t instruction);
@@ -26,17 +26,15 @@ void decodeForDataProc(uint32_t instruction, DecodedInst *di);
 void decodeForMult(uint32_t instruction, DecodedInst *di);
 void decodeForDataTrans(uint32_t instruction, DecodedInst *di);
 void decodeForBranch(uint32_t instruction, DecodedInst *di);
-// --
 
-// execute functions --
+// execute functions
 int execute(DecodedInst di);
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t Rn, uint8_t Rd, uint32_t operand);
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t rm);
 void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd, uint32_t offset);
 void executeBranch(int offset);
-// --
 
-// helper functions --
+// helper functions
 void loadFileToMem(char const *file);
 uint32_t wMem(uint32_t startAddr);
 void writewMem(uint32_t value, uint32_t startAddr);
@@ -47,6 +45,5 @@ uint32_t barrelShift(uint32_t valu, int shiftSeg, int s);
 void outputMemReg(void);
 void outputData(uint32_t i, bool isRegister);
 void dealloc(void);
-//--
 
 #endif /* end of include guard: EMULATE_H */

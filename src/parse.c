@@ -4,64 +4,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-uint32_t generateOffsetField(TransferAddress address) {
-  switch (address.indexType) {
-    case Transfer_None:
-      return generateImmediate(address.rnImm);
-    case Transfer_Pre:
-      return generateImmediate(address.rnImm);
-    case Transfer_Post:
-      return generateImmediate(address.rnImm);
+void generateShift(Token *shiftTypeToken, int32_t *currOffset) {
+  if (shiftTypeToken->type != NEWLINE) { // Shift Needed
+    int shift;
+    Token *shiftToken = (shiftTypeToken + 1);
+    if (shiftToken->type == LITERAL || shiftToken->type == EXPRESSION) {
+      char *ptr;
+      shift = (int) strtol(shiftToken->value, &ptr, 0);
+      offset |= (shift & 0x1F) << 7;
+    } else { // Shift is a register
+      shift = map_get(&registerTable, shiftToken->value);
+      *currOffset |= SET << 4;
+      *currOffset |= (shift & 0xF) << 8;
+    }
+    int shift_type = map_get(&shiftTable, shiftTypeToken->value);
+    *currOffset |= (shift_type & 3) << 5;
   }
-}
-
-TransferAddress initEmptyAddress() {
-  TransferAddress output;
-  output.indexType = Transfer_None;
-  output.shiftType = Shift_None;
-  output.rnImm = 0;
-  output.rm = 0;
-  output.shiftOffset = 0;
-  return output;
-}
-
-TransferAddress initImmediateAddress(int immediateAddress) {
-  TransferAddress output = initEmptyAddress();
-  output.rnImm = immediateAddress;
-  return output;
-}
-
-TransferAddress initRegisterAddress(int rn) {
-  TransferAddress output = initEmptyAddress();
-  output.indexType = Transfer_Pre;
-  output.rnImm = rn;
-  return output;
-}
-
-TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexType) {
-  if (offset == 0) {
-    return initRegisterAddress(rn);
-  }
-
-  TransferAddress output = initEmptyAddress();
-  output.rnImm = rn;
-  output.shiftOffset = offset;
-  output.indexType = indexType;
-  return output;
-}
-
-TransferAddress initShiftedRegisterAddress(int rn,
-                                           int rm,
-                                           int shift,
-                                           IndexType indexType,
-                                           ShiftType shiftType) {
-  TransferAddress output = initEmptyAddress();
-  output.rm = rm;
-  output.rnImm = rn;
-  output.shiftOffset = shift;
-  output.indexType = indexType;
-  output.shiftType = shiftType;
-  return output;
 }
 
 void parseProgram(SymbolTable *map, Program *program) {
@@ -139,20 +97,7 @@ void parseTurnaryDataProcessing(Token *token, Program *program) {
     i = NOT_SET;
     int rm = map_get(&registerTable, operand_token->value);
     operand = rm & 0xF;
-    if ((operand_token + 1)->type != NEWLINE) {
-      int shift;
-      if ((operand_token + 2)->type == EXPRESSION) {
-        char *ptr;
-        shift = (int) strtol((operand_token + 2)->value, &ptr, 0);
-        operand |= (shift & 0x1F) << 7;
-      } else {
-        shift = map_get(&registerTable, (operand_token + 2)->value);
-        operand |= 1 << 4;
-        operand |= (shift & 0xF) << 8;
-      }
-      int shift_type = map_get(&shiftTable, (operand_token + 1)->value);
-      operand |= (shift_type & 3) << 5;
-    }
+    generateShift((operand_token + 1), &operand);
   }
 
   generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i, program);
@@ -172,25 +117,11 @@ void parseBinaryDataProcessing(Token *token, Program *program) {
     i = SET;
     operand = (int) strtol(operand_token->value, &ptr, 0);
   } else {
-    i = NOT_SET;
     //Register
     i = NOT_SET;
     int rm = map_get(&registerTable, operand_token->value);
     operand = rm & 0xF;
-    if ((operand_token + 1)->type != NEWLINE) {
-      int shift;
-      if ((operand_token + 2)->type == EXPRESSION) {
-        char *ptr;
-        shift = (int) strtol((operand_token + 2)->value, &ptr, 0);
-        operand |= (shift & 0x1F) << 7;
-      } else {
-        shift = map_get(&registerTable, (operand_token + 2)->value);
-        operand |= 1 << 4;
-        operand |= (shift & 0xF) << 8;
-      }
-      int shift_type = map_get(&shiftTable, (operand_token + 1)->value);
-      operand |= (shift_type & 3) << 5;
-    }
+    generateShift((operand_token + 1), &operand);
   }
 
   if (strcmp(token->value,"mov") == 0) {
@@ -237,17 +168,14 @@ void parseSingleDataTransfer(Token *token, Program *program) {
   uint32_t i, p, u, l, rd, rn;
   int32_t offset = NOT_SET;
 
-  l = !strcmp(token->value, "ldr");
-
   Token *rdToken = token + 1;
   Token *addrToken = token + 2;
 
+  l = !strcmp(token->value, "ldr");
   rd = map_get(&registerTable, rdToken->value);
 
   //p, i, rn, offset, u
   if (addrToken->type == EXPRESSION) {
-    p = 1;
-    rn = map_get(&registerTable, k_PC);
     //Get Expression
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
@@ -256,6 +184,8 @@ void parseSingleDataTransfer(Token *token, Program *program) {
     program->length += isMov ? 0 : WORD_SIZE;
     offset = isMov ? ex : program->length - program->addr - ARM_OFFSET;
 
+    p = SET;
+    rn = map_get(&registerTable, k_PC);
     u = !isMov;
 
     if (offset < 0) {
@@ -263,30 +193,33 @@ void parseSingleDataTransfer(Token *token, Program *program) {
     }
 
     if (isMov) {
-      i = 1;
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, SET, program);
+      i = SET;
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, i, program);
+      return;
     } else {
-      i = 0;
+      i = NOT_SET;
       enqueue(program->loadExpr, ex);
-      generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
     }
-  } else {
+  }
+  else {
     char *addrValue = malloc(100);
     strcpy(addrValue, addrToken->value);
     Token *offsetToken = (addrToken + 1);
-    if (offsetToken->type == NEWLINE) { //offset = 0
-      //Pre-Index, just base register
+    if (offsetToken->type == NEWLINE) {
+      /* special pre case */
       p = SET;
-      i = NOT_SET;
       u = SET;
+      i = NOT_SET;
       offset = NOT_SET;
       rn = map_get(&registerTable, stripBrackets(addrValue));
     }
-    else if (isPreIndex(addrValue)) {
-      //Pre-Index, base and offset
-      p = SET;
-      rn = map_get(&registerTable, addrValue + 1);
-      if (offsetToken->type == LITERAL) {
+    else {
+      /* pre/post cases */
+      p = isPreIndex(addrValue);
+      rn = map_get(&registerTable, stripBrackets(addrValue));
+
+      int rm = map_get(&registerTable,stripLastBracket(offsetToken->value));
+      if (rm == NOT_FOUND) {
         i = NOT_SET;
         char *ptr;
         offset = strtol(offsetToken->value, &ptr, 0);
@@ -296,46 +229,18 @@ void parseSingleDataTransfer(Token *token, Program *program) {
         } else {
           u = 1;
         }
-      }
-      else { //offset is a register, may need to shift
-        int rm = map_get(&registerTable, stripLastBracket(offsetToken->value));
+      } else { //Rm exists
         offset = rm & 0xF;
+
         Token *shiftTypeToken = (offsetToken + 1);
-        if (shiftTypeToken->type != NEWLINE) { // Shift Needed
-          int shift;
-          Token *shiftToken = (shiftTypeToken + 1);
-          if (shiftToken->type == LITERAL) {
-            char *ptr;
-            shift = (int) strtol(shiftToken->value, &ptr, 0);
-            offset |= (shift & 0x1F) << 7;
-          } else { // Shift is a register
-            shift = map_get(&registerTable, shiftToken->value);
-            offset |= SET << 4;
-            offset |= (shift & 0xF) << 8;
-          }
-          int shift_type = map_get(&shiftTable, shiftTypeToken->value);
-          offset |= (shift_type & 3) << 5;
-        }
+        generateShift(shiftTypeToken, &offset);
+
         i = SET;
-        u = SET; // TODO: change
+        u = SET;
       }
     }
-    else {
-      //Post-Index
-      i = SET;
-      p = NOT_SET;
-      rn = map_get(&registerTable, stripLastBracket(addrToken->value+1));
-      char *ptr;
-      // stripLastBracket((token+3)->value);
-      offset = map_get(&registerTable, (token+3)->value);
-      if (offset == NOT_FOUND) {
-        i = NOT_SET;
-        offset = strtol((token+3)->value, &ptr, 0);
-      }
-      u = SET; // TODO: change
-    }
-    generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
   }
+  generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
 }
 
 void parseB(Token *token, Program *program) {

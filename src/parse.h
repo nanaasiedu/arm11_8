@@ -30,18 +30,4 @@ char* stripBrackets(char *str);
 char* stripLastBracket(char *str);
 bool isPreIndex(char *str);
 
-uint32_t generateOffsetField(TransferAddress address);
-
-TransferAddress initEmptyAddress();
-
-TransferAddress initImmediateAddress(int immediateAddress);
-
-TransferAddress initRegisterAddress(int rn);
-TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexType);
-TransferAddress initShiftedRegisterAddress(int rn,
-                                           int rm,
-                                           int shift,
-                                           IndexType indexType,
-                                           ShiftType shiftType);
-
 #endif /* end of include guard: PARSE_H */

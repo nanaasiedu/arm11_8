@@ -56,7 +56,7 @@ typedef enum { Transfer_Post, Transfer_Pre, Transfer_None } IndexType;
 typedef enum { Shift_LSL,  Shift_LSR,  Shift_ASR, Shift_ROR, Shift_None } ShiftType;
 
 typedef struct {
-  int rnImm;
+  int imm;
   IndexType indexType;
   int rm;
   ShiftType shiftType;
