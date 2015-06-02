@@ -14,6 +14,12 @@ const int Zbit = 30;
 const int Cbit = 29;
 const int Vbit = 28;
 
+const uint32_t GPIO_ADDR0 = 0x20200000;
+const uint32_t GPIO_ADDR1 = 0x20200004;
+const uint32_t GPIO_ADDR2 = 0x20200008;
+const uint32_t GPIO_SET_ADDR = 0x2020001C;
+const uint32_t GPIO_CLEAR_ADDR = 0x20200028;
+
 const int EXE_HALT = 0;
 const int EXE_CONTINUE = -1;
 const int EXE_BRANCH = 1;
