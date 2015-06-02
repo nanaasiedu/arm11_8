@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
+CFLAGS  = -ferror-limit=200 -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 .SUFFIXES: .c .o
 
@@ -7,7 +7,7 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 all: emulate assemble
 
-assemble: assemble.o symbolmap.o tokenise.o parse.o generate.o table.o intArray.o
+assemble: assemble.o symbolmap.o tokenise.o parse.o generate.o table.o intArray.o bitUtils.o
 	$(CC) $^ -o $@
 
 tokenise.o: tokenise.c

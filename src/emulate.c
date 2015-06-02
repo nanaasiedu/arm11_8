@@ -18,38 +18,35 @@ int main (int argc, char const *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  mem = calloc(MEM16BIT, 1);  // allocates 2^16 bit memory addresses to mem
-  clearRegfile();             // sets all registers to 0
-  loadFileToMem(argv[1]);     // binary loader: loads file passed through argv
-                              // into mem
-  int executeResult;          // controls pipeline flow
+  mem = calloc(MEM16BIT, 1);
+  clearRegfile();
+  loadFileToMem(argv[1]);
+  int executeResult;
 
-  int32_t instruction;        // stores the current fetched instruction
-  DecodedInst di;             // stores the current decoded instruction
+  int32_t instruction;
+  DecodedInst di;
 
-      // PC = 0 before entering loop, an effect of clearRegfile()
   do {
     instruction = fetch(mem);
     do {
       di = decode(instruction);
       instruction = fetch(mem);
       executeResult = execute(di);
-    } while(executeResult == EXE_CONTINUE); // continue regular cycle
-  } while(executeResult != EXE_HALT);       // fetch again if EXE_BRANCH
+    } while(executeResult == EXE_CONTINUE);
+  } while(executeResult != EXE_HALT);
 
-  outputMemReg();             // print memory and register contents to screen
-  // runAllTests();
-  dealloc();                  // frees up allocated memory
+  outputMemReg();
+  dealloc();
   return EXIT_SUCCESS;
 }
 
-// Fetch-Decode functions -------------------------
+// Fetch-Decode functions
 
 uint32_t fetch(uint8_t *mem){
   // reads and returns 4 byte LITTLE ENDIAN
   // Returns Big Endian
   uint32_t instruction = wMem(*rf.PC);
-  *rf.PC += WORD_SIZE;              // inc^ PC
+  *rf.PC += WORD_SIZE;
   return instruction;
 }
 

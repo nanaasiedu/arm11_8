@@ -5,6 +5,22 @@
 
 #include "tokenise.h"
 
+void tokenise(Program *program, char *sep, void (*tokenFunction)(Program *program, char *token)) {
+  char line[512];
+  while (fgets(line, sizeof(line), program->input) != NULL) {
+    char *token = strtok(line, sep);
+    bool isBlankLine = token == NULL;
+    while (token != NULL) {
+      tokenFunction(program, token);
+      token = strtok(NULL, sep);
+    }
+    if (!isBlankLine) {
+      tokens_add(program->tokens, "nl", NEWLINE);
+    }
+  }
+  tokens_add(program->tokens, "end", ENDFILE);
+}
+
 void tokens_init(Tokens *tokens) {
   tokens->size = 0;
   tokens->fullCapacity = 100;

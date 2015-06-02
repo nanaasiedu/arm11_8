@@ -1,6 +1,6 @@
 #include "generate.h"
 
-uint32_t generateImmediate(uint32_t value){
+uint32_t generateImmediate(uint32_t value) {
   uint32_t output = 0;
   if (value != 0) {
     int rotation = 32;
@@ -20,25 +20,27 @@ void generateDataProcessingOpcode(int32_t opcode,
                                   int32_t rn,
                                   int32_t operand,
                                   int32_t s,
-                                  int32_t i) {
-  //Cond set to 1110
-  instruction instr = 0xe << 28;
+                                  int32_t i,
+                                  Program *program) {
+  instruction instr = NOT_SET;
 
   //Append all fields
-  instr |= i      << 25;
-  instr |= opcode << 21;
-  instr |= s      << 20;
-  instr |= rn     << 16;
-  instr |= rd     << 12;
+  setField(&instr, 4, 0xE);
+  setField(NULL, 2, NOT_SET);
+  setField(NULL, 1, i);
+  setField(NULL, 4, opcode);
+  setField(NULL, 1, s);
+  setField(NULL, 4, rn);
+  setField(NULL, 4, rd);
 
   //If immediate must calculate rotation
-  // if (i == SET && operand > 0xff) {
-  //   instr |= generateImmediate(operand);
-  // } else {
-    setField(&instr, 0, 24, operand);
-  // }
+  if (i == SET && operand > 0xff) {
+    setField(NULL, 12, generateImmediate(operand));
+  } else {
+    setField(NULL, 12, operand);
+  }
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
 void generateMultiplyOpcode(int32_t opcode,
@@ -46,58 +48,61 @@ void generateMultiplyOpcode(int32_t opcode,
                             int32_t rm,
                             int32_t rs,
                             int32_t rn,
-                            int32_t a) {
-  //Cond set to 1110
-  instruction instr = 0xe << 28; // COND define
+                            int32_t a,
+                            Program *program) {
+  instruction instr = NOT_SET;
 
   //Append all fields
-  instr |= a     << 21;
-  instr |= rd    << 16;
-  instr |= rn    << 12;
-  instr |= rs    << 8;
-  //bits 7 to 4 = 1001;
-  instr |= 9     << 4; // TODO: define
-  instr |= rm;
+  setField(&instr, 4, 0xE);
+  setField(NULL, 6, NOT_SET);
+  setField(NULL, 1, a);
+  setField(NULL, 1, NOT_SET);
+  setField(NULL, 4, rd);
+  setField(NULL, 4, rn);
+  setField(NULL, 4, rs);
+  setField(NULL, 4, 9);
+  setField(NULL, 4, rm);
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
-void generateBranchOpcode(int32_t cond, int32_t offset) {
-  instruction instr = cond << 28;
+void generateBranchOpcode(int32_t cond, int32_t offset, Program *program) {
+  instruction instr = NOT_SET;
 
   //Append all fields
-  //bits 27 to 24 = 1010;
-  instr |= 0xa << 24; // TODO: define
-  instr |= offset & 0xffffff;
+  setField(&instr, 4, cond);
+  setField(NULL, 4, 0xA);
+  setField(NULL, 24, offset);
 
-  outputData(instr);
+  outputData(instr, program);
 }
 
-void generateSingleDataTransferOpcode(uint32_t cond,
-                                      uint32_t i,
+void generateSingleDataTransferOpcode(uint32_t i,
                                       uint32_t p,
                                       uint32_t u,
                                       uint32_t l,
                                       uint32_t rd,
                                       uint32_t rn,
-                                      uint32_t offset) {
-  //Cond set to 1110
-  instruction instr = 0x39 << 26;
+                                      uint32_t offset,
+                                      Program *program) {
+  instruction instr = NOT_SET;
 
   //Append all fields
-  //bits 27,26 = 01
-  // TODO: maybe look at making instructions
-  instr |= i     << 25;
-  instr |= p     << 24;
-  instr |= u     << 23;
-  instr |= l     << 20;
-  instr |= rn    << 16;
-  instr |= rd    << 12;
-  instr |= offset & 0xFFF;
-  outputData(instr);
+  setField(&instr, 4, 0xE);
+  setField(NULL, 2, SET);
+  setField(NULL, 1, i);
+  setField(NULL, 1, p);
+  setField(NULL, 1, u);
+  setField(NULL, 2, NOT_SET);
+  setField(NULL, 1, l);
+  setField(NULL, 4, rn);
+  setField(NULL, 4, rd);
+  setField(NULL, 12, offset);
+
+  outputData(instr, program);
 }
 
-void generateHaltOpcode() {
+void generateHaltOpcode(Program *program) {
   int32_t instr = 0;
-  outputData(instr);
+  outputData(instr, program);
 }
