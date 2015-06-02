@@ -86,8 +86,8 @@ typedef struct {
   FILE *input;
   FILE *output;
   int length;
-  int addr;
-  Tokens tokens;
+  address addr;
+  Tokens *tokens;
   IntArray *loadExpr;
 } Program;
 

@@ -66,7 +66,7 @@ TransferAddress initShiftedRegisterAddress(int rn,
 
 void parseProgram(SymbolTable *map, Program *program) {
   //loadExprs = malloc(sizeof(IntArray));
-  Token *tokenPtr = program->tokens.tokens;
+  Token *tokenPtr = program->tokens->tokens;
   init(program->loadExpr, program->length);
   while (tokenPtr->type != ENDFILE) {
     parseLine(tokenPtr, program);

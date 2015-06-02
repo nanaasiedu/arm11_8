@@ -13,10 +13,11 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  Program program = (const Program){ 0 };
-
   //Setup
-  Program *pProgram = malloc(sizeof(program));
+  Program *pProgram = calloc(sizeof(Program), 1);
+  pProgram->tokens = malloc(sizeof(Tokens));
+  pProgram->loadExpr = malloc(sizeof(IntArray));
+  tokens_init(pProgram->tokens);
   lblToAddr = malloc(sizeof(SymbolTable));
   map_init(lblToAddr);
   setUpIO(argv[1], argv[2], pProgram);
@@ -26,8 +27,10 @@ int main(int argc, char **argv) {
   parseProgram(lblToAddr, pProgram);
 
   //deallocation
-  fclose(program.input);
-  fclose(program.output);
+  fclose(pProgram->input);
+  fclose(pProgram->output);
+  free(pProgram->loadExpr);
+  tokens_free(pProgram->tokens);
   map_free(lblToAddr);
   free(pProgram);
 
@@ -48,7 +51,7 @@ void setUpIO(char *in, char *out, Program *program) {
 
 void resolveLabelAddresses(Program *program) {
   address currAddr = 0;
-  Token *tokenPtr = (program->tokens).tokens;
+  Token *tokenPtr = (program->tokens)->tokens;
   while (tokenPtr->type != ENDFILE) {
     if (tokenPtr->type == LABEL) {
       map_set(lblToAddr, tokenPtr->value, currAddr+WORD_SIZE);
@@ -64,27 +67,19 @@ void resolveLabelAddresses(Program *program) {
   program->length = (int) currAddr;
 }
 
-void outputData(uint32_t i, Program *program) {
+void outputData(instruction i, Program *program) {
   //Gets each byte of i
-  uint8_t b0,b1,b2,b3;
-  b0 = (uint8_t) ( i        & 0xff);
-  b1 = (uint8_t) ((i >> 8)  & 0xff);
-  b2 = (uint8_t) ((i >> 16) & 0xff);
-  b3 = (uint8_t) ((i >> 24) & 0xff);
-
-  //Convert to little endian format
-  instruction littleEndian_format = 0;
-  littleEndian_format = (littleEndian_format | b0) << 8;
-  littleEndian_format = (littleEndian_format | b1) << 8;
-  littleEndian_format = (littleEndian_format | b2) << 8;
-  littleEndian_format = (littleEndian_format | b3);
+  unsigned char b0,b1,b2,b3 = 0;
+  b0 = i         & 0xff;
+  b1 = (i >> 8)  & 0xff;
+  b2 = (i >> 16) & 0xff;
+  b3 = (i >> 24) & 0xff;
 
   // Print to file
-  // printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
-
   if (program->output != NULL) {
     fprintf(program->output, "%c%c%c%c", b0, b1, b2, b3);
   }
+
 }
 
 void tokenise(Program *program) {
@@ -97,21 +92,21 @@ void tokenise(Program *program) {
       if (isLabel(token)) {
         char *pch = strstr(token, ":");
         strncpy(pch, "", 1);
-        tokens_add(&program->tokens, token, LABEL);
+        tokens_add(program->tokens, token, LABEL);
       } else if (isLiteral(token)) {
         token++; // Remove #
-        tokens_add(&program->tokens, token, LITERAL);
+        tokens_add(program->tokens, token, LITERAL);
       } else if (isExpression(token)) {
         token++; // Remove =
-        tokens_add(&program->tokens, token, EXPRESSION);
+        tokens_add(program->tokens, token, EXPRESSION);
       } else {
-        tokens_add(&program->tokens, token, OTHER);
+        tokens_add(program->tokens, token, OTHER);
       }
       token = strtok(NULL, sep);
     }
     if (!isBlankLine) {
-      tokens_add(&program->tokens, "nl", NEWLINE);
+      tokens_add(program->tokens, "nl", NEWLINE);
     }
   }
-  tokens_add(&program->tokens, "end", ENDFILE);
+  tokens_add(program->tokens, "end", ENDFILE);
 }
