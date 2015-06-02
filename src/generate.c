@@ -52,13 +52,13 @@ void generateMultiplyOpcode(int32_t opcode,
 
   //Append all fields
   setField(&instr, 4, 0xE);
-  setField(NULL, 1, a);
   setField(NULL, 6, NOT_SET);
+  setField(NULL, 1, a);
+  setField(NULL, 1, NOT_SET);
   setField(NULL, 4, rd);
   setField(NULL, 4, rn);
   setField(NULL, 4, rs);
   setField(NULL, 4, 9);
-  setField(NULL, 4, rs);
   setField(NULL, 4, rm);
 
   outputData(instr);

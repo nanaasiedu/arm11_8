@@ -41,5 +41,5 @@ void setField(uint32_t *instr, int length, uint32_t value) {
   }
   uint32_t mask = (1 << length) - 1;
   g_InstructionPointer -= length;
-  *currInstruction |= (value & mask) << (g_InstructionPointer + 1));
+  *currInstruction |= (value & mask) << (g_InstructionPointer + 1);
 }
