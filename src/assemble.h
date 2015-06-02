@@ -18,6 +18,7 @@ void outputData(uint32_t i, Program *program);
 void resolveLabelAddresses(Program *program);
 
 //Helper
-void tokenise(Program *program);
+
+void arm11Tokeniser(Program *program, char *token);
 
 #endif /* end of include guard: ASSEMBLE */

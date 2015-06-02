@@ -18,4 +18,6 @@ int mnemonic_name(Token *token);
 char* print_tokentype(TokenType type);
 void print_tokens(Tokens *tokens);
 
+void tokenise(Program *program, char *sep, void (*tokenFunction)(Program *program, char *token));
+
 #endif /* end of include guard: TOKENISE_H */

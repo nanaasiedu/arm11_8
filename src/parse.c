@@ -148,7 +148,6 @@ void parseTurnaryDataProcessing(Token *token, Program *program) {
       } else {
         shift = map_get(&registerTable, (operand_token + 2)->value);
         operand |= 1 << 4;
-        //printf("shift: 0x%.4x\n", shift);
         operand |= (shift & 0xF) << 8;
       }
       int shift_type = map_get(&shiftTable, (operand_token + 1)->value);
@@ -187,7 +186,6 @@ void parseBinaryDataProcessing(Token *token, Program *program) {
       } else {
         shift = map_get(&registerTable, (operand_token + 2)->value);
         operand |= 1 << 4;
-        //printf("shift: 0x%.4x\n", shift);
         operand |= (shift & 0xF) << 8;
       }
       int shift_type = map_get(&shiftTable, (operand_token + 1)->value);
@@ -237,7 +235,7 @@ void parseMla(Token *token, Program *program) {
 void parseSingleDataTransfer(Token *token, Program *program) {
   // Define fields
   uint32_t i, p, u, l, rd, rn;
-  int32_t offset;
+  int32_t offset = NOT_SET;
 
   l = !strcmp(token->value, "ldr");
 
@@ -273,8 +271,8 @@ void parseSingleDataTransfer(Token *token, Program *program) {
       generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
     }
   } else {
-    // char *addrValue = malloc(100);
-    // strcpy(addrValue, addrToken->value);
+    char *addrValue = malloc(100);
+    strcpy(addrValue, addrToken->value);
     Token *offsetToken = (addrToken + 1);
     if (offsetToken->type == NEWLINE) { //offset = 0
       //Pre-Index, just base register
@@ -282,12 +280,12 @@ void parseSingleDataTransfer(Token *token, Program *program) {
       i = NOT_SET;
       u = SET;
       offset = NOT_SET;
-      rn = map_get(&registerTable, stripBrackets(addrToken->value));
+      rn = map_get(&registerTable, stripBrackets(addrValue));
     }
-    else if (isPreIndex(addrToken->value)) {
+    else if (isPreIndex(addrValue)) {
       //Pre-Index, base and offset
       p = SET;
-      rn = map_get(&registerTable, addrToken->value + 1);
+      rn = map_get(&registerTable, addrValue + 1);
       if (offsetToken->type == LITERAL) {
         i = NOT_SET;
         char *ptr;
@@ -300,7 +298,7 @@ void parseSingleDataTransfer(Token *token, Program *program) {
         }
       }
       else { //offset is a register, may need to shift
-        int rm = map_get(&registerTable, offsetToken->value);
+        int rm = map_get(&registerTable, stripLastBracket(offsetToken->value));
         offset = rm & 0xF;
         Token *shiftTypeToken = (offsetToken + 1);
         if (shiftTypeToken->type != NEWLINE) { // Shift Needed
@@ -313,7 +311,6 @@ void parseSingleDataTransfer(Token *token, Program *program) {
           } else { // Shift is a register
             shift = map_get(&registerTable, shiftToken->value);
             offset |= SET << 4;
-            //printf("shift: 0x%.4x\n", shift);
             offset |= (shift & 0xF) << 8;
           }
           int shift_type = map_get(&shiftTable, shiftTypeToken->value);
@@ -377,7 +374,10 @@ char* stripBrackets(char *str) {
 }
 
 char* stripLastBracket(char *str) {
-  str[strlen(str)-1] = '\0';
+  int lastChar = strlen(str)-1;
+  if (strcmp((str + lastChar), "]") == 0) {
+    str[lastChar] = '\0';
+  }
   return str;
 }
 
