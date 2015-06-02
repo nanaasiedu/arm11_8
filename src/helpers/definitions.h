@@ -1,7 +1,9 @@
 #ifndef DEFINITION_H
 #define DEFINITION_H
 
+#include <stdio.h>
 #include "stdint.h"
+#include "typedefs.h"
 
 #define WORD_SIZE 4
 #define ARM_OFFSET 8
@@ -12,17 +14,12 @@
 #define NOT_NEEDED NOT_SET
 #define N_MNEMONICS 23
 
-typedef int bool;
 #ifndef TRUE
 #define TRUE 1
 #endif
 #ifndef FALSE
 #define FALSE !TRUE
 #endif
-
-typedef int16_t address;
-typedef uint32_t instruction;
-typedef unsigned char byte;
 
 // instruction types
 #define BRANCH 128

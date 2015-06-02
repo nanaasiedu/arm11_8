@@ -64,65 +64,61 @@ TransferAddress initShiftedRegisterAddress(int rn,
   return output;
 }
 
-address addr = 0;
-
-IntArray *loadExprs = NULL;
-
-void parseProgram(SymbolTable *map, Tokens *tokens) {
-  loadExprs = malloc(sizeof(IntArray));
-  Token *tokenPtr = tokens->tokens;
-  init(loadExprs, programLength);
+void parseProgram(SymbolTable *map, Program *program) {
+  //loadExprs = malloc(sizeof(IntArray));
+  Token *tokenPtr = program->tokens.tokens;
+  init(program->loadExpr, program->length);
   while (tokenPtr->type != ENDFILE) {
-    parseLine(tokenPtr);
+    parseLine(tokenPtr, program);
     do {
       tokenPtr++;
     } while(tokenPtr->type != NEWLINE);
     tokenPtr++;
     if (tokenPtr->type == OTHER) {
-      addr += WORD_SIZE;
+      program -> addr += WORD_SIZE;
     }
   }
   //loaded variables
-  instruction nextAddr = (instruction) dequeue(loadExprs);
+  instruction nextAddr = (instruction) dequeue(program->loadExpr);
   while (nextAddr != NOT_FOUND) {
-    outputData(nextAddr);
-    nextAddr = (instruction) dequeue(loadExprs);
+    outputData(nextAddr, program);
+    nextAddr = (instruction) dequeue(program->loadExpr);
   }
-  free(loadExprs);
+  //free(loadExprs);
 }
 
-void parseLine(Token *token) {
+void parseLine(Token *token, Program *program) {
   if (token->type == OTHER) {
-    parseInstruction(token);
+    parseInstruction(token, program);
   }
 }
 
-void parseInstruction(Token *token) {
+void parseInstruction(Token *token, Program *program) {
   switch(index_of(token->value, mnemonicStrings)) {
     case ADD: case SUB: case RSB: case AND: case EOR:
-    case ORR: parseTurnaryDataProcessing(token); break;
+    case ORR: parseTurnaryDataProcessing(token, program); break;
 
     case MOV: case TST: case TEQ:
-    case CMP: parseBinaryDataProcessing(token); break;
+    case CMP: parseBinaryDataProcessing(token, program); break;
 
-    case MUL: parseMul(token); break;
+    case MUL: parseMul(token, program); break;
 
-    case MLA: parseMla(token); break;
+    case MLA: parseMla(token, program); break;
 
     case LDR:
-    case STR: parseSingleDataTransfer(token); break;
+    case STR: parseSingleDataTransfer(token, program); break;
 
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
-    case B: parseB(token); break;
+    case B: parseB(token, program); break;
 
-    case LSL: parseLsl(token); break;
+    case LSL: parseLsl(token, program); break;
 
-    case ANDEQ: generateHaltOpcode(); break;
+    case ANDEQ: generateHaltOpcode(program); break;
   }
 }
 
 //Parse Instructions
-void parseTurnaryDataProcessing(Token *token) {
+void parseTurnaryDataProcessing(Token *token, Program *program) {
   //Get args in Token form
   Token *rd_token = token + 1;
   Token *rn_token = token + 2;
@@ -160,10 +156,10 @@ void parseTurnaryDataProcessing(Token *token) {
     }
   }
 
-  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i);
+  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i, program);
 }
 
-void parseBinaryDataProcessing(Token *token) {
+void parseBinaryDataProcessing(Token *token, Program *program) {
   //Get args in Token form
   Token *rdOrRn_token = token + 1;
   Token *operand_token = token + 2;
@@ -200,13 +196,13 @@ void parseBinaryDataProcessing(Token *token) {
   }
 
   if (strcmp(token->value,"mov") == 0) {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, NOT_SET, i);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, NOT_SET, i, program);
   } else {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), NOT_NEEDED, rdOrRn, operand, SET, i);
+    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), NOT_NEEDED, rdOrRn, operand, SET, i, program);
   }
 }
 
-void parseMul(Token *token) {
+void parseMul(Token *token, Program *program) {
   //Get args in Token form
   Token *rd_token = token + 1;
   Token *rm_token = token + 2;
@@ -218,10 +214,10 @@ void parseMul(Token *token) {
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
 
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, NOT_SET);
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, NOT_SET, program);
 }
 
-void parseMla(Token *token) {
+void parseMla(Token *token, Program *program) {
   //Get args in Token form
   Token *rd_token = token + 1;
   Token *rm_token = token + 2;
@@ -235,10 +231,10 @@ void parseMla(Token *token) {
   rs = map_get(&registerTable, rs_token->value);
   rn = map_get(&registerTable, rn_token->value);
 
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, SET);
+  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, SET, program);
 }
 
-void parseSingleDataTransfer(Token *token) {
+void parseSingleDataTransfer(Token *token, Program *program) {
   // Define fields
   uint32_t i, p, u, l, rd, rn;
   int32_t offset;
@@ -259,23 +255,22 @@ void parseSingleDataTransfer(Token *token) {
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
 
     bool isMov = (ex <= 0xFF);
-    programLength += isMov ? 0 : WORD_SIZE;
-    offset = isMov ? ex : programLength - addr - ARM_OFFSET;
+    program->length += isMov ? 0 : WORD_SIZE;
+    offset = isMov ? ex : program->length - program->addr - ARM_OFFSET;
 
     u = !isMov;
 
     if (offset < 0) {
       offset *= -1;
-      u = 0;
     }
 
     if (isMov) {
       i = 1;
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, SET);
+      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, SET, program);
     } else {
       i = 0;
-      enqueue(loadExprs, ex);
-      generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset);
+      enqueue(program->loadExpr, ex);
+      generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
     }
   } else {
     // char *addrValue = malloc(100);
@@ -342,29 +337,29 @@ void parseSingleDataTransfer(Token *token) {
       }
       u = SET; // TODO: change
     }
-    generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset);
+    generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
   }
 }
 
-void parseB(Token *token) {
+void parseB(Token *token, Program *program) {
   //Get args in Token form
   Token *lblToken = token + 1;
 
   //Get numbers associated to args
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
-  offset = map_get(lblToAddr, lblToken->value) - addr - ARM_OFFSET;
-  generateBranchOpcode(cond, offset >> 2);
+  offset = map_get(lblToAddr, lblToken->value) - program->addr - ARM_OFFSET;
+  generateBranchOpcode(cond, offset >> 2, program);
 }
 
-void parseLsl(Token *token) {
+void parseLsl(Token *token, Program *program) {
   Token *rn_token = token + 1;
   Token *operand_token = token + 2;
   int rn = map_get(&registerTable, rn_token->value);
   char *ptr;
   int operand =  (strtol(operand_token->value, &ptr, 0) << 7) & 0xF80;
   operand |= rn & 0xF;
-  generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rn, NOT_NEEDED, operand, NOT_SET, NOT_SET);
+  generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rn, NOT_NEEDED, operand, NOT_SET, NOT_SET, program);
 }
 
 int index_of(char *value, char **arr) {

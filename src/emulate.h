@@ -5,25 +5,6 @@
 #include <stdint.h>
 #include "helpers/definitions.h"
 
-typedef struct { // stores decoded instrustion in useful format
-  uint8_t cond;
-  uint8_t instType;
-  uint8_t opcode;
-  uint8_t rn;
-  uint8_t rd;
-  uint8_t rm;
-  uint8_t rs;
-  int32_t operandOffset;
-} DecodedInst;
-
-typedef struct {
-  uint32_t *reg; // registers 0-12 are general purpose.
-  uint32_t *SP;
-  uint32_t *LR;
-  uint32_t *PC;
-  uint32_t *CPSR;
-} RegFile;
-
 const uint32_t MEM16BIT = 65536;        // 2^16
 const uint32_t MAX_UINT32 = 0xFFFFFFFF; // 32 1s
 const int NUM_REG = 17;                 // number of registers

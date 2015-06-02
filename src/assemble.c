@@ -4,10 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-FILE *input = NULL, *output = NULL;
-Tokens *tokens = NULL;
 
-int programLength = 0;
 
 int main(int argc, char **argv) {
 
@@ -16,37 +13,42 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
+  Program program = (const Program){ 0 };
+
   //Setup
-  tokens = malloc(sizeof(Tokens));
-  tokens_init(tokens);
+  Program *pProgram = malloc(sizeof(program));
   lblToAddr = malloc(sizeof(SymbolTable));
   map_init(lblToAddr);
-  setUpIO(argv[1], argv[2]);
+  setUpIO(argv[1], argv[2], pProgram);
 
-  tokenise();
-  resolveLabelAddresses();
-  parseProgram(lblToAddr, tokens);
+  tokenise(pProgram);
+  resolveLabelAddresses(pProgram);
+  parseProgram(lblToAddr, pProgram);
 
-  dealloc();
+  //deallocation
+  fclose(program.input);
+  fclose(program.output);
+  map_free(lblToAddr);
+  free(pProgram);
 
   return EXIT_SUCCESS;
 }
 
-void setUpIO(char *in, char *out) {
-  if ((input = fopen(in, "r")) == NULL) {
+void setUpIO(char *in, char *out, Program *program) {
+  if ((program->input = fopen(in, "r")) == NULL) {
     perror(in);
     exit(EXIT_FAILURE);
   }
 
-  if ((output = fopen(out, "wa")) == NULL) {
+  if ((program->output = fopen(out, "wa")) == NULL) {
     perror(out);
     exit(EXIT_FAILURE);
   }
 }
 
-void resolveLabelAddresses() {
+void resolveLabelAddresses(Program *program) {
   address currAddr = 0;
-  Token *tokenPtr = tokens->tokens;
+  Token *tokenPtr = (program->tokens).tokens;
   while (tokenPtr->type != ENDFILE) {
     if (tokenPtr->type == LABEL) {
       map_set(lblToAddr, tokenPtr->value, currAddr+WORD_SIZE);
@@ -59,10 +61,10 @@ void resolveLabelAddresses() {
       currAddr += WORD_SIZE;
     }
   }
-  programLength = (int) currAddr;
+  program->length = (int) currAddr;
 }
 
-void outputData(uint32_t i) {
+void outputData(uint32_t i, Program *program) {
   //Gets each byte of i
   uint8_t b0,b1,b2,b3;
   b0 = (uint8_t) ( i        & 0xff);
@@ -80,14 +82,14 @@ void outputData(uint32_t i) {
   // Print to file
   // printf("0x%.4x: 0x%.8x\n", addr, littleEndian_format);
 
-  if (output != NULL) {
-    fprintf(output, "%c%c%c%c", b0, b1, b2, b3);
+  if (program->output != NULL) {
+    fprintf(program->output, "%c%c%c%c", b0, b1, b2, b3);
   }
 }
 
-void tokenise() {
+void tokenise(Program *program) {
   char line[512];
-  while (fgets(line, sizeof(line), input) != NULL) {
+  while (fgets(line, sizeof(line), program->input) != NULL) {
     char *sep = " ,\n";
     char *token = strtok(line, sep);
     bool isBlankLine = token == NULL;
@@ -95,28 +97,21 @@ void tokenise() {
       if (isLabel(token)) {
         char *pch = strstr(token, ":");
         strncpy(pch, "", 1);
-        tokens_add(tokens, token, LABEL);
+        tokens_add(&program->tokens, token, LABEL);
       } else if (isLiteral(token)) {
         token++; // Remove #
-        tokens_add(tokens, token, LITERAL);
+        tokens_add(&program->tokens, token, LITERAL);
       } else if (isExpression(token)) {
         token++; // Remove =
-        tokens_add(tokens, token, EXPRESSION);
+        tokens_add(&program->tokens, token, EXPRESSION);
       } else {
-        tokens_add(tokens, token, OTHER);
+        tokens_add(&program->tokens, token, OTHER);
       }
       token = strtok(NULL, sep);
     }
     if (!isBlankLine) {
-      tokens_add(tokens, "nl", NEWLINE);
+      tokens_add(&program->tokens, "nl", NEWLINE);
     }
   }
-  tokens_add(tokens, "end", ENDFILE);
-}
-
-void dealloc() {
-  fclose(input);
-  fclose(output);
-  map_free(lblToAddr);
-  tokens_free(tokens);
+  tokens_add(&program->tokens, "end", ENDFILE);
 }

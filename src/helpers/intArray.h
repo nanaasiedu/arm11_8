@@ -4,14 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "definitions.h"
-
-typedef struct {
-  int first;
-  int last;
-  int size;
-  int fullCapacity;
-  int *values;
-} IntArray;
+#include "typedefs.h"
 
 int dequeue(IntArray *array);
 void enqueue(IntArray *array, int value);

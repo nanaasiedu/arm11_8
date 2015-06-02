@@ -11,40 +11,19 @@
 #include <stdint.h>
 
 extern Tokens *tokens;
-
-typedef enum {
-    ADD,SUB,RSB,AND,EOR,ORR,MOV,TST,TEQ,CMP,
-    MUL,MLA,
-    LDR,STR,
-    BEQ,BNE,BGE,BLT,BGT,BLE,B,
-    LSL,ANDEQ
-} Mnemonics;
-
-typedef enum { Transfer_Post, Transfer_Pre, Transfer_None } IndexType;
-
-typedef enum { Shift_LSL,  Shift_LSR,  Shift_ASR, Shift_ROR, Shift_None } ShiftType;
-
-typedef struct {
-  int rnImm;
-  IndexType indexType;
-  int rm;
-  ShiftType shiftType;
-  int shiftOffset;
-} TransferAddress;
-
 extern address addr;
 extern int programLength;
 
-void parseProgram(SymbolTable *map, Tokens *tokens);
-void parseLine(Token *token);
-void parseInstruction(Token *token);
-void parseTurnaryDataProcessing(Token *token);
-void parseBinaryDataProcessing(Token *token);
-void parseMul(Token *token);
-void parseMla(Token *token);
-void parseB(Token *token);
-void parseLsl(Token *token);
-void parseSingleDataTransfer(Token *token);
+void parseProgram(SymbolTable *map, Program *program);
+void parseLine(Token *token, Program *program);
+void parseInstruction(Token *token, Program *program);
+void parseTurnaryDataProcessing(Token *token, Program *program);
+void parseBinaryDataProcessing(Token *token, Program *program);
+void parseMul(Token *token, Program *program);
+void parseMla(Token *token, Program *program);
+void parseB(Token *token, Program *program);
+void parseLsl(Token *token, Program *program);
+void parseSingleDataTransfer(Token *token, Program *program);
 
 int index_of(char *value, char **arr);
 char* stripBrackets(char *str);
