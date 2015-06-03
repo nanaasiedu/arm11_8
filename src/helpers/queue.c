@@ -4,12 +4,12 @@ instruction dequeue(Queue *queue) {
   if (!isEmpty(queue)) {
     QueueNode *node = queue->front;
     instruction value = node->value;
-    if (queue->front == queue->end) {
-      queue->end = NULL;
-    }
     QueueNode *next = node->next;
     queue->front = next;
     free(node);
+    if (queue->front == queue->end) {
+      queue->end = NULL;
+    }
     return value;
   }
   return NOT_FOUND;
@@ -29,6 +29,7 @@ void enqueue(Queue *queue, instruction value) {
 
   queue->end->next = node;
   queue->end = node;
+  node->next = NULL;
 }
 
 //Helper Functions
@@ -44,12 +45,12 @@ Queue* queueInit(void) {
 }
 
 void queueFree(Queue *queue) {
-  // QueueNode *node = queue->front;
-  // while (!isEmpty(queue)) {
-  //   QueueNode *next = node->next;
-  //   free(node);
-  //   node = next;
-  // }
+  QueueNode *node = queue->front;
+  while (!isEmpty(queue)) {
+    QueueNode *next = node->next;
+    free(node);
+    node = next;
+  }
   free(queue);
 }
 

@@ -31,12 +31,13 @@ void parseProgram(SymbolTable *map, Program *program) {
     } while(tokenPtr->type != NEWLINE);
     tokenPtr++;
     if (tokenPtr->type == OTHER) {
-      program -> addr += WORD_SIZE;
+      program->addr += WORD_SIZE;
     }
   }
   //loaded variables
   while (!isEmpty(program->loadExpr)) {
     instruction instr = dequeue(program->loadExpr);
+    program->addr += WORD_SIZE;
     outputData(instr, program);
   }
 }
