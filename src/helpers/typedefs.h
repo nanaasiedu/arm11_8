@@ -5,14 +5,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//intArray
+//Queue
+typedef struct QueueNode {
+  uint32_t value;
+  struct QueueNode *next;
+} QueueNode;
+
 typedef struct {
-  int first;
-  int last;
-  int size;
-  int fullCapacity;
-  int *values;
-} IntArray;
+  QueueNode *front;
+  QueueNode *end;
+} Queue;
 
 //emulate
 typedef struct { // stores decoded instrustion in useful format
@@ -88,7 +90,7 @@ typedef struct {
   int length;
   address addr;
   Tokens *tokens;
-  IntArray *loadExpr;
+  Queue *loadExpr;
 } Program;
 
 #endif /* end of include guard: TYPEDEFS_H */

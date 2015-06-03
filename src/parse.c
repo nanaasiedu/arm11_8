@@ -23,9 +23,7 @@ void generateShift(Token *shiftTypeToken, int32_t *currOffset) {
 }
 
 void parseProgram(SymbolTable *map, Program *program) {
-  //loadExprs = malloc(sizeof(IntArray));
   Token *tokenPtr = program->tokens->tokens;
-  init(program->loadExpr, program->length);
   while (tokenPtr->type != ENDFILE) {
     parseLine(tokenPtr, program);
     do {
@@ -37,12 +35,10 @@ void parseProgram(SymbolTable *map, Program *program) {
     }
   }
   //loaded variables
-  instruction nextAddr = (instruction) dequeue(program->loadExpr);
-  while (nextAddr != NOT_FOUND) {
-    outputData(nextAddr, program);
-    nextAddr = (instruction) dequeue(program->loadExpr);
+  while (!isEmpty(program->loadExpr)) {
+    instruction instr = dequeue(program->loadExpr);
+    outputData(instr, program);
   }
-  //free(loadExprs);
 }
 
 void parseLine(Token *token, Program *program) {

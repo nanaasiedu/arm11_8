@@ -370,11 +370,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 
   if (p) { //pre-indexing
     if (l) { //load
-      if(rn == 15) {
-        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
-      } else {
-        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
-      }
+      rf.reg[rd] = wMem(rf.reg[rn]+soffset);
     } else { //store
       writewMem(rf.reg[rd], rf.reg[rn]+soffset);
     }

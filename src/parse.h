@@ -5,7 +5,7 @@
 #include "tokenise.h"
 #include "helpers/symbolmap.h"
 #include "helpers/table.h"
-#include "helpers/intArray.h"
+#include "helpers/queue.h"
 #include "helpers/definitions.h"
 #include "helpers/bitUtils.h"
 #include <stdint.h>
