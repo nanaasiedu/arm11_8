@@ -69,6 +69,7 @@ DecodedInst decode(uint32_t instruction) {
   DecodedInst di;
   di.cond = getBinarySeg(instruction, 31, 4); // cond = inst[28..31]
   di.instType = getInstType(instruction); // only has correct 4 MSBs
+
   switch(di.instType){
     case DATA_PROC :
         decodeForDataProc(instruction, &di);
@@ -248,7 +249,6 @@ int execute(DecodedInst di) {
   }
 
   return res;
-
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
@@ -328,7 +328,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
       setCPSRZN(rf.reg[rd], s);
     break;
   }
-
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
