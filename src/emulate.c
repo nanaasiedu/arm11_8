@@ -187,7 +187,7 @@ void decodeForBranch(uint32_t instruction, DecodedInst *di) {
 
 }
 
-// Execute functions -----------------------------
+// Execute functions 
 
 int execute(DecodedInst di) {
   if (di.instType == HALT) {
