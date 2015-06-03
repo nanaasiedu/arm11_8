@@ -11,7 +11,7 @@ void generateShift(Token *shiftTypeToken, int32_t *currOffset) {
     if (shiftToken->type == LITERAL || shiftToken->type == EXPRESSION) {
       char *ptr;
       shift = (int) strtol(shiftToken->value, &ptr, 0);
-      offset |= (shift & 0x1F) << 7;
+      *currOffset |= (shift & 0x1F) << 7;
     } else { // Shift is a register
       shift = map_get(&registerTable, shiftToken->value);
       *currOffset |= SET << 4;
