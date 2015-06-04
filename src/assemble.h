@@ -14,11 +14,8 @@
 void setUpIO(char *in, char *out, Program *program);
 void outputData(uint32_t i, Program *program);
 
-//Compile
-void resolveLabelAddresses(Program *program);
-
 //Helper
-
+void resolveLabelAddresses(Program *program);
 void arm11Tokeniser(Program *program, char *token);
 
 #endif /* end of include guard: ASSEMBLE */

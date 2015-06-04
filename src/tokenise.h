@@ -6,6 +6,7 @@
 
 void tokens_init(Tokens *tokens);
 void tokens_add(Tokens *tokens, char *value, TokenType type);
+
 //Helpers
 bool isLabel(char *string);
 bool isLiteral(char *string);

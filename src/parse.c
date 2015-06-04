@@ -4,24 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void generateShift(Token *shiftTypeToken, int32_t *currOffset) {
-  if (shiftTypeToken->type != NEWLINE) { // Shift Needed
-    int shift;
-    Token *shiftToken = (shiftTypeToken + 1);
-    if (shiftToken->type == LITERAL || shiftToken->type == EXPRESSION) {
-      char *ptr;
-      shift = (int) strtol(shiftToken->value, &ptr, 0);
-      *currOffset |= (shift & 0x1F) << 7;
-    } else { // Shift is a register
-      shift = map_get(&registerTable, shiftToken->value);
-      *currOffset |= SET << 4;
-      *currOffset |= (shift & 0xF) << 8;
-    }
-    int shift_type = map_get(&shiftTable, shiftTypeToken->value);
-    *currOffset |= (shift_type & 3) << 5;
-  }
-}
-
 void parseProgram(SymbolTable *map, Program *program) {
   Token *tokenPtr = program->tokens->tokens;
   while (tokenPtr->type != ENDFILE) {
@@ -56,19 +38,18 @@ void parseInstruction(Token *token, Program *program) {
     case MOV: case TST: case TEQ:
     case CMP: parseBinaryDataProcessing(token, program); break;
 
-    case MUL: parseMul(token, program); break;
-
-    case MLA: parseMla(token, program); break;
+    case MUL:
+    case MLA: parseMul(token, program); break;
 
     case LDR:
     case STR: parseSingleDataTransfer(token, program); break;
 
     case BEQ: case BNE: case BGE: case BLT: case BGT: case BLE:
-    case B: parseB(token, program); break;
+    case B: parseBranch(token, program); break;
 
     case LSL: parseLsl(token, program); break;
 
-    case ANDEQ: generateHaltOpcode(program); break;
+    case ANDEQ: generateHaltInstruction(program); break;
   }
 }
 
@@ -97,7 +78,7 @@ void parseTurnaryDataProcessing(Token *token, Program *program) {
     generateShift((operand_token + 1), &operand);
   }
 
-  generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i, program);
+  generateDataProcessingInstruction(map_get(&mnemonicTable, token->value), rd, rn, operand, NOT_NEEDED, i, program);
 }
 
 void parseBinaryDataProcessing(Token *token, Program *program) {
@@ -122,9 +103,11 @@ void parseBinaryDataProcessing(Token *token, Program *program) {
   }
 
   if (strcmp(token->value,"mov") == 0) {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), rdOrRn, NOT_NEEDED, operand, NOT_SET, i, program);
+    generateDataProcessingInstruction( map_get(&mnemonicTable, token->value), rdOrRn,
+                                  NOT_NEEDED, operand, NOT_SET, i, program);
   } else {
-    generateDataProcessingOpcode(map_get(&mnemonicTable, token->value), NOT_NEEDED, rdOrRn, operand, SET, i, program);
+    generateDataProcessingInstruction( map_get(&mnemonicTable, token->value), NOT_NEEDED,
+                                  rdOrRn, operand, SET, i, program);
   }
 }
 
@@ -133,31 +116,23 @@ void parseMul(Token *token, Program *program) {
   Token *rd_token = token + 1;
   Token *rm_token = token + 2;
   Token *rs_token = token + 3;
-
-  //Get numbers associated to args
-  int rd,rm,rs;
-  rd = map_get(&registerTable, rd_token->value);
-  rm = map_get(&registerTable, rm_token->value);
-  rs = map_get(&registerTable, rs_token->value);
-
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, NOT_NEEDED, NOT_SET, program);
-}
-
-void parseMla(Token *token, Program *program) {
-  //Get args in Token form
-  Token *rd_token = token + 1;
-  Token *rm_token = token + 2;
-  Token *rs_token = token + 3;
   Token *rn_token = token + 4;
 
   //Get numbers associated to args
-  int rd,rm,rs,rn;
+  int rd, rm, rs, rn, a;
   rd = map_get(&registerTable, rd_token->value);
   rm = map_get(&registerTable, rm_token->value);
   rs = map_get(&registerTable, rs_token->value);
-  rn = map_get(&registerTable, rn_token->value);
 
-  generateMultiplyOpcode(map_get(&mnemonicTable, token->value), rd, rm, rs, rn, SET, program);
+  if (rn_token->type != NEWLINE) {
+    rn = map_get(&registerTable, rn_token->value);
+    a = SET;
+  } else {
+    rn = NOT_SET;
+    a = NOT_SET;
+  }
+  generateMultiplyInstruction(map_get(&mnemonicTable, token->value), rd, rm, rs,
+                              rn, a, program);
 }
 
 void parseSingleDataTransfer(Token *token, Program *program) {
@@ -171,8 +146,7 @@ void parseSingleDataTransfer(Token *token, Program *program) {
   l = !strcmp(token->value, "ldr");
   rd = map_get(&registerTable, rdToken->value);
 
-  //p, i, rn, offset, u
-  if (addrToken->type == EXPRESSION) {
+  if (addrToken->type == EXPRESSION) { /* <ldr/str> Rd, =expr */
     //Get Expression
     char *ptr;
     uint32_t ex = (uint32_t) strtol(addrToken->value, &ptr, 0);
@@ -191,7 +165,8 @@ void parseSingleDataTransfer(Token *token, Program *program) {
 
     if (isMov) {
       i = SET;
-      generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED, offset, NOT_SET, i, program);
+      generateDataProcessingInstruction( map_get(&mnemonicTable, "mov"), rd, NOT_NEEDED,
+                                    offset, NOT_SET, i, program);
       return;
     } else {
       i = NOT_SET;
@@ -202,8 +177,7 @@ void parseSingleDataTransfer(Token *token, Program *program) {
     char *addrValue = malloc(100);
     strcpy(addrValue, addrToken->value);
     Token *offsetToken = (addrToken + 1);
-    if (offsetToken->type == NEWLINE) {
-      /* special pre case */
+    if (offsetToken->type == NEWLINE) { /* <ldr/str> Rd, [Rn] */
       p = SET;
       u = SET;
       i = NOT_SET;
@@ -216,7 +190,7 @@ void parseSingleDataTransfer(Token *token, Program *program) {
       rn = map_get(&registerTable, stripBrackets(addrValue));
 
       int rm = map_get(&registerTable,stripLastBracket(offsetToken->value));
-      if (rm == NOT_FOUND) {
+      if (rm == NOT_FOUND) { /* <ldr/str> Rd, Rn, #offset */
         i = NOT_SET;
         char *ptr;
         offset = strtol(offsetToken->value, &ptr, 0);
@@ -226,7 +200,7 @@ void parseSingleDataTransfer(Token *token, Program *program) {
         } else {
           u = 1;
         }
-      } else { //Rm exists
+      } else { /* <ldr/str> Rd, Rn, Rm {, <shift>} */
         offset = rm & 0xF;
 
         Token *shiftTypeToken = (offsetToken + 1);
@@ -237,10 +211,10 @@ void parseSingleDataTransfer(Token *token, Program *program) {
       }
     }
   }
-  generateSingleDataTransferOpcode(i, p, u, l, rd, rn, offset, program);
+  generateSingleDataTransferInstruction(i, p, u, l, rd, rn, offset, program);
 }
 
-void parseB(Token *token, Program *program) {
+void parseBranch(Token *token, Program *program) {
   //Get args in Token form
   Token *lblToken = token + 1;
 
@@ -248,17 +222,41 @@ void parseB(Token *token, Program *program) {
   uint8_t cond; int offset;
   cond = (uint8_t) map_get(&mnemonicTable, token->value);
   offset = map_get(lblToAddr, lblToken->value) - program->addr - ARM_OFFSET;
-  generateBranchOpcode(cond, offset >> 2, program);
+
+  generateBranchInstruction(cond, offset >> 2, program);
 }
 
 void parseLsl(Token *token, Program *program) {
   Token *rn_token = token + 1;
   Token *operand_token = token + 2;
+
   int rn = map_get(&registerTable, rn_token->value);
   char *ptr;
   int operand =  (strtol(operand_token->value, &ptr, 0) << 7) & 0xF80;
   operand |= rn & 0xF;
-  generateDataProcessingOpcode(map_get(&mnemonicTable, "mov"), rn, NOT_NEEDED, operand, NOT_SET, NOT_SET, program);
+
+  generateDataProcessingInstruction( map_get(&mnemonicTable, "mov"), rn, NOT_NEEDED,
+                                operand, NOT_SET, NOT_SET, program);
+}
+
+//Helper Functions
+
+void generateShift(Token *shiftTypeToken, int32_t *currOffset) {
+  if (shiftTypeToken->type != NEWLINE) { // Shift Needed
+    int shift;
+    Token *shiftToken = (shiftTypeToken + 1);
+    if (shiftToken->type == LITERAL || shiftToken->type == EXPRESSION) {
+      char *ptr;
+      shift = (int) strtol(shiftToken->value, &ptr, 0);
+      *currOffset |= (shift & 0x1F) << 7;
+    } else { // Shift is a register
+      shift = map_get(&registerTable, shiftToken->value);
+      *currOffset |= SET << 4;
+      *currOffset |= (shift & 0xF) << 8;
+    }
+    int shift_type = map_get(&shiftTable, shiftTypeToken->value);
+    *currOffset |= (shift_type & 3) << 5;
+  }
 }
 
 int index_of(char *value, char **arr) {
