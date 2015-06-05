@@ -9,6 +9,8 @@ C Project for Imperial Computing Summer Term - Year 1
 ### TODO
 
  - Look at Instruction struct and map for function pointers
+ - make mov r15 branch in emulate
+ - Make comments in assemble
 
 
 #### Useful information
@@ -17,7 +19,7 @@ C Project for Imperial Computing Summer Term - Year 1
 
     - set up stack pointer at beginning of program:
     ldr r13,=0x10000
- 
+
     - call:
     add r14,r15,#8
     sub r13,r13,#4
@@ -25,5 +27,6 @@ C Project for Imperial Computing Summer Term - Year 1
     b fn_name
 
     - ret:
-    ldr r15,[r13]
+    ldr r14,[r13]
     add r13,r13,#4
+    mov r15, r14
