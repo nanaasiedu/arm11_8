@@ -1,3 +1,39 @@
+ldr r13,=0x10000
+
+mov r0,#1
+mov r12,r0
+andeq r0,r0,r0
+
+add r14,r15,#8
+sub r13,r13,#4
+andeq r0,r0,r0
+str r14,[r13]
+b fn_add1
+
+add r14,r15,#8
+sub r13,r13,#4
+str r14,[r13]
+b fn_lsl3
+andeq r0,r0,r0
+
+fn_add1:
+add r12,r12,#1
+
+add r14,r15,#8
+sub r13,r13,#4
+str r14,[r13]
+b fn_lsl3
+
+ldr r14,[r13]
+add r13,r13,#4
+mov r15, r14
+
+fn_lsl3:
+lsl r12,#3
+ldr r14,[r13]
+add r13,r13,#4
+mov r15, r14
+
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -187,7 +223,7 @@ void decodeForBranch(uint32_t instruction, DecodedInst *di) {
 
 }
 
-// Execute functions 
+// Execute functions
 
 int execute(DecodedInst di) {
   if (di.instType == HALT) {
@@ -569,6 +605,13 @@ void outputMemReg(void) {
     printf("$%-3d: %10d ", i, rf.reg[i]);
     outputData(rf.reg[i], isRegister);
   }
+
+
+  printf("SP  : %10d ", *rf.SP);
+  outputData(*rf.SP, isRegister);
+  printf("LR  : %10d ", *rf.LR);
+  outputData(*rf.LR, isRegister);
+
   printf("PC  : %10d ", *rf.PC);
   outputData(*rf.PC, isRegister);
   printf("CPSR: %10d ", *rf.CPSR);
