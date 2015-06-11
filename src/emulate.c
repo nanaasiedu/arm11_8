@@ -232,6 +232,9 @@ int execute(DecodedInst di) {
     if ((di.instType & DATA_PROC) != FALSE) {// Data processing
       executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
                             di.operandOffset);
+      if (di.rd == 15) {
+        res = EXE_BRANCH;
+      }
 
     } else if ((di.instType & MULT) != FALSE) { // Multiply
       executeMult(di.instType, di.rd, di.rn, di.rs, di.rm);
