@@ -573,12 +573,14 @@ void outputMemReg(void) {
     printf("$%-3d: %10d ", i, rf.reg[i]);
     outputData(rf.reg[i], isRegister);
   }
+
   if (showAllRegisters) {
     printf("SP  : %10d ", *rf.SP);
     outputData(*rf.SP, isRegister);
     printf("LR  : %10d ", *rf.LR);
     outputData(*rf.LR, isRegister);
   }
+
   printf("PC  : %10d ", *rf.PC);
   outputData(*rf.PC, isRegister);
   printf("CPSR: %10d ", *rf.CPSR);
