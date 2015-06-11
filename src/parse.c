@@ -13,6 +13,7 @@ uint32_t generateOffsetField(TransferAddress address) {
     case Transfer_Post:
       return generateImmediate(address.rnImm);
   }
+  return NOT_FOUND;
 }
 
 TransferAddress initEmptyAddress() {
