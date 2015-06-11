@@ -268,7 +268,6 @@ int execute(DecodedInst di) {
     if ((di.instType & DATA_PROC) != FALSE) {// Data processing
       executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
                             di.operandOffset);
-
       if (di.rd == 15) {
         res = EXE_BRANCH;
       }
