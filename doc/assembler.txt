@@ -1,0 +1,21 @@
+Our assembler can be split into 5 subtasks:
+
+- input/output setup with setUpIO() in assemble.c which simply sets the pointer
+to the input and output files.
+
+- tokenising the input file with tokenise() in tokenise.c; an array of tookens
+is created where tokens is composed of two fields:a string which is the actual
+word and its type in assembly.
+
+- parsing in the input file with parseProgram() in parse.c. Since some opcode
+are different from other opcodes, we created a parse function for every type of
+opcode (different flags/arguments and different number of arguments). Each parse
+function computes the arguments to parse in the generate functions (below) by
+accessing the symbol tables that links the "word" to the matching number and by
+computing the flags that are set. 
+
+- generating the instruction in binary for each type of opcode using generate
+ functions (different for every type of opcode) all in generate.c.
+
+- outputting the binary instruction in the output file using ouputData() in
+assemble.c.
