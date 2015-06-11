@@ -12,6 +12,8 @@ FILE *binFile = NULL; // binary file containing instructions
 uint8_t *mem = NULL;  // LITTLE ENDIAN Main Memory
 RegFile rf;           // sets register file
 
+bool showAllRegisters = FALSE;
+
 uint32_t *gpio0 = NULL; // Controls I/O state of GPIO pins from 0-9
 uint32_t *gpio1 = NULL; // Controls I/O state of GPIO pins from 10-19
 uint32_t *gpio2 = NULL; // Controls I/O state of GPIO pins from 20-29
@@ -28,13 +30,20 @@ int main (int argc, char const *argv[]) {
   clearRegfile();             // sets all registers to 0
   loadFileToMem(argv[1]);     // binary loader: loads file passed through argv
                               // into mem
-
   gpio0 = calloc(4, 1);
   gpio1 = calloc(4, 1);
   gpio2 = calloc(4, 1);
   gpioS = calloc(4, 1);
   gpioC = calloc(4, 1);
 
+  fetchExecuteCycle();
+  outputMemReg();
+
+  dealloc();
+  return EXIT_SUCCESS;
+}
+
+void fetchExecuteCycle() {
   int executeResult;          // controls pipeline flow
 
   int32_t instruction;
@@ -48,10 +57,6 @@ int main (int argc, char const *argv[]) {
       executeResult = execute(di);
     } while(executeResult == EXE_CONTINUE);
   } while(executeResult != EXE_HALT);
-
-  outputMemReg();
-  dealloc();
-  return EXIT_SUCCESS;
 }
 
 // Fetch-Decode functions
@@ -402,7 +407,7 @@ void loadFileToMem(char const *file) {
     exit(EXIT_FAILURE);
   }
 
-  fread(mem,1,MEM16BIT,binFile);
+  fread(mem, 1, MEM16BIT, binFile);
   fclose(binFile);
 }
 
@@ -568,6 +573,12 @@ void outputMemReg(void) {
     printf("$%-3d: %10d ", i, rf.reg[i]);
     outputData(rf.reg[i], isRegister);
   }
+  if (showAllRegisters) {
+    printf("SP  : %10d ", *rf.SP);
+    outputData(*rf.SP, isRegister);
+    printf("LR  : %10d ", *rf.LR);
+    outputData(*rf.LR, isRegister);
+  }
   printf("PC  : %10d ", *rf.PC);
   outputData(*rf.PC, isRegister);
   printf("CPSR: %10d ", *rf.CPSR);
@@ -575,6 +586,7 @@ void outputMemReg(void) {
 
   // output mem -----------------------
   printf("Non-zero memory:\n");
+  uint32_t strPC = *rf.PC;
   *rf.PC = 0;
   uint32_t instruction;
   while(*rf.PC < MEM16BIT) {
@@ -584,6 +596,7 @@ void outputMemReg(void) {
       outputData(instruction, !isRegister);
     }
   }
+  *rf.PC = strPC;
 }
 
 void outputData(uint32_t i, bool isRegister) {

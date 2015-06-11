@@ -25,6 +25,8 @@ const int EXE_HALT = 0;
 const int EXE_CONTINUE = -1;
 const int EXE_BRANCH = 1;
 
+void fetchExecuteCycle();
+
 // fetch-decode functions
 uint32_t fetch(uint8_t *mem);
 DecodedInst decode(uint32_t instruction);
