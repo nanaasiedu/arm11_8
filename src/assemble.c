@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   // Setup
   Program *pProgram = calloc(sizeof(Program), 1);
   pProgram->tokens = malloc(sizeof(Tokens));
-  pProgram->loadExpr = malloc(sizeof(IntArray));
+  pProgram->loadExpr = queueInit();
   tokens_init(pProgram->tokens);
   lblToAddr = malloc(sizeof(SymbolTable));
   map_init(lblToAddr);
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
   // Deallocation
   fclose(pProgram->input);
   fclose(pProgram->output);
-  free(pProgram->loadExpr);
+  queueFree(pProgram->loadExpr);
   tokens_free(pProgram->tokens);
   map_free(lblToAddr);
   free(pProgram);
@@ -95,9 +95,16 @@ void outputData(instruction i, Program *program) {
   b2 = (i >> 16) & 0xff;
   b3 = (i >> 24) & 0xff;
 
+  instruction lei = b0;
+  lei = (lei << 8) | b1;
+  lei = (lei << 8) | b2;
+  lei = (lei << 8) | b3;
+
   // Print to file
   if (program->output != NULL) {
     fprintf(program->output, "%c%c%c%c", b0, b1, b2, b3);
   }
+
+  printf("0x%.4x: 0x%.8x\n", program->addr, lei);
 
 }

@@ -37,32 +37,30 @@ int main (int argc, char const *argv[]) {
 
   int executeResult;          // controls pipeline flow
 
-  int32_t instruction;        // stores the current fetched instruction
-  DecodedInst di;             // stores the current decoded instruction
+  int32_t instruction;
+  DecodedInst di;
 
-      // PC = 0 before entering loop, an effect of clearRegfile()
   do {
     instruction = fetch(mem);
     do {
       di = decode(instruction);
       instruction = fetch(mem);
       executeResult = execute(di);
-    } while(executeResult == EXE_CONTINUE); // continue regular cycle
-  } while(executeResult != EXE_HALT);       // fetch again if EXE_BRANCH
+    } while(executeResult == EXE_CONTINUE);
+  } while(executeResult != EXE_HALT);
 
-  outputMemReg();             // print memory and register contents to screen
-  // runAllTests();
-  dealloc();                  // frees up allocated memory
+  outputMemReg();
+  dealloc();
   return EXIT_SUCCESS;
 }
 
-// Fetch-Decode functions -------------------------
+// Fetch-Decode functions
 
 uint32_t fetch(uint8_t *mem){
   // reads and returns 4 byte LITTLE ENDIAN
   // Returns Big Endian
   uint32_t instruction = wMem(*rf.PC);
-  *rf.PC += WORD_SIZE;              // inc^ PC
+  *rf.PC += WORD_SIZE;
   return instruction;
 }
 
@@ -71,6 +69,7 @@ DecodedInst decode(uint32_t instruction) {
   DecodedInst di;
   di.cond = getBinarySeg(instruction, 31, 4); // cond = inst[28..31]
   di.instType = getInstType(instruction); // only has correct 4 MSBs
+
   switch(di.instType){
     case DATA_PROC :
         decodeForDataProc(instruction, &di);
@@ -187,9 +186,8 @@ void decodeForBranch(uint32_t instruction, DecodedInst *di) {
   }
 
 }
-// -----------------------------------------------
 
-// Execute functions -----------------------------
+// Execute functions
 
 int execute(DecodedInst di) {
   if (di.instType == HALT) {
@@ -234,7 +232,6 @@ int execute(DecodedInst di) {
     if ((di.instType & DATA_PROC) != FALSE) {// Data processing
       executeDataProcessing(di.instType, di.opcode, di.rn, di.rd,
                             di.operandOffset);
-
       if (di.rd == 15) {
         res = EXE_BRANCH;
       }
@@ -255,7 +252,6 @@ int execute(DecodedInst di) {
   }
 
   return res;
-
 }
 
 void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
@@ -335,7 +331,6 @@ void executeDataProcessing(uint8_t instType, uint8_t opcode, uint8_t rn, uint8_t
       setCPSRZN(rf.reg[rd], s);
     break;
   }
-
 }
 
 void executeMult(uint8_t instType, uint8_t rd, uint8_t rn, uint8_t rs, uint8_t
@@ -377,11 +372,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 
   if (p) { //pre-indexing
     if (l) { //load
-      if(rn == 15) {
-        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
-      } else {
-        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
-      }
+      rf.reg[rd] = wMem(rf.reg[rn]+soffset);
     } else { //store
       writewMem(rf.reg[rd], rf.reg[rn]+soffset);
     }
@@ -401,9 +392,9 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 void executeBranch(int offset) {
   *rf.PC += offset << 2;
 }
-// -----------------------------------------------
 
-// Helper functions ------------------------------
+
+// Helper functions
 void loadFileToMem(char const *file) {
   // Reads bytes from file and inserts them into mem in LITTLE ENDIAN format
   if ((binFile = fopen(file,"r")) == NULL){
@@ -438,8 +429,6 @@ uint32_t wMem(uint32_t startAddr) {
     return *gpioS;
 
   }
-
-
 
   if (startAddr > MEM16BIT) {
     printf("Error: Out of bounds memory access at address 0x%.8x\n", startAddr);

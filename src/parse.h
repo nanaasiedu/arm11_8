@@ -5,43 +5,26 @@
 #include "tokenise.h"
 #include "helpers/symbolmap.h"
 #include "helpers/table.h"
-#include "helpers/intArray.h"
+#include "helpers/queue.h"
 #include "helpers/definitions.h"
 #include "helpers/bitUtils.h"
 #include <stdint.h>
 
-extern Tokens *tokens;
-extern address addr;
-extern int programLength;
-
 void parseProgram(SymbolTable *map, Program *program);
 void parseLine(Token *token, Program *program);
 void parseInstruction(Token *token, Program *program);
-void parseTurnaryDataProcessing(Token *token, Program *program);
+void parseTurnaryDataProcessing(Token *token, Program *program); //Try to combine
 void parseBinaryDataProcessing(Token *token, Program *program);
 void parseMul(Token *token, Program *program);
-void parseMla(Token *token, Program *program);
-void parseB(Token *token, Program *program);
+void parseBranch(Token *token, Program *program);
 void parseLsl(Token *token, Program *program);
 void parseSingleDataTransfer(Token *token, Program *program);
 
+//Helpers
 int index_of(char *value, char **arr);
 char* stripBrackets(char *str);
 char* stripLastBracket(char *str);
 bool isPreIndex(char *str);
-
-uint32_t generateOffsetField(TransferAddress address);
-
-TransferAddress initEmptyAddress();
-
-TransferAddress initImmediateAddress(int immediateAddress);
-
-TransferAddress initRegisterAddress(int rn);
-TransferAddress initOffsetRegisterAddress(int rn, int offset, IndexType indexType);
-TransferAddress initShiftedRegisterAddress(int rn,
-                                           int rm,
-                                           int shift,
-                                           IndexType indexType,
-                                           ShiftType shiftType);
+void generateShift(Token *shiftTypeToken, int32_t *currOffset);
 
 #endif /* end of include guard: PARSE_H */

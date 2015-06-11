@@ -7,7 +7,13 @@ CFLAGS  = -Wall -g -D_POSIX_SOURCE -D_BSD_SOURCE -std=c99 -Werror -pedantic
 
 all: emulate assemble
 
-assemble: assemble.o symbolmap.o tokenise.o parse.o generate.o table.o intArray.o bitUtils.o
+queueTest: queueTest.o queue.o
+	$(CC) $^ -o $@
+
+queueTest.o: queueTest.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+assemble: assemble.o symbolmap.o tokenise.o parse.o generate.o table.o queue.o bitUtils.o
 	$(CC) $^ -o $@
 
 tokenise.o: tokenise.c
@@ -28,7 +34,7 @@ table.o: helpers/table.c
 generate.o: generate.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
-intArray.o: helpers/intArray.c
+queue.o: helpers/queue.c
 	$(CC) $(CFLAGS) $< -c -o $@
 
 emulate: emulate.o bitUtils.o
