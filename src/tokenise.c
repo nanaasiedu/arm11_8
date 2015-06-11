@@ -10,11 +10,12 @@ void tokenise(Program *program, char *sep, void (*tokenFunction)(Program *progra
   while (fgets(line, sizeof(line), program->input) != NULL) {
     char *token = strtok(line, sep);
     bool isBlankLine = token == NULL;
-    while (token != NULL) {
+    bool isCommentLine = !isBlankLine && isComment(token);
+    while (token != NULL && !isComment(token)) {
       tokenFunction(program, token);
       token = strtok(NULL, sep);
     }
-    if (!isBlankLine) {
+    if (!isBlankLine && !isCommentLine) {
       tokens_add(program->tokens, "nl", NEWLINE);
     }
   }
@@ -42,6 +43,10 @@ bool isLabel(char *string) {
 
 bool isLiteral(char *string) {
   return string[0] == '#';
+}
+
+bool isComment(char *string) {
+  return string[0] == ';';
 }
 
 bool isExpression(char *string) {

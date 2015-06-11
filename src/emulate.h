@@ -20,6 +20,7 @@ const uint32_t GPIO_ADDR2 = 0x20200008;
 const uint32_t GPIO_SET_ADDR = 0x2020001C;
 const uint32_t GPIO_CLEAR_ADDR = 0x20200028;
 
+// execute return values
 const int EXE_HALT = 0;
 const int EXE_CONTINUE = -1;
 const int EXE_BRANCH = 1;

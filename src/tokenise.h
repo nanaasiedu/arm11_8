@@ -6,10 +6,12 @@
 
 void tokens_init(Tokens *tokens);
 void tokens_add(Tokens *tokens, char *value, TokenType type);
+
 //Helpers
 bool isLabel(char *string);
 bool isLiteral(char *string);
 bool isExpression(char *string);
+bool isComment(char *string);
 bool isNewLine(char *string);
 void tokens_free(Tokens *tokens);
 

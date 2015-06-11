@@ -36,6 +36,7 @@ int main (int argc, char const *argv[]) {
   gpioC = calloc(4, 1);
 
   int executeResult;          // controls pipeline flow
+
   int32_t instruction;
   DecodedInst di;
 
@@ -68,9 +69,6 @@ DecodedInst decode(uint32_t instruction) {
   DecodedInst di;
   di.cond = getBinarySeg(instruction, 31, 4); // cond = inst[28..31]
   di.instType = getInstType(instruction); // only has correct 4 MSBs
-
-  // printf("instType = %x\n", di.instType);
-  // getchar();
 
   switch(di.instType){
     case DATA_PROC :
@@ -188,9 +186,8 @@ void decodeForBranch(uint32_t instruction, DecodedInst *di) {
   }
 
 }
-// -----------------------------------------------
 
-// Execute functions -----------------------------
+// Execute functions
 
 int execute(DecodedInst di) {
   if (di.instType == HALT) {
@@ -372,11 +369,7 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 
   if (p) { //pre-indexing
     if (l) { //load
-      if(rn == 15) {
-        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
-      } else {
-        rf.reg[rd] = wMem(rf.reg[rn]+soffset);
-      }
+      rf.reg[rd] = wMem(rf.reg[rn]+soffset);
     } else { //store
       writewMem(rf.reg[rd], rf.reg[rn]+soffset);
     }
@@ -396,9 +389,9 @@ void executeSingleDataTransfer(uint8_t instType, uint8_t rn, uint8_t rd,
 void executeBranch(int offset) {
   *rf.PC += offset << 2;
 }
-// -----------------------------------------------
 
-// Helper functions ------------------------------
+
+// Helper functions
 void loadFileToMem(char const *file) {
   // Reads bytes from file and inserts them into mem in LITTLE ENDIAN format
   if ((binFile = fopen(file,"r")) == NULL){

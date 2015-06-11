@@ -1,21 +1,6 @@
 #include "generate.h"
 
-uint32_t generateImmediate(uint32_t value) {
-  uint32_t output = 0;
-  if (value != 0) {
-    int rotation = 32;
-    int32_t imm = value;
-    while (imm % 4 == 0) {
-      rotation--;
-      imm = imm >> 2;
-    }
-    output |= (rotation & 0xf) << 8;
-    output |= imm & 0xff;
-  }
-  return output;
-}
-
-void generateDataProcessingOpcode(int32_t opcode,
+void generateDataProcessingInstruction(int32_t opcode,
                                   int32_t rd,
                                   int32_t rn,
                                   int32_t operand,
@@ -43,7 +28,7 @@ void generateDataProcessingOpcode(int32_t opcode,
   outputData(instr, program);
 }
 
-void generateMultiplyOpcode(int32_t opcode,
+void generateMultiplyInstruction(int32_t opcode,
                             int32_t rd,
                             int32_t rm,
                             int32_t rs,
@@ -66,7 +51,7 @@ void generateMultiplyOpcode(int32_t opcode,
   outputData(instr, program);
 }
 
-void generateBranchOpcode(int32_t cond, int32_t offset, Program *program) {
+void generateBranchInstruction(int32_t cond, int32_t offset, Program *program) {
   instruction instr = NOT_SET;
 
   //Append all fields
@@ -77,7 +62,7 @@ void generateBranchOpcode(int32_t cond, int32_t offset, Program *program) {
   outputData(instr, program);
 }
 
-void generateSingleDataTransferOpcode(uint32_t i,
+void generateSingleDataTransferInstruction(uint32_t i,
                                       uint32_t p,
                                       uint32_t u,
                                       uint32_t l,
@@ -102,7 +87,22 @@ void generateSingleDataTransferOpcode(uint32_t i,
   outputData(instr, program);
 }
 
-void generateHaltOpcode(Program *program) {
+void generateHaltInstruction(Program *program) {
   int32_t instr = 0;
   outputData(instr, program);
+}
+
+uint32_t generateImmediate(uint32_t value) {
+  uint32_t output = 0;
+  if (value != 0) {
+    int rotation = 32;
+    int32_t imm = value;
+    while (imm % 4 == 0) {
+      rotation--;
+      imm = imm >> 2;
+    }
+    output |= (rotation & 0xf) << 8;
+    output |= imm & 0xff;
+  }
+  return output;
 }
