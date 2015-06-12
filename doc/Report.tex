@@ -46,37 +46,53 @@
 This report covers the completion of Group 8's ARM11 Project, specifically Parts II - IV: Assembler; General Purpose Input/Output on a Raspberry Pi; our chosen extension. The assembler program, like the emulator, is written in C. Part of the extension is also written in C, and the other part in the ARM11 assembly language. In this report we will also discuss the organisation and communication of the group.
 
 \section{Part II - Assembler}
+The assembler can be split into 6 subtasks:\newline
 
-Our assembler can be split into 6 subtasks:\newline
+\begin{lstlisting}
+// SETUP
+setUpIO(inputFile, outputFile, pProgram);
 
-1. Input/output setup with \verb|setUpIO()| in \texttt{assemble.c} which simply sets the pointer
-to the input and output files.\newline
+// RUN PROGRAM
+/* create an array of tokens
+ * Token is composed of two fields - the original string and the token type
+ */
+tokenise(inputFile);
+// map labels to addresses
+resolveLabelAddresses(pProgram);
+// call the respective parse function depending on opcode (string field in token)
+parseProgram(tokenArray);
+/* generate binary instruction in big endian by computing relevant flags and
+/* binary representation for each argument of opcode
+ */
+generateInstrunction(opcode);
+//ouput instruction in little endian to ouputFile
+outputData();
 
-2. Breaking up the input file with \verb|tokenise()| in \texttt{tokenise.c}; an array of tokens is created where a token is composed of two fields - the original string and the token type (e.g. \texttt{LABEL}).\newline
+// DEALLOCATION
+closeFiles();
+freeInternalMemorySpaces();
 
-3. Mapping all of the labels in the program to their addresses using \verb|resolveLabelAddresses()| in \texttt{assemble.c};\newline
+}
+\end{lstlisting}
 
-4. Parsing in the input file with \verb|parseProgram()| in \texttt{parse.c}. Since different instructions require different components (flags, arguments, e.t.c.), parse functions have been written to cater for all instruction types. Each parse function computes the arguments to pass in the generate functions (below) by accessing the symbol tables that links the "word" to the matching number and by
-computing the flags that are set.\newline
+Using assembly files in a provided testsuite, the \texttt{./assemble} outputs were compared to the expected outputs to ensure the program function correctly. We also built files for testing data structures, such as the queue - this ensured we knew this unit of the program was working as we wanted to, affording us the opportunity to use its functions freely in our program.
 
-5. Generating the instruction in binary for each type of opcode using generate
-functions (different for every type of opcode) all in \texttt{generate.c.}\newline
+\section{Part III - GPIO (General Purpose Input/ Output)}
+Since inputs and outputs required no special instructions, \texttt{./assemble} needed do amending, all updates were made in \texttt{./emulate}. Constants were added which contain the GPIO set/clear area addresses used to alter the output of pins. Three more constants were created to contain the GPIO status addresses that modify the state of each pin (input or output). Extra memory structures were created for these addresses to refer to, this is how the states are manipulated.\newline
 
-6. Writing the binary instruction to the output file using \verb|ouputData()| in \texttt{assemble.c}.\newline
+\noindent Deciding how to implement this extra part of the memory was a challenge. Originally the existing RAM structure was extended, however, this was prone to errors with arithmetic operations. This is why it was decided to create a separate structure for the GPIO pins.\newline
 
-Using assembly files in a provided testsuite, the \texttt{./assemble} outputs were compared to the expected outputs to ensure the program function correctly. We also built files for testing data structures, such as the queue - this ensured we knew this unit of the program was working as we wanted to, affording us the opportunity to use it's functions freely in our program.
+\noindent In order to test our understanding of how the Raspberry Pi handled outputs, a simple program to flash an LED was created. This test was successful, below is the code used. Note that the comments were added after the program was assembled.
 
-\section{Part III - GPIO}
-%nana for emulate, no change for assembler, testing - flashes\newline
-
-We added constants that contain the GPIO set/clear area addresses that will be used to alter their outputs. Three more constants were made to contain the GPIO status addresses that modify the state of each pin.  Memory was allocated for all five of the addresses. The emulator had to be updated to allow these addresses to be modify. This was done by adding functionality to the functions that access memory locations. If these special memory address are being accessed (e.g. 0x2020 0004) then our program alters their respective memory locations rather than the allocated RAM memory used to store the instructions.
+\lstinputlisting{gpio.s}
 
 \section{Part IV - Extension}
+
 Our chosen extension has 4 parts: changing the functionality of \texttt{mov r15, r14} to allow returns from function calls; allowing the use of comments in an assembler file being passed into our assembly program; creating a 3 bit binary counter in assembly language; creating a IR-based counter. \newline
 
-% talk about the fact we built it up from a flashing LED, to a binary counter, to an IR counter
-
-% all have description, design, problems, testing
+%all have description, design, problems, testing, USAGE
+\subsection{Implementing \texttt{mov r15, rn}}
+In order to use functions, a program can create its own stack structure in memory. This allows the program to store the derived return address and then branch to a function. However, in order to return from a function the PC must store the return address whilst maintaining the pipeline effect. The ARM11 architecture already has a \texttt{mov PC, rn} command which braches automatically so \texttt{./assemble} needed no changing. However, to test the function we have improved the \texttt{mov} instruction in the emulator to allow the PC to store in a chosen address and then branch immediately. again this was very little challenge as it simply involved a small if statement checking the destination resister.
 
 \subsection{Comments}
 The ability to write comments alongside instructions is a useful feature. It can improve the clarity of assembly code which allows for easier maintainance. Comments begin with a semi-colon and finish at the end of the line. They can be placed either on an empty line or at the end of an instruction. For a new-line and end-of-line comments there are 3 types to test for: a blank comment with no text (e.g. \texttt{;}), a comment with no spaces at the start (e.g. \texttt{;comment}), a comment with spaces after the start (e.g. \texttt{; comment}).\newline
@@ -89,21 +105,25 @@ The ability to write comments alongside instructions is a useful feature. It can
 \begin{figure}[H]
 	\centering
 	\includegraphics[scale = 0.5]{commentTest}
-	\caption{Abhinav Gandhi taught me how to do this}
+	\caption{No difference between outputs without comments (left) and with comments}
 \end{figure}
 
 \subsection{3 Bit Binary Counter}
-\subsection{Implementing \texttt{mov r15, rn}}
-In order to use functions, a program can create its own stack structure in memory. This allows the program to store the derived return address and then branch to a function. However, in order to return from a function the PC must store the return address whilst maintaining the pipeline effect. The ARM11 architecture already has a \texttt{mov PC, rn} command which braches automatically so \texttt{./assemble} needs no changing. However, to test the function we have improved the \texttt{mov} instruction in the emulator to allow the PC to store in a chosen address and then branch immediately. again this was very little challenge as it simply involved a small if statement.
-\subsection{IR-Based Counter}
+ Three LEDs are connected to the Raspberry Pi which represent the bit pattern (i.e. The LED being on represents a 1). The assembly program written counts from 0 to 7 at regular intervals. The required pins are then cleared and set by the program to control the LEDs. An issue encountered was the choice of pins to use to increase the simplicity of the program, since when the Raspberry Pi is first turned on, some pins are used for certain functions. Since these were just initialisation usages, it was decided that there was no issue operating these pins.
 
-  - all have description, design, problems, testing
+ The program was first run by our emulator to make sure that the program did set pins as expected, it was then run on the Raspberry Pi. Both tests were passed.
+
+\subsection{IR-Based Counter}
+This part of the extension is essential a way of registering motion or obstructions and carrying out an event related to whatever situation this system is used in. The set up (of a photo gate) involves an infrared LED powered and lined up with a phototransistor which is set as an input device to the Raspberry Pi. The relevant function is called as soon as the IR beam is interrupted, the incrementing of a counter has been chosen the function for demonstration.\newline
+
+\noindent This photo gate can be used for a variety of applications such as an alarm system, speed detection (when used with a timer) and simple games that require objects to reach a certain point.\newline
+
+
 
 \section{Reflection of working in a group}
 \subsection{Elliot Greenwood}
 \subsection{Elyas Addo}
 \subsection{Florian Emile}
-
 I thought that the most challenging part of the project would have been writing
 in assembly. However coding the assembler in C was the trickiest as C was new to
 me and the tasks in assembly were straightforward. I had to get used to drawing
